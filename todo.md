@@ -83,3 +83,4 @@
 
 ## Bugs
 - [x] Corrigir erro de query retornando undefined quando não há config do Bling
+- [x] Corrigir erro 404 na sincronização com API do Bling (endpoints corrigidos + logs melhorados)

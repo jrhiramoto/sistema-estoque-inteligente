@@ -168,20 +168,33 @@ async function blingRequest<T>(
   const token = await ensureValidToken(userId);
 
   try {
+    console.log(`[Bling API] ${method} ${BLING_API_URL}${endpoint}`);
     const response = await axios({
       method,
       url: `${BLING_API_URL}${endpoint}`,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "Accept": "application/json",
       },
       data,
     });
 
+    console.log(`[Bling API] Sucesso: ${method} ${endpoint}`);
     return response.data;
   } catch (error: any) {
-    console.error(`Erro na requisição Bling ${endpoint}:`, error.response?.data || error.message);
-    throw new Error(`Falha ao acessar API do Bling: ${error.response?.data?.error?.message || error.message}`);
+    const status = error.response?.status;
+    const errorData = error.response?.data;
+    const errorMessage = errorData?.error?.message || errorData?.message || error.message;
+    
+    console.error(`[Bling API] Erro ${status} em ${endpoint}:`, {
+      status,
+      message: errorMessage,
+      data: errorData,
+      url: `${BLING_API_URL}${endpoint}`,
+    });
+    
+    throw new Error(`Falha ao acessar API do Bling (${status}): ${errorMessage}`);
   }
 }
 
@@ -226,7 +239,7 @@ export async function syncProducts(userId: number): Promise<{ synced: number; er
  */
 export async function syncInventory(userId: number): Promise<{ synced: number; errors: number }> {
   try {
-    const response = await blingRequest<{ data: BlingEstoque[] }>(userId, "/estoques");
+    const response = await blingRequest<{ data: BlingEstoque[] }>(userId, "/estoques/saldos");
     const estoques = response.data || [];
 
     let synced = 0;
@@ -273,7 +286,7 @@ export async function syncSales(userId: number): Promise<{ synced: number; error
 
     const response = await blingRequest<{ data: BlingPedido[] }>(
       userId,
-      `/pedidos/vendas?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}`
+      `/pedidos?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}`
     );
     
     const pedidos = response.data || [];
