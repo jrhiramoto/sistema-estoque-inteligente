@@ -1,8 +1,17 @@
 import axios from "axios";
 import * as db from "./db";
+const BLING_API_URL = "https://api.bling.com.br/Api/v3";
+const BLING_OAUTH_URL = "https://www.bling.com.br/Api/v3/oauth/token";
 
-const BLING_API_URL = "https://www.bling.com.br/Api/v3";
-const BLING_AUTH_URL = "https://www.bling.com.br/Api/v3/oauth/token";
+// Rate limiting: delay entre requisições (em ms)
+const REQUEST_DELAY_MS = 500; // 500ms = 2 requisições por segundo
+
+/**
+ * Aguarda um tempo antes de continuar
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 interface BlingTokenResponse {
   access_token: string;
@@ -57,7 +66,7 @@ export async function exchangeCodeForToken(
 ): Promise<BlingTokenResponse> {
   try {
     const response = await axios.post(
-      BLING_AUTH_URL,
+      BLING_OAUTH_URL,
       {
         grant_type: "authorization_code",
         code,
@@ -90,7 +99,7 @@ export async function refreshAccessToken(
 ): Promise<BlingTokenResponse> {
   try {
     const response = await axios.post(
-      BLING_AUTH_URL,
+      BLING_OAUTH_URL,
       {
         grant_type: "refresh_token",
         refresh_token: refreshToken,
@@ -250,37 +259,58 @@ export async function syncInventory(userId: number): Promise<{ synced: number; e
     let synced = 0;
     let errors = 0;
 
-    // Para cada produto, buscar o estoque no Bling
-    for (const product of products) {
-      if (!product.blingId) {
-        continue; // Pular produtos sem blingId
-      }
-
+    // Processar produtos em lotes para respeitar rate limit
+    const BATCH_SIZE = 10; // Processar 10 produtos por vez
+    
+    for (let i = 0; i < products.length; i += BATCH_SIZE) {
+      const batch = products.slice(i, i + BATCH_SIZE);
+      
+      // Criar array de IDs para buscar em uma única requisição
+      const productIds = batch
+        .filter(p => p.blingId)
+        .map(p => p.blingId)
+        .join(',');
+      
+      if (!productIds) continue;
+      
       try {
-        // Buscar estoque do produto específico
+        // Buscar estoque de múltiplos produtos de uma vez
         const response = await blingRequest<{ data: BlingEstoque[] }>(
           userId,
-          `/estoques/saldos?idsProdutos[]=${product.blingId}`
+          `/estoques/saldos?idsProdutos=${productIds}`
         );
         
         const estoques = response.data || [];
         
-        if (estoques.length > 0) {
-          const estoque = estoques[0]; // Pegar o primeiro resultado
+        // Mapear estoques aos produtos
+        for (const estoque of estoques) {
+          const product = batch.find(p => p.blingId === String(estoque.produto.id));
           
-          await db.upsertInventory({
-            productId: product.id,
-            depositId: estoque.deposito?.id ? String(estoque.deposito.id) : "default",
-            depositName: estoque.deposito?.nome || "Depósito Principal",
-            virtualStock: Math.round(estoque.saldoVirtualTotal || 0),
-            physicalStock: Math.round(estoque.saldoFisicoTotal || 0),
-            lastVirtualSync: new Date(),
-          });
-          synced++;
+          if (product) {
+            try {
+              await db.upsertInventory({
+                productId: product.id,
+                depositId: estoque.deposito?.id ? String(estoque.deposito.id) : "default",
+                depositName: estoque.deposito?.nome || "Depósito Principal",
+                virtualStock: Math.round(estoque.saldoVirtualTotal || 0),
+                physicalStock: Math.round(estoque.saldoFisicoTotal || 0),
+                lastVirtualSync: new Date(),
+              });
+              synced++;
+            } catch (error: any) {
+              console.error(`Erro ao salvar estoque do produto ${product.blingId}:`, error.message);
+              errors++;
+            }
+          }
+        }
+        
+        // Aguardar antes da próxima requisição (rate limiting)
+        if (i + BATCH_SIZE < products.length) {
+          await delay(REQUEST_DELAY_MS);
         }
       } catch (error: any) {
-        console.error(`Erro ao sincronizar estoque do produto ${product.blingId}:`, error.message);
-        errors++;
+        console.error(`Erro ao sincronizar lote de produtos:`, error.message);
+        errors += batch.length;
       }
     }
 

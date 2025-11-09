@@ -86,3 +86,4 @@
 - [x] Corrigir erro 404 na sincronização com API do Bling (endpoints corrigidos + logs melhorados)
 - [x] Corrigir erro 400 ao sincronizar estoque do Bling (alterado para buscar estoque por produto)
 - [x] Investigar e corrigir erro 404 em algum endpoint da sincronização (endpoint de vendas corrigido para /pedidos/vendas)
+- [x] Implementar controle de rate limiting para evitar erro 429 do Bling (processamento em lotes + delay de 500ms)
