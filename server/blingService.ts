@@ -191,28 +191,76 @@ async function blingRequest<T>(
 
     // Verificar se a resposta é HTML ao invés de JSON
     if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
-      console.error('[Bling API] Resposta HTML recebida ao invés de JSON');
-      console.error('[Bling API] Endpoint:', endpoint);
+      console.error('[Bling API] ❌ Resposta HTML recebida ao invés de JSON');
+      console.error('[Bling API] Endpoint:', `${BLING_API_URL}${endpoint}`);
       console.error('[Bling API] Status:', response.status);
-      console.error('[Bling API] Primeiros 200 caracteres:', response.data.substring(0, 200));
-      throw new Error('API do Bling retornou HTML ao invés de JSON. Possíveis causas: endpoint incorreto, token inválido ou erro no servidor do Bling.');
+      console.error('[Bling API] Primeiros 500 caracteres:', response.data.substring(0, 500));
+      
+      // Tentar extrair informação útil do HTML
+      let errorHint = '';
+      if (response.data.includes('404') || response.data.includes('Not Found')) {
+        errorHint = 'Endpoint não encontrado. Verifique se a URL está correta.';
+      } else if (response.data.includes('401') || response.data.includes('Unauthorized')) {
+        errorHint = 'Token de acesso inválido ou expirado. Tente reautorizar na página de Configurações.';
+      } else if (response.data.includes('429') || response.data.includes('Too Many Requests')) {
+        errorHint = 'Limite de requisições atingido. Aguarde alguns minutos antes de tentar novamente.';
+      } else if (response.data.includes('500') || response.data.includes('Internal Server Error')) {
+        errorHint = 'Erro no servidor do Bling. Tente novamente em alguns minutos.';
+      } else {
+        errorHint = 'Erro desconhecido no servidor do Bling.';
+      }
+      
+      throw new Error(`${errorHint} (Resposta HTML recebida ao invés de JSON)`);
     }
     
     console.log(`[Bling API] Sucesso: ${method} ${endpoint}`);
     return response.data;
   } catch (error: any) {
+    // Se já é um erro tratado (HTML), relançar
+    if (error.message && !error.response) {
+      throw error;
+    }
+    
     const status = error.response?.status;
     const errorData = error.response?.data;
     const errorMessage = errorData?.error?.message || errorData?.message || error.message;
     
-    console.error(`[Bling API] Erro ${status} em ${endpoint}:`, {
+    console.error(`[Bling API] ❌ Erro ${status} em ${endpoint}:`, {
       status,
       message: errorMessage,
       data: errorData,
       url: `${BLING_API_URL}${endpoint}`,
     });
     
-    throw new Error(`Falha ao acessar API do Bling (${status}): ${errorMessage}`);
+    // Mensagens amigáveis por tipo de erro
+    let friendlyMessage = '';
+    
+    switch (status) {
+      case 400:
+        friendlyMessage = 'Requisição inválida. Verifique os parâmetros enviados.';
+        break;
+      case 401:
+        friendlyMessage = 'Token de acesso inválido ou expirado. Reautorize o sistema na página de Configurações.';
+        break;
+      case 403:
+        friendlyMessage = 'Acesso negado. Verifique as permissões do aplicativo no Bling.';
+        break;
+      case 404:
+        friendlyMessage = 'Recurso não encontrado. O endpoint pode estar incorreto.';
+        break;
+      case 429:
+        friendlyMessage = 'Limite de requisições atingido. O sistema irá tentar novamente automaticamente em alguns minutos.';
+        break;
+      case 500:
+      case 502:
+      case 503:
+        friendlyMessage = 'Erro no servidor do Bling. Tente novamente em alguns minutos.';
+        break;
+      default:
+        friendlyMessage = `Erro ao acessar API do Bling: ${errorMessage}`;
+    }
+    
+    throw new Error(friendlyMessage);
   }
 }
 

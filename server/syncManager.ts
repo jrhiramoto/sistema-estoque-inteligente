@@ -220,7 +220,28 @@ async function executeSyncInternal(
     console.log(`[SyncManager] Sincronização completa: ${syncType}`);
     
   } catch (error: any) {
-    console.error(`[SyncManager] Erro na sincronização ${syncType}:`, error.message);
+    console.error(`[SyncManager] ❌ Erro na sincronização ${syncType}:`, error.message);
+    
+    // Se for erro 429 (rate limit), pausar todas as sincronizações por 10 minutos
+    if (error.message && error.message.includes('Limite de requisições atingido')) {
+      console.warn('[SyncManager] ⚠️ Rate limit detectado! Pausando sincronizações por 10 minutos...');
+      
+      await db.updateSyncHistory(historyId, {
+        status: "retrying",
+        errorMessage: error.message,
+        retryCount: 0,
+        nextRetryAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos
+      });
+      
+      // Agendar retry
+      setTimeout(() => {
+        console.log('[SyncManager] Retomando sincronizações após pausa de rate limit...');
+        addToQueue(userId, syncType, "scheduled");
+        processQueue();
+      }, 10 * 60 * 1000);
+      
+      return;
+    }
     
     // Verificar se deve fazer retry
     const history = await db.getRecentSyncHistory(1);
