@@ -303,7 +303,7 @@ export async function syncSales(userId: number): Promise<{ synced: number; error
 
     const response = await blingRequest<{ data: BlingPedido[] }>(
       userId,
-      `/pedidos?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}`
+      `/pedidos/vendas?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}`
     );
     
     const pedidos = response.data || [];

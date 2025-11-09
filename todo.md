@@ -85,3 +85,4 @@
 - [x] Corrigir erro de query retornando undefined quando não há config do Bling
 - [x] Corrigir erro 404 na sincronização com API do Bling (endpoints corrigidos + logs melhorados)
 - [x] Corrigir erro 400 ao sincronizar estoque do Bling (alterado para buscar estoque por produto)
+- [x] Investigar e corrigir erro 404 em algum endpoint da sincronização (endpoint de vendas corrigido para /pedidos/vendas)
