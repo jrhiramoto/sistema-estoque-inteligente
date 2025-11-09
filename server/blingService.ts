@@ -4,7 +4,7 @@ const BLING_API_URL = "https://api.bling.com.br/Api/v3";
 const BLING_OAUTH_URL = "https://www.bling.com.br/Api/v3/oauth/token";
 
 // Rate limiting: delay entre requisições (em ms)
-const REQUEST_DELAY_MS = 500; // 500ms = 2 requisições por segundo
+const REQUEST_DELAY_MS = 1000; // 1000ms = 1 requisição por segundo (mais conservador)
 
 /**
  * Aguarda um tempo antes de continuar
@@ -212,27 +212,58 @@ async function blingRequest<T>(
  */
 export async function syncProducts(userId: number): Promise<{ synced: number; errors: number }> {
   try {
-    const response = await blingRequest<{ data: BlingProduct[] }>(userId, "/produtos");
-    const products = response.data || [];
-
     let synced = 0;
     let errors = 0;
+    let page = 1;
+    const limit = 100; // Buscar 100 produtos por página
+    let hasMore = true;
 
-    for (const blingProduct of products) {
+    while (hasMore) {
       try {
-        await db.upsertProduct({
-          blingId: String(blingProduct.id),
-          code: blingProduct.codigo || null,
-          name: blingProduct.nome,
-          description: blingProduct.descricaoCurta || null,
-          price: Math.round(blingProduct.preco * 100), // converter para centavos
-          cost: Math.round((blingProduct.precoCusto || 0) * 100),
-          unit: blingProduct.unidade || null,
-        });
-        synced++;
-      } catch (error) {
-        console.error(`Erro ao sincronizar produto ${blingProduct.id}:`, error);
-        errors++;
+        console.log(`[Bling] Buscando produtos - página ${page}`);
+        const response = await blingRequest<{ data: BlingProduct[] }>(
+          userId,
+          `/produtos?pagina=${page}&limite=${limit}`
+        );
+        const produtos = response.data || [];
+
+        if (produtos.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const produto of produtos) {
+          try {
+            await db.upsertProduct({
+              blingId: String(produto.id),
+              name: produto.nome,
+              code: produto.codigo || null,
+              price: produto.preco ? parseFloat(String(produto.preco)) : 0,
+              cost: produto.precoCusto ? parseFloat(String(produto.precoCusto)) : undefined,
+              unit: produto.unidade || null,
+            });
+            synced++;
+          } catch (error) {
+            console.error(`Erro ao sincronizar produto ${produto.id}:`, error);
+            errors++;
+          }
+        }
+
+        // Se retornou menos que o limite, é a última página
+        if (produtos.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+          // Aguardar antes da próxima página (rate limiting)
+          await delay(REQUEST_DELAY_MS);
+        }
+      } catch (error: any) {
+        console.error(`Erro ao buscar página ${page} de produtos:`, error.message);
+        // Se for erro 429, parar a sincronização
+        if (error.message.includes('429')) {
+          throw error;
+        }
+        hasMore = false;
       }
     }
 

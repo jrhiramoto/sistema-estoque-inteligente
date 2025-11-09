@@ -87,3 +87,4 @@
 - [x] Corrigir erro 400 ao sincronizar estoque do Bling (alterado para buscar estoque por produto)
 - [x] Investigar e corrigir erro 404 em algum endpoint da sincronização (endpoint de vendas corrigido para /pedidos/vendas)
 - [x] Implementar controle de rate limiting para evitar erro 429 do Bling (processamento em lotes + delay de 500ms)
+- [x] Ajustar rate limiting - ainda ocorrendo erro 429 (aumentado delay para 1s + paginação em produtos)
