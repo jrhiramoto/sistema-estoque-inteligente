@@ -4,7 +4,7 @@ const BLING_API_URL = "https://api.bling.com.br/Api/v3";
 const BLING_OAUTH_URL = "https://www.bling.com.br/Api/v3/oauth/token";
 
 // Rate limiting: delay entre requisições (em ms)
-const REQUEST_DELAY_MS = 1000; // 1000ms = 1 requisição por segundo (mais conservador)
+const REQUEST_DELAY_MS = 2000; // 2000ms = 1 requisição a cada 2 segundos (muito conservador para evitar conflitos)
 
 /**
  * Aguarda um tempo antes de continuar
@@ -189,6 +189,15 @@ async function blingRequest<T>(
       data,
     });
 
+    // Verificar se a resposta é HTML ao invés de JSON
+    if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
+      console.error('[Bling API] Resposta HTML recebida ao invés de JSON');
+      console.error('[Bling API] Endpoint:', endpoint);
+      console.error('[Bling API] Status:', response.status);
+      console.error('[Bling API] Primeiros 200 caracteres:', response.data.substring(0, 200));
+      throw new Error('API do Bling retornou HTML ao invés de JSON. Possíveis causas: endpoint incorreto, token inválido ou erro no servidor do Bling.');
+    }
+    
     console.log(`[Bling API] Sucesso: ${method} ${endpoint}`);
     return response.data;
   } catch (error: any) {
@@ -211,26 +220,46 @@ async function blingRequest<T>(
  * Sincroniza produtos do Bling
  */
 export async function syncProducts(userId: number): Promise<{ synced: number; errors: number }> {
-  try {
+  try{
     let synced = 0;
     let errors = 0;
     let page = 1;
     const limit = 100; // Buscar 100 produtos por página
     let hasMore = true;
+    let consecutiveEmptyPages = 0;
+    const MAX_EMPTY_PAGES = 3; // Parar após 3 páginas vazias consecutivas
+
+    console.log('[Bling] Iniciando sincronização completa de produtos...');
 
     while (hasMore) {
       try {
-        console.log(`[Bling] Buscando produtos - página ${page}`);
+        console.log(`[Bling] Buscando produtos - página ${page} (${synced} sincronizados até agora)`);
         const response = await blingRequest<{ data: BlingProduct[] }>(
           userId,
           `/produtos?pagina=${page}&limite=${limit}`
         );
         const produtos = response.data || [];
 
+        console.log(`[Bling] Página ${page}: ${produtos.length} produtos retornados`);
+
         if (produtos.length === 0) {
-          hasMore = false;
-          break;
+          consecutiveEmptyPages++;
+          console.log(`[Bling] Página vazia (${consecutiveEmptyPages}/${MAX_EMPTY_PAGES})`);
+          
+          if (consecutiveEmptyPages >= MAX_EMPTY_PAGES) {
+            console.log('[Bling] Múltiplas páginas vazias consecutivas. Finalizando sincronização.');
+            hasMore = false;
+            break;
+          }
+          
+          // Continuar para próxima página mesmo se vazia
+          page++;
+          await delay(REQUEST_DELAY_MS);
+          continue;
         }
+
+        // Reset contador de páginas vazias
+        consecutiveEmptyPages = 0;
 
         for (const produto of produtos) {
           try {
@@ -243,32 +272,42 @@ export async function syncProducts(userId: number): Promise<{ synced: number; er
               unit: produto.unidade || null,
             });
             synced++;
+            
+            // Log a cada 1000 produtos
+            if (synced % 1000 === 0) {
+              console.log(`[Bling] Progresso: ${synced} produtos sincronizados`);
+            }
           } catch (error) {
             console.error(`Erro ao sincronizar produto ${produto.id}:`, error);
             errors++;
           }
         }
 
-        // Se retornou menos que o limite, é a última página
-        if (produtos.length < limit) {
-          hasMore = false;
-        } else {
-          page++;
-          // Aguardar antes da próxima página (rate limiting)
-          await delay(REQUEST_DELAY_MS);
-        }
+        // Continuar para próxima página
+        page++;
+        
+        // Aguardar antes da próxima página (rate limiting)
+        await delay(REQUEST_DELAY_MS);
+        
       } catch (error: any) {
         console.error(`Erro ao buscar página ${page} de produtos:`, error.message);
+        
         // Se for erro 429, parar a sincronização
         if (error.message.includes('429')) {
+          console.error('[Bling] Rate limit atingido. Parando sincronização.');
           throw error;
         }
-        hasMore = false;
+        
+        // Para outros erros, tentar continuar
+        console.log('[Bling] Tentando continuar após erro...');
+        page++;
+        await delay(REQUEST_DELAY_MS * 2); // Delay maior após erro
       }
     }
 
+    console.log(`[Bling] Sincronização completa! Total: ${synced} produtos sincronizados, ${errors} erros`);
     return { synced, errors };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao sincronizar produtos:", error);
     throw error;
   }

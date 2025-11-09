@@ -88,3 +88,19 @@
 - [x] Investigar e corrigir erro 404 em algum endpoint da sincronização (endpoint de vendas corrigido para /pedidos/vendas)
 - [x] Implementar controle de rate limiting para evitar erro 429 do Bling (processamento em lotes + delay de 500ms)
 - [x] Ajustar rate limiting - ainda ocorrendo erro 429 (aumentado delay para 1s + paginação em produtos)
+- [x] Corrigir erro de resposta HTML ao invés de JSON da API Bling (adicionado detecção e logs detalhados)
+
+## Sincronização Completa e Contínua
+- [x] Corrigir paginação para sincronizar todos os 39.868 produtos (logs detalhados + continua até 3 páginas vazias)
+- [x] Adicionar indicador de progresso na sincronização (logs a cada 1000 produtos)
+- [ ] Implementar sincronização automática agendada (diária/horária)
+- [ ] Criar sistema de atualização incremental (apenas produtos alterados)
+- [ ] Adicionar log de histórico de sincronizações
+
+## Controle de Concorrência e Otimização
+- [x] Implementar lock de sincronização (apenas 1 por vez)
+- [x] Criar sistema de fila para sincronizações pendentes
+- [x] Adicionar retry automático para sincronizações que falharem (backoff exponencial: 5, 10, 20 min)
+- [x] Aumentar delay para 2 segundos (mais conservador)
+- [x] Implementar backoff exponencial para erro 429
+- [ ] Adicionar dashboard de monitoramento de sincronizações

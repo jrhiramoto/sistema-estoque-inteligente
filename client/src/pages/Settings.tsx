@@ -59,9 +59,12 @@ export default function Settings() {
       utils.bling.getConfig.invalidate();
       utils.products.list.invalidate();
       utils.dashboard.overview.invalidate();
-      toast.success(
-        `Sincronização concluída! Produtos: ${data.products.synced}, Estoque: ${data.inventory.synced}, Vendas: ${data.sales.synced}`
-      );
+      
+      if (data.queued) {
+        toast.info(data.message);
+      } else {
+        toast.success(data.message);
+      }
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao sincronizar");

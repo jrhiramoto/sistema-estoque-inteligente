@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import * as blingService from "./blingService";
+import * as syncManager from "./syncManager";
 
 export const appRouter = router({
   system: systemRouter,
@@ -75,8 +76,8 @@ export const appRouter = router({
     
     syncProducts: protectedProcedure.mutation(async ({ ctx }) => {
       try {
-        const result = await blingService.syncProducts(ctx.user.id);
-        return { success: true, ...result };
+        const result = await syncManager.executeSync(ctx.user.id, "products", "manual");
+        return result;
       } catch (error: any) {
         throw new Error(error.message || "Erro ao sincronizar produtos");
       }
@@ -84,8 +85,8 @@ export const appRouter = router({
     
     syncInventory: protectedProcedure.mutation(async ({ ctx }) => {
       try {
-        const result = await blingService.syncInventory(ctx.user.id);
-        return { success: true, ...result };
+        const result = await syncManager.executeSync(ctx.user.id, "inventory", "manual");
+        return result;
       } catch (error: any) {
         throw new Error(error.message || "Erro ao sincronizar estoque");
       }
@@ -93,8 +94,8 @@ export const appRouter = router({
     
     syncSales: protectedProcedure.mutation(async ({ ctx }) => {
       try {
-        const result = await blingService.syncSales(ctx.user.id);
-        return { success: true, ...result };
+        const result = await syncManager.executeSync(ctx.user.id, "sales", "manual");
+        return result;
       } catch (error: any) {
         throw new Error(error.message || "Erro ao sincronizar vendas");
       }
@@ -102,25 +103,34 @@ export const appRouter = router({
     
     syncAll: protectedProcedure.mutation(async ({ ctx }) => {
       try {
-        const products = await blingService.syncProducts(ctx.user.id);
-        const inventory = await blingService.syncInventory(ctx.user.id);
-        const sales = await blingService.syncSales(ctx.user.id);
+        const result = await syncManager.executeSync(ctx.user.id, "full", "manual");
         
         await db.upsertBlingConfig({
           userId: ctx.user.id,
           lastSync: new Date(),
         });
         
-        return {
-          success: true,
-          products,
-          inventory,
-          sales,
-        };
+        return result;
       } catch (error: any) {
         throw new Error(error.message || "Erro ao sincronizar dados");
       }
     }),
+    
+    // Status da sincronização
+    getSyncStatus: protectedProcedure.query(async () => {
+      return {
+        isRunning: syncManager.isSyncRunning(),
+        currentSync: syncManager.getCurrentSync(),
+        queueSize: syncManager.getQueueSize(),
+      };
+    }),
+    
+    // Histórico de sincronizações
+    getSyncHistory: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getRecentSyncHistory(input?.limit || 20);
+      }),
   }),
 
   // Produtos

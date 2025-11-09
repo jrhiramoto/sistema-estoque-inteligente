@@ -3,7 +3,9 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, 
   inventoryCounts, alerts, countSchedule, blingConfig,
-  Product, Inventory, Sale, Alert, InventoryCount, CountSchedule, BlingConfig
+  syncHistory, syncConfig,
+  Product, Inventory, Sale, Alert, InventoryCount, CountSchedule, BlingConfig,
+  InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -373,5 +375,50 @@ export async function upsertCountSchedule(schedule: Partial<CountSchedule> & { p
   } else {
     const result = await db.insert(countSchedule).values(schedule as any);
     return result[0].insertId;
+  }
+}
+
+// ===== Sync History =====
+
+export async function createSyncHistory(history: InsertSyncHistory) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(syncHistory).values(history);
+  return result[0].insertId;
+}
+
+export async function updateSyncHistory(id: number, updates: Partial<SyncHistory>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(syncHistory).set(updates).where(eq(syncHistory.id, id));
+}
+
+export async function getRecentSyncHistory(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(syncHistory).orderBy(desc(syncHistory.startedAt)).limit(limit);
+}
+
+// ===== Sync Config =====
+
+export async function getSyncConfig(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(syncConfig).where(eq(syncConfig.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertSyncConfig(config: InsertSyncConfig) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getSyncConfig(config.userId);
+  
+  if (existing) {
+    await db.update(syncConfig)
+      .set({ ...config, updatedAt: new Date() })
+      .where(eq(syncConfig.userId, config.userId));
+  } else {
+    await db.insert(syncConfig).values(config);
   }
 }

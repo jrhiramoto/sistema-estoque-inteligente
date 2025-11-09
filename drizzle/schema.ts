@@ -187,3 +187,41 @@ export const countSchedule = mysqlTable("count_schedule", {
 
 export type CountSchedule = typeof countSchedule.$inferSelect;
 export type InsertCountSchedule = typeof countSchedule.$inferInsert;
+
+/**
+ * Histórico de sincronizações
+ */
+export const syncHistory = mysqlTable("sync_history", {
+  id: int("id").autoincrement().primaryKey(),
+  syncType: mysqlEnum("sync_type", ["products", "inventory", "sales", "full"]).notNull(),
+  status: mysqlEnum("status", ["running", "completed", "failed", "queued", "retrying"]).notNull(),
+  itemsSynced: int("items_synced").default(0).notNull(),
+  itemsErrors: int("items_errors").default(0).notNull(),
+  startedAt: timestamp("started_at").notNull(),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"),
+  triggeredBy: mysqlEnum("triggered_by", ["manual", "scheduled", "webhook"]).notNull(),
+  retryCount: int("retry_count").default(0).notNull(),
+  maxRetries: int("max_retries").default(3).notNull(),
+  nextRetryAt: timestamp("next_retry_at"),
+});
+
+export type SyncHistory = typeof syncHistory.$inferSelect;
+export type InsertSyncHistory = typeof syncHistory.$inferInsert;
+
+/**
+ * Configurações de sincronização automática
+ */
+export const syncConfig = mysqlTable("sync_config", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  autoSyncEnabled: boolean("auto_sync_enabled").default(false).notNull(),
+  syncFrequencyHours: int("sync_frequency_hours").default(24).notNull(), // A cada quantas horas sincronizar
+  lastAutoSync: timestamp("last_auto_sync"),
+  nextAutoSync: timestamp("next_auto_sync"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SyncConfig = typeof syncConfig.$inferSelect;
+export type InsertSyncConfig = typeof syncConfig.$inferInsert;
