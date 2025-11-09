@@ -19,17 +19,19 @@ export default function Settings() {
     undefined,
     { enabled: !!user }
   );
+  
+  const hasConfig = config !== null && config !== undefined;
 
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [authCode, setAuthCode] = useState("");
 
   useEffect(() => {
-    if (config) {
-      setClientId(config.clientId || "");
-      setClientSecret(config.clientSecret || "");
+    if (hasConfig) {
+      setClientId(config?.clientId || "");
+      setClientSecret(config?.clientSecret || "");
     }
-  }, [config]);
+  }, [config, hasConfig]);
 
   const saveConfig = trpc.bling.saveConfig.useMutation({
     onSuccess: () => {

@@ -80,3 +80,6 @@
 - [x] Implementar sincronização de vendas
 - [x] Adicionar botões de sincronização manual
 - [ ] Implementar sincronização automática periódica
+
+## Bugs
+- [x] Corrigir erro de query retornando undefined quando não há config do Bling
