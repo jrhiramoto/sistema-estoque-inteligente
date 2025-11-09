@@ -67,3 +67,16 @@
 - [ ] Responsividade mobile
 - [ ] Loading states e feedback visual
 - [ ] Notificações toast para ações
+
+## OAuth Bling (Novo)
+- [x] Implementar endpoint para trocar authorization code por tokens
+- [x] Implementar refresh automático de tokens
+- [x] Criar interface para colar authorization code
+- [ ] Testar fluxo completo de autenticação
+
+## Sincronização Bling (Novo)
+- [x] Implementar sincronização de produtos
+- [x] Implementar sincronização de estoque
+- [x] Implementar sincronização de vendas
+- [x] Adicionar botões de sincronização manual
+- [ ] Implementar sincronização automática periódica

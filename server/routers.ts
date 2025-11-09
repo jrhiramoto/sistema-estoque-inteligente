@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import * as blingService from "./blingService";
 
 export const appRouter = router({
   system: systemRouter,
@@ -38,6 +39,88 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+    
+    exchangeCode: protectedProcedure
+      .input(z.object({
+        code: z.string(),
+        clientId: z.string(),
+        clientSecret: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const tokenData = await blingService.exchangeCodeForToken(
+            input.code,
+            input.clientId,
+            input.clientSecret
+          );
+          
+          const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+          
+          await db.upsertBlingConfig({
+            userId: ctx.user.id,
+            clientId: input.clientId,
+            clientSecret: input.clientSecret,
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            tokenExpiresAt: expiresAt,
+            isActive: true,
+            lastSync: new Date(),
+          });
+          
+          return { success: true, message: "Autoriza\u00e7\u00e3o conclu\u00edda com sucesso!" };
+        } catch (error: any) {
+          throw new Error(error.message || "Erro ao trocar c\u00f3digo por token");
+        }
+      }),
+    
+    syncProducts: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const result = await blingService.syncProducts(ctx.user.id);
+        return { success: true, ...result };
+      } catch (error: any) {
+        throw new Error(error.message || "Erro ao sincronizar produtos");
+      }
+    }),
+    
+    syncInventory: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const result = await blingService.syncInventory(ctx.user.id);
+        return { success: true, ...result };
+      } catch (error: any) {
+        throw new Error(error.message || "Erro ao sincronizar estoque");
+      }
+    }),
+    
+    syncSales: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const result = await blingService.syncSales(ctx.user.id);
+        return { success: true, ...result };
+      } catch (error: any) {
+        throw new Error(error.message || "Erro ao sincronizar vendas");
+      }
+    }),
+    
+    syncAll: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const products = await blingService.syncProducts(ctx.user.id);
+        const inventory = await blingService.syncInventory(ctx.user.id);
+        const sales = await blingService.syncSales(ctx.user.id);
+        
+        await db.upsertBlingConfig({
+          userId: ctx.user.id,
+          lastSync: new Date(),
+        });
+        
+        return {
+          success: true,
+          products,
+          inventory,
+          sales,
+        };
+      } catch (error: any) {
+        throw new Error(error.message || "Erro ao sincronizar dados");
+      }
+    }),
   }),
 
   // Produtos
