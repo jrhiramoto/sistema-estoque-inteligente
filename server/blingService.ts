@@ -239,18 +239,35 @@ export async function syncProducts(userId: number): Promise<{ synced: number; er
  */
 export async function syncInventory(userId: number): Promise<{ synced: number; errors: number }> {
   try {
-    const response = await blingRequest<{ data: BlingEstoque[] }>(userId, "/estoques/saldos");
-    const estoques = response.data || [];
+    // Primeiro, buscar todos os produtos do banco local
+    const products = await db.getAllProducts();
+    
+    if (products.length === 0) {
+      console.log("[Bling] Nenhum produto encontrado. Sincronize produtos primeiro.");
+      return { synced: 0, errors: 0 };
+    }
 
     let synced = 0;
     let errors = 0;
 
-    for (const estoque of estoques) {
+    // Para cada produto, buscar o estoque no Bling
+    for (const product of products) {
+      if (!product.blingId) {
+        continue; // Pular produtos sem blingId
+      }
+
       try {
-        // Buscar produto pelo blingId
-        const product = await db.getProductByBlingId(String(estoque.produto.id));
+        // Buscar estoque do produto específico
+        const response = await blingRequest<{ data: BlingEstoque[] }>(
+          userId,
+          `/estoques/saldos?idsProdutos[]=${product.blingId}`
+        );
         
-        if (product) {
+        const estoques = response.data || [];
+        
+        if (estoques.length > 0) {
+          const estoque = estoques[0]; // Pegar o primeiro resultado
+          
           await db.upsertInventory({
             productId: product.id,
             depositId: estoque.deposito?.id ? String(estoque.deposito.id) : "default",
@@ -261,8 +278,8 @@ export async function syncInventory(userId: number): Promise<{ synced: number; e
           });
           synced++;
         }
-      } catch (error) {
-        console.error(`Erro ao sincronizar estoque do produto ${estoque.produto.id}:`, error);
+      } catch (error: any) {
+        console.error(`Erro ao sincronizar estoque do produto ${product.blingId}:`, error.message);
         errors++;
       }
     }

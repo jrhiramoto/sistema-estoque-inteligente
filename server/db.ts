@@ -129,7 +129,7 @@ export async function getAllProducts() {
   const db = await getDb();
   if (!db) return [];
   
-  return await db.select().from(products).where(eq(products.isActive, true));
+  return await db.select().from(products);
 }
 
 export async function getProductById(id: number) {
@@ -144,7 +144,10 @@ export async function getProductByBlingId(blingId: string) {
   const db = await getDb();
   if (!db) return undefined;
   
-  const result = await db.select().from(products).where(eq(products.blingId, blingId)).limit(1);
+  const result = await db.select().from(products)
+    .where(eq(products.blingId, blingId))
+    .limit(1);
+  
   return result.length > 0 ? result[0] : undefined;
 }
 
