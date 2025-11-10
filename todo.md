@@ -106,3 +106,4 @@
 - [ ] Adicionar dashboard de monitoramento de sincronizações
 - [x] Investigar erro HTML retornado pela API do Bling durante sincronização
 - [x] Implementar tratamento robusto de erros HTML da API Bling com mensagens amigáveis (detecta HTML, extrai erro, mensagens por status code)
+- [x] Adicionar barra de progresso visual na sincronização (com polling a cada 2s, mostra current/total, percentual e fila)

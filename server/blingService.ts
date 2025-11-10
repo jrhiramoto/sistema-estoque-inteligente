@@ -267,7 +267,10 @@ async function blingRequest<T>(
 /**
  * Sincroniza produtos do Bling
  */
-export async function syncProducts(userId: number): Promise<{ synced: number; errors: number }> {
+export async function syncProducts(
+  userId: number,
+  onProgress?: (current: number, total: number | null, message: string) => void
+): Promise<{ synced: number; errors: number }> {
   try{
     let synced = 0;
     let errors = 0;
@@ -282,6 +285,11 @@ export async function syncProducts(userId: number): Promise<{ synced: number; er
     while (hasMore) {
       try {
         console.log(`[Bling] Buscando produtos - página ${page} (${synced} sincronizados até agora)`);
+        
+        // Atualizar progresso
+        if (onProgress) {
+          onProgress(synced, null, `Sincronizando produtos - Página ${page}`);
+        }
         const response = await blingRequest<{ data: BlingProduct[] }>(
           userId,
           `/produtos?pagina=${page}&limite=${limit}`
@@ -318,19 +326,22 @@ export async function syncProducts(userId: number): Promise<{ synced: number; er
               price: produto.preco ? parseFloat(String(produto.preco)) : 0,
               cost: produto.precoCusto ? parseFloat(String(produto.precoCusto)) : undefined,
               unit: produto.unidade || null,
-            });
+             });
             synced++;
-            
-            // Log a cada 1000 produtos
-            if (synced % 1000 === 0) {
-              console.log(`[Bling] Progresso: ${synced} produtos sincronizados`);
-            }
           } catch (error) {
             console.error(`Erro ao sincronizar produto ${produto.id}:`, error);
             errors++;
           }
         }
 
+        // A cada 1000 produtos, mostrar progresso
+        if (synced % 1000 === 0 && synced > 0) {
+          console.log(`[Bling] 📊 Progresso: ${synced} produtos sincronizados...`);
+          if (onProgress) {
+            onProgress(synced, null, `${synced} produtos sincronizados`);
+          }
+        }
+        
         // Continuar para próxima página
         page++;
         

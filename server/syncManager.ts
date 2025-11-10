@@ -14,6 +14,11 @@ let syncLock: {
     userId: number;
     syncType: string;
     startedAt: Date;
+    progress?: {
+      current: number;
+      total: number;
+      message: string;
+    };
   } | null;
 } = {
   isLocked: false,
@@ -40,6 +45,15 @@ export function isSyncRunning(): boolean {
  */
 export function getCurrentSync() {
   return syncLock.currentSync;
+}
+
+/**
+ * Atualiza o progresso da sincronização atual
+ */
+export function updateProgress(current: number, total: number | null, message: string) {
+  if (syncLock.currentSync) {
+    syncLock.currentSync.progress = { current, total: total || 0, message };
+  }
 }
 
 /**
@@ -188,7 +202,9 @@ async function executeSyncInternal(
     
     switch (syncType) {
       case "products":
-        result = await blingService.syncProducts(userId);
+        result = await blingService.syncProducts(userId, (current, total, message) => {
+          updateProgress(current, total, message);
+        });
         break;
       case "inventory":
         result = await blingService.syncInventory(userId);
@@ -198,7 +214,9 @@ async function executeSyncInternal(
         break;
       case "full":
         // Sincronização completa (produtos + estoque + vendas)
-        const products = await blingService.syncProducts(userId);
+        const products = await blingService.syncProducts(userId, (current, total, message) => {
+          updateProgress(current, total, `Produtos: ${message}`);
+        });
         const inventory = await blingService.syncInventory(userId);
         const sales = await blingService.syncSales(userId);
         

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Save, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -18,6 +19,18 @@ export default function Settings() {
   const { data: config, isLoading } = trpc.bling.getConfig.useQuery(
     undefined,
     { enabled: !!user }
+  );
+  
+  // Query para status da sincronização (polling a cada 2 segundos quando está rodando)
+  const { data: syncStatus } = trpc.bling.getSyncStatus.useQuery(
+    undefined,
+    {
+      enabled: !!user,
+      refetchInterval: (query) => {
+        // Se está sincronizando, atualizar a cada 2 segundos
+        return query?.state?.data?.isRunning ? 2000 : false;
+      },
+    }
   );
   
   const hasConfig = config !== null && config !== undefined;
@@ -299,20 +312,56 @@ export default function Settings() {
                   Isso pode levar alguns minutos dependendo da quantidade de produtos.
                 </p>
 
+                {/* Barra de Progresso */}
+                {syncStatus?.isRunning && syncStatus.currentSync?.progress && (
+                  <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">
+                        {syncStatus.currentSync.progress.message}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {syncStatus.currentSync.progress.current.toLocaleString()}
+                        {syncStatus.currentSync.progress.total > 0 && (
+                          <> / {syncStatus.currentSync.progress.total.toLocaleString()}</>
+                        )}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={
+                        syncStatus.currentSync.progress.total > 0
+                          ? (syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100
+                          : 0
+                      } 
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Sincronização em andamento... Por favor, aguarde.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Fila de Sincronização */}
+                {syncStatus && syncStatus.queueSize > 0 && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      🕒 {syncStatus.queueSize} sincronização(s) na fila aguardando processamento
+                    </p>
+                  </div>
+                )}
+
                 <Separator />
 
                 <div className="flex justify-end">
                   <Button
                     onClick={handleSync}
-                    disabled={syncAll.isPending}
+                    disabled={syncAll.isPending || syncStatus?.isRunning}
                     size="lg"
                   >
-                    {syncAll.isPending ? (
+                    {(syncAll.isPending || syncStatus?.isRunning) ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
                       <RefreshCw className="w-4 h-4 mr-2" />
                     )}
-                    Sincronizar Agora
+                    {syncStatus?.isRunning ? "Sincronizando..." : "Sincronizar Agora"}
                   </Button>
                 </div>
               </CardContent>
