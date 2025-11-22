@@ -269,7 +269,8 @@ async function blingRequest<T>(
  */
 export async function syncProducts(
   userId: number,
-  onProgress?: (current: number, total: number | null, message: string) => void
+  onProgress?: (current: number, total: number | null, message: string) => void,
+  incremental: boolean = false
 ): Promise<{ synced: number; errors: number }> {
   try{
     let synced = 0;
@@ -280,7 +281,19 @@ export async function syncProducts(
     let consecutiveEmptyPages = 0;
     const MAX_EMPTY_PAGES = 3; // Parar após 3 páginas vazias consecutivas
 
-    console.log('[Bling] Iniciando sincronização completa de produtos...');
+    // Buscar última sincronização para modo incremental
+    let lastSyncDate: Date | null = null;
+    if (incremental) {
+      const lastSync = await db.getLastSuccessfulSync(userId, 'products');
+      if (lastSync && lastSync.completedAt) {
+        lastSyncDate = lastSync.completedAt;
+        console.log(`[Bling] Modo incremental ativado - buscando produtos alterados desde ${lastSyncDate.toISOString()}`);
+      } else {
+        console.log('[Bling] Primeira sincronização - modo incremental desativado');
+      }
+    }
+
+    console.log(`[Bling] Iniciando sincronização ${incremental && lastSyncDate ? 'incremental' : 'completa'} de produtos...`);
 
     while (hasMore) {
       try {
@@ -290,9 +303,17 @@ export async function syncProducts(
         if (onProgress) {
           onProgress(synced, null, `Sincronizando produtos - Página ${page}`);
         }
+        
+        // Construir URL com filtro de data se incremental
+        let url = `/produtos?pagina=${page}&limite=${limit}`;
+        if (incremental && lastSyncDate) {
+          const dataAlteracao = lastSyncDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+          url += `&dataAlteracaoInicial=${dataAlteracao}`;
+        }
+        
         const response = await blingRequest<{ data: BlingProduct[] }>(
           userId,
-          `/produtos?pagina=${page}&limite=${limit}`
+          url
         );
         const produtos = response.data || [];
 
@@ -453,11 +474,32 @@ export async function syncInventory(userId: number): Promise<{ synced: number; e
 /**
  * Sincroniza vendas do Bling (últimos 30 dias)
  */
-export async function syncSales(userId: number): Promise<{ synced: number; errors: number }> {
+export async function syncSales(
+  userId: number,
+  incremental: boolean = false
+): Promise<{ synced: number; errors: number }> {
   try {
-    // Buscar pedidos dos últimos 30 dias
-    const dataInicial = new Date();
-    dataInicial.setDate(dataInicial.getDate() - 30);
+    // Buscar última sincronização para modo incremental
+    let dataInicial: Date;
+    
+    if (incremental) {
+      const lastSync = await db.getLastSuccessfulSync(userId, 'sales');
+      if (lastSync && lastSync.completedAt) {
+        dataInicial = lastSync.completedAt;
+        console.log(`[Bling] Modo incremental ativado para vendas - buscando desde ${dataInicial.toISOString()}`);
+      } else {
+        // Se não houver sincronização anterior, buscar últimos 30 dias
+        dataInicial = new Date();
+        dataInicial.setDate(dataInicial.getDate() - 30);
+        console.log('[Bling] Primeira sincronização de vendas - buscando últimos 30 dias');
+      }
+    } else {
+      // Modo completo: buscar últimos 30 dias
+      dataInicial = new Date();
+      dataInicial.setDate(dataInicial.getDate() - 30);
+      console.log('[Bling] Sincronização completa de vendas - últimos 30 dias');
+    }
+    
     const dataFinal = new Date();
 
     const response = await blingRequest<{ data: BlingPedido[] }>(

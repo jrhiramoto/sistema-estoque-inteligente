@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Loader2, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -33,11 +35,19 @@ export default function Settings() {
     }
   );
   
+  // Query para configuração de sincronização automática
+  const { data: syncConfig } = trpc.bling.getSyncConfig.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
+  
   const hasConfig = config !== null && config !== undefined;
 
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [authCode, setAuthCode] = useState("");
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [syncFrequencyHours, setSyncFrequencyHours] = useState("24");
 
   useEffect(() => {
     if (hasConfig) {
@@ -45,6 +55,13 @@ export default function Settings() {
       setClientSecret(config?.clientSecret || "");
     }
   }, [config, hasConfig]);
+  
+  useEffect(() => {
+    if (syncConfig) {
+      setAutoSyncEnabled(syncConfig.autoSyncEnabled || false);
+      setSyncFrequencyHours(String(syncConfig.syncFrequencyHours || 24));
+    }
+  }, [syncConfig]);
 
   const saveConfig = trpc.bling.saveConfig.useMutation({
     onSuccess: () => {
@@ -83,6 +100,16 @@ export default function Settings() {
       toast.error(error.message || "Erro ao sincronizar");
     },
   });
+  
+  const saveSyncConfig = trpc.bling.saveSyncConfig.useMutation({
+    onSuccess: () => {
+      utils.bling.getSyncConfig.invalidate();
+      toast.success("Configuração de sincronização salva com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao salvar configuração");
+    },
+  });
 
   const handleSaveCredentials = () => {
     if (!clientId || !clientSecret) {
@@ -116,6 +143,13 @@ export default function Settings() {
 
   const handleSync = () => {
     syncAll.mutate();
+  };
+  
+  const handleSaveSyncConfig = () => {
+    saveSyncConfig.mutate({
+      autoSyncEnabled,
+      syncFrequencyHours: parseInt(syncFrequencyHours),
+    });
   };
 
   const formatDate = (date: Date | null) => {
@@ -362,6 +396,84 @@ export default function Settings() {
                       <RefreshCw className="w-4 h-4 mr-2" />
                     )}
                     {syncStatus?.isRunning ? "Sincronizando..." : "Sincronizar Agora"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Configuração de Sincronização Automática */}
+          {hasConfig && config?.isActive && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  4. Sincronização Automática
+                </CardTitle>
+                <CardDescription>
+                  Configure a sincronização automática de produtos, estoque e vendas
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="auto-sync">Ativar Sincronização Automática</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Sincroniza automaticamente apenas os dados alterados desde a última sincronização
+                      </p>
+                    </div>
+                    <Switch
+                      id="auto-sync"
+                      checked={autoSyncEnabled}
+                      onCheckedChange={setAutoSyncEnabled}
+                    />
+                  </div>
+
+                  {autoSyncEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="frequency">Frequência de Sincronização</Label>
+                      <Select
+                        value={syncFrequencyHours}
+                        onValueChange={setSyncFrequencyHours}
+                      >
+                        <SelectTrigger id="frequency">
+                          <SelectValue placeholder="Selecione a frequência" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">A cada 1 hora</SelectItem>
+                          <SelectItem value="3">A cada 3 horas</SelectItem>
+                          <SelectItem value="6">A cada 6 horas</SelectItem>
+                          <SelectItem value="12">A cada 12 horas</SelectItem>
+                          <SelectItem value="24">A cada 24 horas (1 dia)</SelectItem>
+                          <SelectItem value="48">A cada 48 horas (2 dias)</SelectItem>
+                          <SelectItem value="168">A cada 168 horas (1 semana)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        A sincronização automática é incremental: busca apenas produtos, vendas e estoque alterados desde a última sincronização, economizando tempo e requisições.
+                      </p>
+                    </div>
+                  )}
+
+                  {syncConfig?.lastAutoSync && (
+                    <div className="text-sm text-muted-foreground">
+                      <strong>Última sincronização automática:</strong> {formatDate(syncConfig.lastAutoSync)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSaveSyncConfig}
+                    disabled={saveSyncConfig.isPending}
+                  >
+                    {saveSyncConfig.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Salvar Configuração
                   </Button>
                 </div>
               </CardContent>

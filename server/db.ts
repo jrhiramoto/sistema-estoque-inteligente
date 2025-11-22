@@ -453,6 +453,22 @@ export async function getRecentSyncHistory(limit: number = 10) {
   return db.select().from(syncHistory).orderBy(desc(syncHistory.startedAt)).limit(limit);
 }
 
+export async function getLastSuccessfulSync(userId: number, syncType: 'products' | 'inventory' | 'sales' | 'full') {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(syncHistory)
+    .where(and(
+      eq(syncHistory.syncType, syncType),
+      eq(syncHistory.status, 'completed'),
+      isNull(syncHistory.errorMessage)
+    ))
+    .orderBy(desc(syncHistory.completedAt))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
 // ===== Sync Config =====
 
 export async function getSyncConfig(userId: number) {

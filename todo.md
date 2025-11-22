@@ -111,3 +111,12 @@
 - [x] Implementar paginação na listagem de produtos (50 por página)
 - [x] Adicionar debounce na busca de produtos (500ms)
 - [x] Otimizar query do banco com limit, offset e busca por nome/código
+
+## Sincronização Incremental Automática
+- [x] Implementar sincronização incremental de produtos (dataAlteracaoInicial)
+- [x] Implementar sincronização incremental de vendas (dataInicial baseada em última sync)
+- [ ] Implementar sincronização incremental de estoque (apenas produtos com alteração)
+- [x] Criar job agendado para sincronização automática (node-cron, configurável via syncConfig)
+- [x] Adicionar interface de configuração de frequência de sincronização (switch + select com opções de 1h a 1 semana)
+- [ ] Implementar gestão de produtos inativos (produtos excluídos no Bling)
+- [ ] Adicionar dashboard de histórico de sincronizações

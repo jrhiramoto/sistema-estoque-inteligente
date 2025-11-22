@@ -131,6 +131,30 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getRecentSyncHistory(input?.limit || 20);
       }),
+    
+    // Configuração de sincronização automática
+    getSyncConfig: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getSyncConfig(ctx.user.id);
+    }),
+    
+    saveSyncConfig: protectedProcedure
+      .input(z.object({
+        autoSyncEnabled: z.boolean(),
+        syncFrequencyHours: z.number().min(1).max(168), // Mínimo 1h, máximo 1 semana
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.upsertSyncConfig({
+          userId: ctx.user.id,
+          autoSyncEnabled: input.autoSyncEnabled,
+          syncFrequencyHours: input.syncFrequencyHours,
+        });
+        
+        // Reiniciar job agendado com nova configuração
+        const { restartScheduledSync } = await import('./scheduledSync');
+        await restartScheduledSync();
+        
+        return { success: true };
+      }),
   }),
 
   // Produtos
