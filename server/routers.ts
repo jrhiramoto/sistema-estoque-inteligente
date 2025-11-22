@@ -138,12 +138,21 @@ export const appRouter = router({
     list: protectedProcedure
       .input(z.object({
         abcClass: z.enum(["A", "B", "C"]).optional(),
+        search: z.string().optional(),
+        page: z.number().default(1),
+        limit: z.number().default(50),
       }).optional())
       .query(async ({ input }) => {
-        if (input?.abcClass) {
-          return await db.getProductsByABCClass(input.abcClass);
-        }
-        return await db.getAllProducts();
+        const page = input?.page || 1;
+        const limit = input?.limit || 50;
+        const offset = (page - 1) * limit;
+        
+        return await db.getProductsPaginated({
+          abcClass: input?.abcClass,
+          search: input?.search,
+          limit,
+          offset,
+        });
       }),
     
     get: protectedProcedure

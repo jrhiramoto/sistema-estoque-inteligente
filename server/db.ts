@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNull, or, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, 
@@ -132,6 +132,60 @@ export async function getAllProducts() {
   if (!db) return [];
   
   return await db.select().from(products);
+}
+
+export async function getProductsPaginated(params: {
+  abcClass?: "A" | "B" | "C";
+  search?: string;
+  limit: number;
+  offset: number;
+}) {
+  const db = await getDb();
+  if (!db) return { products: [], total: 0 };
+  
+  const { abcClass, search, limit, offset } = params;
+  
+  // Construir condições
+  const conditions = [];
+  
+  if (abcClass) {
+    conditions.push(eq(products.abcClass, abcClass));
+  }
+  
+  if (search && search.trim()) {
+    const searchTerm = `%${search.trim()}%`;
+    conditions.push(
+      or(
+        like(products.name, searchTerm),
+        like(products.code, searchTerm)
+      )
+    );
+  }
+  
+  // Query com filtros
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  // Buscar produtos paginados
+  const productsList = await db.select()
+    .from(products)
+    .where(whereClause)
+    .limit(limit)
+    .offset(offset)
+    .orderBy(products.name);
+  
+  // Contar total (para paginação)
+  const countResult = await db.select({ count: sql<number>`count(*)` })
+    .from(products)
+    .where(whereClause);
+  
+  const total = countResult[0]?.count || 0;
+  
+  return {
+    products: productsList,
+    total,
+    page: Math.floor(offset / limit) + 1,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 export async function getProductById(id: number) {

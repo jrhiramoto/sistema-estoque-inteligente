@@ -107,3 +107,7 @@
 - [x] Investigar erro HTML retornado pela API do Bling durante sincronização
 - [x] Implementar tratamento robusto de erros HTML da API Bling com mensagens amigáveis (detecta HTML, extrai erro, mensagens por status code)
 - [x] Adicionar barra de progresso visual na sincronização (com polling a cada 2s, mostra current/total, percentual e fila)
+- [ ] Investigar erro HTML recorrente na sincronização (verificar token expirado ou endpoint incorreto)
+- [x] Implementar paginação na listagem de produtos (50 por página)
+- [x] Adicionar debounce na busca de produtos (500ms)
+- [x] Otimizar query do banco com limit, offset e busca por nome/código

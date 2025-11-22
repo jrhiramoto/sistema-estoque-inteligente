@@ -21,23 +21,39 @@ import {
 import { ABC_CLASSES } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 
 export default function Products() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [abcFilter, setAbcFilter] = useState<"all" | "A" | "B" | "C">("all");
+  const [page, setPage] = useState(1);
+  const limit = 50;
 
-  const { data: products, isLoading } = trpc.products.list.useQuery(
-    abcFilter !== "all" ? { abcClass: abcFilter } : undefined,
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1); // Reset para primeira página ao buscar
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data, isLoading } = trpc.products.list.useQuery(
+    {
+      abcClass: abcFilter !== "all" ? abcFilter : undefined,
+      search: debouncedSearch || undefined,
+      page,
+      limit,
+    },
     { enabled: !!user }
   );
 
-  const filteredProducts = products?.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const products = data?.products || [];
+  const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -108,7 +124,8 @@ export default function Products() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {filteredProducts?.length || 0} produto(s) encontrado(s)
+              {total.toLocaleString()} produto(s) encontrado(s)
+              {totalPages > 1 && ` - Página ${page} de ${totalPages}`}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -116,7 +133,7 @@ export default function Products() {
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               </div>
-            ) : filteredProducts && filteredProducts.length > 0 ? (
+            ) : products && products.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -133,7 +150,7 @@ export default function Products() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.map((product) => (
+                    {products.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell className="font-mono text-sm">
                           {product.code || "-"}
@@ -186,6 +203,33 @@ export default function Products() {
                 <p className="text-muted-foreground">
                   Nenhum produto encontrado. {searchTerm && "Tente ajustar os filtros."}
                 </p>
+              </div>
+            )}
+            
+            {/* Paginação */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando {((page - 1) * limit) + 1} a {Math.min(page * limit, total)} de {total.toLocaleString()} produtos
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || isLoading}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages || isLoading}
+                  >
+                    Próxima
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
