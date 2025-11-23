@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import * as blingService from "./blingService";
@@ -112,7 +113,12 @@ export const appRouter = router({
         
         return result;
       } catch (error: any) {
-        throw new Error(error.message || "Erro ao sincronizar dados");
+        console.error("[syncAll] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao sincronizar dados",
+          cause: error,
+        });
       }
     }),
     

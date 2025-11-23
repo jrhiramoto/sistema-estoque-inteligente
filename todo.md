@@ -149,3 +149,7 @@
 ## Melhorias - Interface
 - [x] Adicionar data/hora da última sincronização na seção de Sincronização Automática
 - [x] Adicionar data/hora da última sincronização na seção 3 (Sincronização de Dados)
+
+## Bug - Página de Configurações
+- [x] Corrigir erro "Unexpected token '<', "<html>" na página /settings
+- [x] API mutation retornando HTML ao invés de JSON
