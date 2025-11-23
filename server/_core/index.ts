@@ -44,6 +44,29 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Global error handler - ensure all errors return JSON
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[Express Error]:', err);
+    
+    // If headers already sent, delegate to default error handler
+    if (res.headersSent) {
+      return next(err);
+    }
+    
+    // Always return JSON for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(err.status || 500).json({
+        error: {
+          message: err.message || 'Internal Server Error',
+          code: err.code || 'INTERNAL_SERVER_ERROR',
+        },
+      });
+    }
+    
+    // For non-API routes, pass to next handler
+    next(err);
+  });
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

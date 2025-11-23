@@ -71,7 +71,12 @@ export const appRouter = router({
           
           return { success: true, message: "Autoriza\u00e7\u00e3o conclu\u00edda com sucesso!" };
         } catch (error: any) {
-          throw new Error(error.message || "Erro ao trocar c\u00f3digo por token");
+          console.error("[exchangeCode] Erro:", error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: error.message || "Erro ao trocar código por token",
+            cause: error,
+          });
         }
       }),
     
@@ -80,7 +85,12 @@ export const appRouter = router({
         const result = await syncManager.executeSync(ctx.user.id, "products", "manual");
         return result;
       } catch (error: any) {
-        throw new Error(error.message || "Erro ao sincronizar produtos");
+        console.error("[syncProducts] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao sincronizar produtos",
+          cause: error,
+        });
       }
     }),
     
@@ -89,7 +99,12 @@ export const appRouter = router({
         const result = await syncManager.executeSync(ctx.user.id, "inventory", "manual");
         return result;
       } catch (error: any) {
-        throw new Error(error.message || "Erro ao sincronizar estoque");
+        console.error("[syncInventory] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao sincronizar estoque",
+          cause: error,
+        });
       }
     }),
     
@@ -98,7 +113,12 @@ export const appRouter = router({
         const result = await syncManager.executeSync(ctx.user.id, "sales", "manual");
         return result;
       } catch (error: any) {
-        throw new Error(error.message || "Erro ao sincronizar vendas");
+        console.error("[syncSales] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao sincronizar vendas",
+          cause: error,
+        });
       }
     }),
     
@@ -205,7 +225,12 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
         const product = await db.getProductById(id);
-        if (!product) throw new Error("Produto não encontrado");
+        if (!product) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: "Produto não encontrado",
+          });
+        }
         
         await db.upsertProduct({
           ...product,

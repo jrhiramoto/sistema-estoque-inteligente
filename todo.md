@@ -151,8 +151,8 @@
 - [x] Adicionar data/hora da última sincronização na seção 3 (Sincronização de Dados)
 
 ## Bug - Página de Configurações
-- [x] Corrigir erro "Unexpected token '<', "<html>" na página /settings
-- [x] API mutation retornando HTML ao invés de JSON
+- [x] Corrigir erro "Unexpected token '<', "<html>" na página /settings (RECORRENTE)
+- [x] API mutation retornando HTML ao invés de JSON - causa raiz corrigida
 
 ## Melhorias - Sincronização
 - [x] Melhorar visibilidade da barra de progresso durante sincronização
