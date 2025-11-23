@@ -348,8 +348,8 @@ export async function syncProducts(
               blingId: String(produto.id),
               name: produto.nome,
               code: produto.codigo || null,
-              price: produto.preco ? parseFloat(String(produto.preco)) : 0,
-              cost: produto.precoCusto ? parseFloat(String(produto.precoCusto)) : undefined,
+              price: produto.preco ? Math.round(parseFloat(String(produto.preco)) * 100) : 0,
+              cost: produto.precoCusto ? Math.round(parseFloat(String(produto.precoCusto)) * 100) : 0,
               unit: produto.unidade || null,
              });
             synced++;

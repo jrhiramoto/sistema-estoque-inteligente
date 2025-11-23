@@ -415,6 +415,23 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Exibir última sincronização */}
+                {config?.lastSync && (
+                  <div className="rounded-lg border bg-muted/50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Última Sincronização</p>
+                        <p className="text-xs text-muted-foreground">
+                          {syncConfig?.lastAutoSync ? 'Automática' : 'Manual'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{formatDate(config.lastSync)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
@@ -453,12 +470,6 @@ export default function Settings() {
                       <p className="text-xs text-muted-foreground">
                         A sincronização automática é incremental: busca apenas produtos, vendas e estoque alterados desde a última sincronização, economizando tempo e requisições.
                       </p>
-                    </div>
-                  )}
-
-                  {syncConfig?.lastAutoSync && (
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Última sincronização automática:</strong> {formatDate(syncConfig.lastAutoSync)}
                     </div>
                   )}
                 </div>

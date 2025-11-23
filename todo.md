@@ -139,3 +139,12 @@
 - [x] Investigar por que sincronização inicia automaticamente após renovação OAuth
 - [ ] Remover disparo automático de sincronização após autorização
 - [ ] Sincronização deve iniciar apenas: manualmente (botão) ou via job agendado
+
+## Bugs - Módulo de Produtos
+- [x] Corrigir exibição de preço dos produtos (valores incorretos)
+- [x] Corrigir exibição de custo dos produtos (valores incorretos)
+- [x] Adicionar exibição de saldo em estoque na listagem de produtos
+- [ ] Adicionar exibição de saldo em estoque na página de detalhes do produto
+
+## Melhorias - Interface
+- [x] Adicionar data/hora da última sincronização na seção de Sincronização Automática

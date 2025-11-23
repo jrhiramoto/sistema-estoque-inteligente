@@ -143,6 +143,7 @@ export default function Products() {
                       <TableHead>Classe ABC</TableHead>
                       <TableHead className="text-right">Preço</TableHead>
                       <TableHead className="text-right">Custo</TableHead>
+                      <TableHead className="text-right">Saldo Estoque</TableHead>
                       <TableHead className="text-right">Estoque Mín.</TableHead>
                       <TableHead className="text-right">Ponto Pedido</TableHead>
                       <TableHead>Estocar</TableHead>
@@ -172,6 +173,9 @@ export default function Products() {
                         </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(product.cost)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {(product as any).virtualStock || 0}
                         </TableCell>
                         <TableCell className="text-right">
                           {product.minStock}

@@ -165,10 +165,36 @@ export async function getProductsPaginated(params: {
   // Query com filtros
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
   
-  // Buscar produtos paginados
-  const productsList = await db.select()
+  // Buscar produtos paginados com estoque
+  const productsList = await db.select({
+      id: products.id,
+      blingId: products.blingId,
+      code: products.code,
+      name: products.name,
+      description: products.description,
+      price: products.price,
+      cost: products.cost,
+      unit: products.unit,
+      abcClass: products.abcClass,
+      abcClassManual: products.abcClassManual,
+      shouldStock: products.shouldStock,
+      minStock: products.minStock,
+      maxStock: products.maxStock,
+      reorderPoint: products.reorderPoint,
+      safetyStock: products.safetyStock,
+      avgSales12Months: products.avgSales12Months,
+      suggestedOrderQty: products.suggestedOrderQty,
+      lastSaleDate: products.lastSaleDate,
+      isActive: products.isActive,
+      createdAt: products.createdAt,
+      updatedAt: products.updatedAt,
+      virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
+      physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
+    })
     .from(products)
+    .leftJoin(inventory, eq(products.id, inventory.productId))
     .where(whereClause)
+    .groupBy(products.id)
     .limit(limit)
     .offset(offset)
     .orderBy(products.name);
