@@ -125,6 +125,17 @@
 - [x] Corrigir syncSales para filtrar apenas pedidos com situação "atendido" (ID:15) e "faturado" (ID:24)
 - [x] Adicionar syncSales ao fluxo de sincronização completa (syncAll)
 - [x] Adicionar syncSales ao job de sincronização automática (já incluído no 'full')
-- [ ] Verificar e corrigir permissões do aplicativo Bling para acessar pedidos de venda
-- [ ] Testar sincronização inicial de vendas
+- [x] Verificar e corrigir permissões do aplicativo Bling para acessar pedidos de venda
+- [x] Testar sincronização inicial de vendas
 - [ ] Testar sincronização incremental de vendas
+
+## Renovação Automática de Token
+- [x] Implementar verificação de token expirado antes de cada requisição
+- [x] Implementar renovação automática usando refresh token
+- [x] Adicionar retry automático após renovação de token
+- [ ] Testar fluxo completo de renovação automática
+
+## Bug: Sincronização Automática Indesejada
+- [x] Investigar por que sincronização inicia automaticamente após renovação OAuth
+- [ ] Remover disparo automático de sincronização após autorização
+- [ ] Sincronização deve iniciar apenas: manualmente (botão) ou via job agendado
