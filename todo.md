@@ -148,3 +148,4 @@
 
 ## Melhorias - Interface
 - [x] Adicionar data/hora da última sincronização na seção de Sincronização Automática
+- [x] Adicionar data/hora da última sincronização na seção 3 (Sincronização de Dados)

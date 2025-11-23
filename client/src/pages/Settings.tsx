@@ -341,6 +341,23 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Exibir última sincronização */}
+                {config?.lastSync && (
+                  <div className="rounded-lg border bg-muted/50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Última Sincronização</p>
+                        <p className="text-xs text-muted-foreground">
+                          Produtos, vendas e estoque
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{formatDate(config.lastSync)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-sm text-muted-foreground">
                   Clique no botão abaixo para sincronizar todos os dados do Bling. 
                   Isso pode levar alguns minutos dependendo da quantidade de produtos.
