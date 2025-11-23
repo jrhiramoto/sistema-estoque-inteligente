@@ -153,3 +153,7 @@
 ## Bug - Página de Configurações
 - [x] Corrigir erro "Unexpected token '<', "<html>" na página /settings
 - [x] API mutation retornando HTML ao invés de JSON
+
+## Melhorias - Sincronização
+- [x] Melhorar visibilidade da barra de progresso durante sincronização
+- [x] Adicionar porcentagem e ícone animado na barra de progresso

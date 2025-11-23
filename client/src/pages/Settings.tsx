@@ -365,28 +365,43 @@ export default function Settings() {
 
                 {/* Barra de Progresso */}
                 {syncStatus?.isRunning && syncStatus.currentSync?.progress && (
-                  <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">
-                        {syncStatus.currentSync.progress.message}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {syncStatus.currentSync.progress.current.toLocaleString()}
-                        {syncStatus.currentSync.progress.total > 0 && (
-                          <> / {syncStatus.currentSync.progress.total.toLocaleString()}</>
-                        )}
-                      </span>
+                  <div className="space-y-3 p-5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="font-semibold text-blue-900 dark:text-blue-100">
+                            {syncStatus.currentSync.progress.message}
+                          </span>
+                          <span className="text-blue-700 dark:text-blue-300 font-medium">
+                            {syncStatus.currentSync.progress.current.toLocaleString()}
+                            {syncStatus.currentSync.progress.total > 0 && (
+                              <> / {syncStatus.currentSync.progress.total.toLocaleString()}</>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <Progress 
-                      value={
-                        syncStatus.currentSync.progress.total > 0
-                          ? (syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100
-                          : 0
-                      } 
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Sincronização em andamento... Por favor, aguarde.
-                    </p>
+                    <div className="space-y-1">
+                      <Progress 
+                        value={
+                          syncStatus.currentSync.progress.total > 0
+                            ? (syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100
+                            : 0
+                        } 
+                        className="h-3"
+                      />
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-blue-700 dark:text-blue-300">
+                          Sincronização em andamento... Por favor, aguarde.
+                        </span>
+                        {syncStatus.currentSync.progress.total > 0 && (
+                          <span className="font-semibold text-blue-900 dark:text-blue-100">
+                            {Math.round((syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
                 
