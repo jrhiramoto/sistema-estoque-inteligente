@@ -157,3 +157,8 @@
 ## Melhorias - Sincronização
 - [x] Melhorar visibilidade da barra de progresso durante sincronização
 - [x] Adicionar porcentagem e ícone animado na barra de progresso
+
+## Bug - Barra de Progresso
+- [x] Barra de progresso não aparece quando clica em "Sincronizar Agora"
+- [x] Remover sistema de fila - sincronização deve iniciar imediatamente ao clicar
+- [x] Simplificar lógica de concorrência (apenas bloquear se já estiver rodando)

@@ -1,7 +1,7 @@
 /**
  * Gerenciador de Sincronizações
  * 
- * Controla concorrência, filas e retries de sincronizações
+ * Controla concorrência de sincronizações
  */
 
 import * as db from "./db";
@@ -25,13 +25,7 @@ let syncLock: {
   currentSync: null,
 };
 
-// Fila de sincronizações pendentes
-const syncQueue: Array<{
-  userId: number;
-  syncType: "products" | "inventory" | "sales" | "full";
-  triggeredBy: "manual" | "scheduled" | "webhook";
-  historyId: number;
-}> = [];
+// Fila removida - sincronização inicia imediatamente ou retorna erro se já estiver rodando
 
 /**
  * Verifica se há uma sincronização em andamento
@@ -44,7 +38,10 @@ export function isSyncRunning(): boolean {
  * Obtém informações da sincronização atual
  */
 export function getCurrentSync() {
-  return syncLock.currentSync;
+  return {
+    isRunning: syncLock.isLocked,
+    currentSync: syncLock.currentSync,
+  };
 }
 
 /**
@@ -56,12 +53,7 @@ export function updateProgress(current: number, total: number | null, message: s
   }
 }
 
-/**
- * Obtém o tamanho da fila
- */
-export function getQueueSize(): number {
-  return syncQueue.length;
-}
+// getQueueSize removido - não há mais fila
 
 /**
  * Adquire o lock de sincronização
@@ -76,6 +68,11 @@ function acquireLock(userId: number, syncType: string): boolean {
     userId,
     syncType,
     startedAt: new Date(),
+    progress: {
+      current: 0,
+      total: 0,
+      message: "Iniciando sincronização...",
+    },
   };
   
   console.log(`[SyncManager] Lock adquirido: ${syncType} para usuário ${userId}`);
@@ -90,62 +87,10 @@ function releaseLock() {
   syncLock.isLocked = false;
   syncLock.currentSync = null;
   
-  // Processar próximo item da fila
-  processQueue();
+  // Lock liberado - próxima sincronização pode iniciar
 }
 
-/**
- * Adiciona sincronização à fila
- */
-async function addToQueue(
-  userId: number,
-  syncType: "products" | "inventory" | "sales" | "full",
-  triggeredBy: "manual" | "scheduled" | "webhook"
-): Promise<number> {
-  // Criar registro de histórico como "queued"
-  const historyId = await db.createSyncHistory({
-    syncType,
-    status: "queued",
-    itemsSynced: 0,
-    itemsErrors: 0,
-    startedAt: new Date(),
-    triggeredBy,
-  });
-  
-  syncQueue.push({
-    userId,
-    syncType,
-    triggeredBy,
-    historyId,
-  });
-  
-  console.log(`[SyncManager] Sincronização adicionada à fila: ${syncType} (posição ${syncQueue.length})`);
-  
-  return historyId;
-}
-
-/**
- * Processa o próximo item da fila
- */
-async function processQueue() {
-  if (syncQueue.length === 0 || syncLock.isLocked) {
-    return;
-  }
-  
-  const next = syncQueue.shift();
-  if (!next) return;
-  
-  console.log(`[SyncManager] Processando próximo da fila: ${next.syncType}`);
-  
-  // Atualizar status para "running"
-  await db.updateSyncHistory(next.historyId, {
-    status: "running",
-    startedAt: new Date(),
-  });
-  
-  // Executar sincronização
-  await executeSyncInternal(next.userId, next.syncType, next.triggeredBy, next.historyId);
-}
+// Funções de fila removidas - sincronização inicia imediatamente
 
 /**
  * Executa a sincronização com controle de concorrência
@@ -158,14 +103,8 @@ export async function executeSync(
   
   // Tentar adquirir lock
   if (!acquireLock(userId, syncType)) {
-    // Lock ocupado, adicionar à fila
-    const historyId = await addToQueue(userId, syncType, triggeredBy);
-    return {
-      success: true,
-      historyId,
-      queued: true,
-      message: `Sincronização adicionada à fila (posição ${syncQueue.length}). Será executada automaticamente.`,
-    };
+    // Lock ocupado, retornar erro
+    throw new Error("Já existe uma sincronização em andamento. Aguarde a conclusão antes de iniciar outra.");
   }
   
   // Lock adquirido, criar histórico e executar
@@ -207,18 +146,26 @@ async function executeSyncInternal(
         });
         break;
       case "inventory":
-        result = await blingService.syncInventory(userId);
+        result = await blingService.syncInventory(userId, (current, total, message) => {
+          updateProgress(current, total, message);
+        });
         break;
       case "sales":
-        result = await blingService.syncSales(userId);
+        result = await blingService.syncSales(userId, false, (current, total, message) => {
+          updateProgress(current, total, message);
+        });
         break;
       case "full":
         // Sincronização completa (produtos + estoque + vendas)
         const products = await blingService.syncProducts(userId, (current, total, message) => {
           updateProgress(current, total, `Produtos: ${message}`);
         });
-        const inventory = await blingService.syncInventory(userId);
-        const sales = await blingService.syncSales(userId);
+        const inventory = await blingService.syncInventory(userId, (current, total, message) => {
+          updateProgress(current, total, `Estoque: ${message}`);
+        });
+        const sales = await blingService.syncSales(userId, false, (current, total, message) => {
+          updateProgress(current, total, `Vendas: ${message}`);
+        });
         
         result = {
           synced: products.synced + inventory.synced + sales.synced,
@@ -251,12 +198,8 @@ async function executeSyncInternal(
         nextRetryAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos
       });
       
-      // Agendar retry
-      setTimeout(() => {
-        console.log('[SyncManager] Retomando sincronizações após pausa de rate limit...');
-        addToQueue(userId, syncType, "scheduled");
-        processQueue();
-      }, 10 * 60 * 1000);
+      // Retry de rate limit removido - usuário deve tentar manualmente após 10 minutos
+      console.log('[SyncManager] Rate limit atingido. Aguarde 10 minutos antes de tentar novamente.');
       
       return;
     }
@@ -279,12 +222,8 @@ async function executeSyncInternal(
       
       console.log(`[SyncManager] Retry agendado para ${nextRetryAt.toLocaleString()} (tentativa ${currentHistory.retryCount + 1}/${currentHistory.maxRetries})`);
       
-      // Agendar retry (em produção, isso seria feito por um job scheduler)
-      setTimeout(() => {
-        console.log(`[SyncManager] Executando retry de ${syncType}...`);
-        addToQueue(userId, syncType, "scheduled");
-        processQueue();
-      }, nextRetryMinutes * 60 * 1000);
+      // Retry automático removido - usuário deve tentar manualmente
+      console.log(`[SyncManager] Sincronização falhou. Retry agendado para ${nextRetryAt.toLocaleString()}, mas deve ser executado manualmente.`);
       
     } else {
       // Falha definitiva
@@ -311,17 +250,10 @@ export async function processRetries() {
   
   for (const item of history) {
     if (item.status === "retrying" && item.nextRetryAt && item.nextRetryAt <= now) {
-      console.log(`[SyncManager] Processando retry de ${item.syncType}...`);
-      
-      // Adicionar à fila
-      syncQueue.push({
-        userId: 1, // TODO: pegar userId do histórico
-        syncType: item.syncType as any,
-        triggeredBy: "scheduled",
-        historyId: item.id,
-      });
+      console.log(`[SyncManager] Retry pendente de ${item.syncType}, mas deve ser executado manualmente.`);
+      // Retry automático removido
     }
   }
   
-  processQueue();
+  // processQueue removido - não há mais fila
 }

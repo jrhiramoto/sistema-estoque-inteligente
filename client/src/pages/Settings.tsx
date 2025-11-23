@@ -364,55 +364,53 @@ export default function Settings() {
                 </p>
 
                 {/* Barra de Progresso */}
-                {syncStatus?.isRunning && syncStatus.currentSync?.progress && (
-                  <div className="space-y-3 p-5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center gap-3">
-                      <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="font-semibold text-blue-900 dark:text-blue-100">
-                            {syncStatus.currentSync.progress.message}
+                {(() => {
+                  if (!syncStatus?.isRunning || !(syncStatus as any).currentSync?.progress) return null;
+                  
+                  const progress = (syncStatus as any).currentSync.progress;
+                  const percentage = progress.total > 0 
+                    ? (progress.current / progress.total) * 100 
+                    : 0;
+                  
+                  return (
+                    <div className="space-y-3 p-5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <span className="font-semibold text-blue-900 dark:text-blue-100">
+                              {progress.message}
+                            </span>
+                            <span className="text-blue-700 dark:text-blue-300 font-medium">
+                              {progress.current.toLocaleString()}
+                              {progress.total > 0 && (
+                                <> / {progress.total.toLocaleString()}</>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Progress 
+                          value={percentage} 
+                          className="h-3"
+                        />
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-blue-700 dark:text-blue-300">
+                            Sincronização em andamento... Por favor, aguarde.
                           </span>
-                          <span className="text-blue-700 dark:text-blue-300 font-medium">
-                            {syncStatus.currentSync.progress.current.toLocaleString()}
-                            {syncStatus.currentSync.progress.total > 0 && (
-                              <> / {syncStatus.currentSync.progress.total.toLocaleString()}</>
-                            )}
-                          </span>
+                          {progress.total > 0 && (
+                            <span className="font-semibold text-blue-900 dark:text-blue-100">
+                              {Math.round(percentage)}%
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Progress 
-                        value={
-                          syncStatus.currentSync.progress.total > 0
-                            ? (syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100
-                            : 0
-                        } 
-                        className="h-3"
-                      />
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-blue-700 dark:text-blue-300">
-                          Sincronização em andamento... Por favor, aguarde.
-                        </span>
-                        {syncStatus.currentSync.progress.total > 0 && (
-                          <span className="font-semibold text-blue-900 dark:text-blue-100">
-                            {Math.round((syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100)}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
                 
-                {/* Fila de Sincronização */}
-                {syncStatus && syncStatus.queueSize > 0 && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                      🕒 {syncStatus.queueSize} sincronização(s) na fila aguardando processamento
-                    </p>
-                  </div>
-                )}
+                {/* Fila de Sincronização - Removido pois não está implementado */}
 
                 <Separator />
 

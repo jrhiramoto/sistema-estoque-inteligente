@@ -144,11 +144,7 @@ export const appRouter = router({
     
     // Status da sincronização
     getSyncStatus: protectedProcedure.query(async () => {
-      return {
-        isRunning: syncManager.isSyncRunning(),
-        currentSync: syncManager.getCurrentSync(),
-        queueSize: syncManager.getQueueSize(),
-      };
+      return syncManager.getCurrentSync();
     }),
     
     // Histórico de sincronizações

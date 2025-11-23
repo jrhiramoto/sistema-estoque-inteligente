@@ -400,7 +400,10 @@ export async function syncProducts(
 /**
  * Sincroniza estoque do Bling
  */
-export async function syncInventory(userId: number): Promise<{ synced: number; errors: number }> {
+export async function syncInventory(
+  userId: number,
+  onProgress?: (current: number, total: number | null, message: string) => void
+): Promise<{ synced: number; errors: number }> {
   try {
     // Primeiro, buscar todos os produtos do banco local
     const products = await db.getAllProducts();
@@ -416,7 +419,13 @@ export async function syncInventory(userId: number): Promise<{ synced: number; e
     // Processar produtos em lotes para respeitar rate limit
     const BATCH_SIZE = 10; // Processar 10 produtos por vez
     
+    console.log(`[Bling] Sincronizando estoque de ${products.length} produtos...`);
+    
     for (let i = 0; i < products.length; i += BATCH_SIZE) {
+      // Atualizar progresso
+      if (onProgress) {
+        onProgress(synced, products.length, `Sincronizando estoque - ${synced}/${products.length}`);
+      }
       const batch = products.slice(i, i + BATCH_SIZE);
       
       // Criar array de IDs para buscar em uma única requisição
@@ -451,6 +460,11 @@ export async function syncInventory(userId: number): Promise<{ synced: number; e
                 lastVirtualSync: new Date(),
               });
               synced++;
+              
+              // Atualizar progresso a cada 100 itens
+              if (synced % 100 === 0 && onProgress) {
+                onProgress(synced, products.length, `Sincronizando estoque - ${synced}/${products.length}`);
+              }
             } catch (error: any) {
               console.error(`Erro ao salvar estoque do produto ${product.blingId}:`, error.message);
               errors++;
@@ -480,7 +494,8 @@ export async function syncInventory(userId: number): Promise<{ synced: number; e
  */
 export async function syncSales(
   userId: number,
-  incremental: boolean = false
+  incremental: boolean = false,
+  onProgress?: (current: number, total: number | null, message: string) => void
 ): Promise<{ synced: number; errors: number }> {
   try {
     // Buscar última sincronização para modo incremental
@@ -520,6 +535,11 @@ export async function syncSales(
 
     let synced = 0;
     let errors = 0;
+    
+    console.log(`[Bling] Sincronizando ${pedidos.length} pedidos de venda...`);
+    if (onProgress) {
+      onProgress(0, pedidos.length, `Sincronizando vendas - 0/${pedidos.length}`);
+    }
 
     for (const pedido of pedidos) {
       // Log da situação para debug
@@ -546,6 +566,11 @@ export async function syncSales(
               saleDate: new Date(pedido.data),
             });
             synced++;
+            
+            // Atualizar progresso a cada 10 vendas
+            if (synced % 10 === 0 && onProgress) {
+              onProgress(synced, pedidos.length, `Sincronizando vendas - ${synced}/${pedidos.length}`);
+            }
           }
         } catch (error) {
           // Pode dar erro de duplicação se já existir, ignorar
