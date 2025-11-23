@@ -120,3 +120,11 @@
 - [x] Adicionar interface de configuração de frequência de sincronização (switch + select com opções de 1h a 1 semana)
 - [ ] Implementar gestão de produtos inativos (produtos excluídos no Bling)
 - [ ] Adicionar dashboard de histórico de sincronizações
+
+## Sincronização de Vendas (Novo)
+- [x] Corrigir syncSales para filtrar apenas pedidos com situação "atendido" (ID:15) e "faturado" (ID:24)
+- [x] Adicionar syncSales ao fluxo de sincronização completa (syncAll)
+- [x] Adicionar syncSales ao job de sincronização automática (já incluído no 'full')
+- [ ] Verificar e corrigir permissões do aplicativo Bling para acessar pedidos de venda
+- [ ] Testar sincronização inicial de vendas
+- [ ] Testar sincronização incremental de vendas

@@ -47,6 +47,10 @@ interface BlingPedido {
   id: number;
   numero: string;
   data: string;
+  situacao: {
+    id: number;
+    valor: number;
+  };
   itens: Array<{
     produto: {
       id: number;
@@ -502,9 +506,14 @@ export async function syncSales(
     
     const dataFinal = new Date();
 
+    // Filtrar apenas pedidos com situação "atendido" (id: 15) e "faturado" (id: 24)
+    // Nota: Esses IDs podem variar por conta. Ajuste conforme necessário.
+    const situacoesValidas = [15, 24]; // atendido e faturado
+    const idsSituacoesParam = situacoesValidas.map(id => `idsSituacoes[]=${id}`).join('&');
+    
     const response = await blingRequest<{ data: BlingPedido[] }>(
       userId,
-      `/pedidos/vendas?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}`
+      `/pedidos/vendas?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}&${idsSituacoesParam}`
     );
     
     const pedidos = response.data || [];
@@ -513,6 +522,15 @@ export async function syncSales(
     let errors = 0;
 
     for (const pedido of pedidos) {
+      // Log da situação para debug
+      console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
+      
+      // Validar situação (redundante, mas garante segurança)
+      if (!situacoesValidas.includes(pedido.situacao.id)) {
+        console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
+        continue;
+      }
+      
       for (const item of pedido.itens) {
         try {
           // Buscar produto pelo blingId
