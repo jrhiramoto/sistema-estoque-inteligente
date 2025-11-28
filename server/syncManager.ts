@@ -141,7 +141,7 @@ async function executeSyncInternal(
     
     switch (syncType) {
       case "products":
-        result = await blingService.syncProducts(userId, (current, total, message) => {
+        result = await blingService.syncProducts(userId, false, (current, total, message) => {
           updateProgress(current, total, message);
         });
         break;
@@ -157,7 +157,7 @@ async function executeSyncInternal(
         break;
       case "full":
         // Sincronização completa (produtos + estoque + vendas)
-        const products = await blingService.syncProducts(userId, (current, total, message) => {
+        const products = await blingService.syncProducts(userId, false, (current, total, message) => {
           updateProgress(current, total, `Produtos: ${message}`);
         });
         const inventory = await blingService.syncInventory(userId, (current, total, message) => {

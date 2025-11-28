@@ -1,41 +1,23 @@
-import axios from "axios";
 import * as db from "./db";
-const BLING_API_URL = "https://api.bling.com.br/Api/v3";
-const BLING_OAUTH_URL = "https://www.bling.com.br/Api/v3/oauth/token";
+import { TRPCError } from "@trpc/server";
 
-// Rate limiting: delay entre requisições (em ms)
-const REQUEST_DELAY_MS = 2000; // 2000ms = 1 requisição a cada 2 segundos (muito conservador para evitar conflitos)
-
-/**
- * Aguarda um tempo antes de continuar
- */
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-interface BlingTokenResponse {
-  access_token: string;
-  expires_in: number;
-  token_type: string;
-  scope: string;
-  refresh_token: string;
-}
-
-interface BlingProduct {
+// Tipos da API do Bling
+interface BlingProduto {
   id: number;
-  codigo?: string;
   nome: string;
-  descricaoCurta?: string;
-  preco: number;
+  codigo?: string;
+  preco?: number;
   precoCusto?: number;
-  unidade?: string;
+  situacao?: string;
+  tipo?: string;
+  formato?: string;
 }
 
 interface BlingEstoque {
   produto: {
     id: number;
   };
-  deposito?: {
+  deposito: {
     id: number;
     nome: string;
   };
@@ -49,7 +31,7 @@ interface BlingPedido {
   data: string;
   situacao: {
     id: number;
-    valor: number;
+    valor: string;
   };
   itens: Array<{
     produto: {
@@ -60,212 +42,177 @@ interface BlingPedido {
   }>;
 }
 
-/**
- * Troca authorization code por access token e refresh token
- */
-export async function exchangeCodeForToken(
-  code: string,
-  clientId: string,
-  clientSecret: string
-): Promise<BlingTokenResponse> {
-  try {
-    const response = await axios.post(
-      BLING_OAUTH_URL,
-      {
-        grant_type: "authorization_code",
-        code,
-      },
-      {
-        auth: {
-          username: clientId,
-          password: clientSecret,
-        },
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
+interface BlingTokenResponse {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+  scope: string;
+  refresh_token: string;
+}
 
-    return response.data;
-  } catch (error: any) {
-    console.error("Erro ao trocar code por token:", error.response?.data || error.message);
-    throw new Error("Falha ao obter token do Bling");
-  }
+interface BlingErrorResponse {
+  error?: {
+    type?: string;
+    message?: string;
+    description?: string;
+  };
+}
+
+// Constantes de rate limiting
+const REQUEST_DELAY_MS = 1000; // 1 segundo entre requisições
+const BATCH_SIZE = 100; // Buscar 100 produtos por requisição de estoque
+
+// Helper para aguardar
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Atualiza access token usando refresh token
+ * Garante que temos um token válido, renovando se necessário
  */
-export async function refreshAccessToken(
-  refreshToken: string,
-  clientId: string,
-  clientSecret: string
-): Promise<BlingTokenResponse> {
-  try {
-    const response = await axios.post(
-      BLING_OAUTH_URL,
-      {
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      },
-      {
-        auth: {
-          username: clientId,
-          password: clientSecret,
-        },
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-
-    return response.data;
-  } catch (error: any) {
-    console.error("Erro ao renovar token:", error.response?.data || error.message);
-    throw new Error("Falha ao renovar token do Bling");
-  }
-}
-
-/**
- * Verifica se o token está expirado e renova se necessário
- */
-export async function ensureValidToken(userId: number): Promise<string> {
+async function ensureValidToken(userId: number): Promise<string> {
   const config = await db.getBlingConfig(userId);
-  
-  if (!config || !config.accessToken) {
-    throw new Error("Configuração do Bling não encontrada");
+  if (!config) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Configuração do Bling não encontrada",
+    });
   }
 
-  if (!config.clientId || !config.clientSecret || !config.refreshToken) {
-    throw new Error("Credenciais do Bling incompletas");
+  // Se não tiver token, precisa autenticar primeiro
+  if (!config.accessToken) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Você precisa autorizar o aplicativo no Bling primeiro",
+    });
   }
 
-  // Verifica se o token está expirado (com margem de 5 minutos)
+  // Verificar se o token expirou
   const now = new Date();
   const expiresAt = config.tokenExpiresAt ? new Date(config.tokenExpiresAt) : new Date(0);
-  const marginMs = 5 * 60 * 1000; // 5 minutos
 
-  if (now.getTime() + marginMs >= expiresAt.getTime()) {
-    // Token expirado, renovar
-    const newToken = await refreshAccessToken(
-      config.refreshToken,
-      config.clientId,
-      config.clientSecret
-    );
+  if (now >= expiresAt) {
+    console.log("[Bling] Token expirado, renovando...");
 
-    // Atualizar no banco
-    const newExpiresAt = new Date(Date.now() + newToken.expires_in * 1000);
-    await db.upsertBlingConfig({
-      userId,
-      accessToken: newToken.access_token,
-      refreshToken: newToken.refresh_token,
-      tokenExpiresAt: newExpiresAt,
-      isActive: true,
+    if (!config.refreshToken) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Refresh token não encontrado. Você precisa autorizar o aplicativo novamente.",
+      });
+    }
+
+    // Renovar token usando refresh_token
+    const response = await fetch("https://www.bling.com.br/Api/v3/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: config.refreshToken,
+      }),
     });
 
-    return newToken.access_token;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Bling] Erro ao renovar token:", errorText);
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Falha ao renovar token. Você precisa autorizar o aplicativo novamente.",
+      });
+    }
+
+    const tokenData: BlingTokenResponse = await response.json();
+
+    // Atualizar tokens no banco
+    const newExpiresAt = new Date();
+    newExpiresAt.setSeconds(newExpiresAt.getSeconds() + tokenData.expires_in);
+
+    await db.upsertBlingConfig({
+      userId,
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      tokenExpiresAt: newExpiresAt,
+    });
+
+    console.log("[Bling] Token renovado com sucesso");
+    return tokenData.access_token;
   }
 
   return config.accessToken;
 }
 
 /**
- * Faz requisição autenticada para a API do Bling
+ * Faz uma requisição autenticada para a API do Bling
  */
 async function blingRequest<T>(
   userId: number,
   endpoint: string,
-  method: "GET" | "POST" = "GET",
-  data?: any
+  options: RequestInit = {}
 ): Promise<T> {
   const token = await ensureValidToken(userId);
+  const url = `https://www.bling.com.br/Api/v3${endpoint}`;
 
-  try {
-    console.log(`[Bling API] ${method} ${BLING_API_URL}${endpoint}`);
-    const response = await axios({
-      method,
-      url: `${BLING_API_URL}${endpoint}`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      data,
-    });
+  console.log(`[Bling] Requisição: ${url}`);
 
-    // Verificar se a resposta é HTML ao invés de JSON
-    if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
-      console.error('[Bling API] ❌ Resposta HTML recebida ao invés de JSON');
-      console.error('[Bling API] Endpoint:', `${BLING_API_URL}${endpoint}`);
-      console.error('[Bling API] Status:', response.status);
-      console.error('[Bling API] Primeiros 500 caracteres:', response.data.substring(0, 500));
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      ...options.headers,
+    },
+  });
+
+  // Log do status
+  console.log(`[Bling] Status: ${response.status} ${response.statusText}`);
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type");
+    let errorMessage = `Erro ${response.status}: ${response.statusText}`;
+
+    // Tentar extrair informações úteis do erro
+    if (contentType?.includes("application/json")) {
+      try {
+        const errorData: BlingErrorResponse = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error.message || errorData.error.description || errorMessage;
+        }
+      } catch (e) {
+        // Se falhar ao parsear JSON, usar mensagem padrão
+      }
+    } else if (contentType?.includes("text/html")) {
+      // API retornou HTML (geralmente página de erro)
+      const htmlText = await response.text();
       
-      // Tentar extrair informação útil do HTML
-      let errorHint = '';
-      if (response.data.includes('404') || response.data.includes('Not Found')) {
-        errorHint = 'Endpoint não encontrado. Verifique se a URL está correta.';
-      } else if (response.data.includes('401') || response.data.includes('Unauthorized')) {
-        errorHint = 'Token de acesso inválido ou expirado. Tente reautorizar na página de Configurações.';
-      } else if (response.data.includes('429') || response.data.includes('Too Many Requests')) {
-        errorHint = 'Limite de requisições atingido. Aguarde alguns minutos antes de tentar novamente.';
-      } else if (response.data.includes('500') || response.data.includes('Internal Server Error')) {
-        errorHint = 'Erro no servidor do Bling. Tente novamente em alguns minutos.';
+      // Tentar extrair informações úteis do HTML
+      if (htmlText.includes("404")) {
+        errorMessage = "Endpoint não encontrado (404). Verifique se a URL está correta.";
+      } else if (htmlText.includes("401") || htmlText.includes("Unauthorized")) {
+        errorMessage = "Não autorizado (401). Token pode estar inválido.";
+      } else if (htmlText.includes("429") || htmlText.includes("Too Many Requests")) {
+        errorMessage = "Limite de requisições atingido (429). Aguarde alguns minutos.";
+      } else if (htmlText.includes("500") || htmlText.includes("Internal Server Error")) {
+        errorMessage = "Erro interno do servidor Bling (500). Tente novamente mais tarde.";
       } else {
-        errorHint = 'Erro desconhecido no servidor do Bling.';
+        errorMessage = `Erro ${response.status}: API retornou HTML em vez de JSON`;
       }
       
-      throw new Error(`${errorHint} (Resposta HTML recebida ao invés de JSON)`);
+      console.error(`[Bling] HTML recebido (primeiros 500 chars):`, htmlText.substring(0, 500));
     }
-    
-    console.log(`[Bling API] Sucesso: ${method} ${endpoint}`);
-    return response.data;
-  } catch (error: any) {
-    // Se já é um erro tratado (HTML), relançar
-    if (error.message && !error.response) {
-      throw error;
+
+    console.error(`[Bling] Erro detalhado: ${errorMessage}`);
+
+    // Tratamento especial para rate limit
+    if (response.status === 429) {
+      throw new Error("Limite de requisições atingido. O sistema irá tentar novamente automaticamente em alguns minutos.");
     }
-    
-    const status = error.response?.status;
-    const errorData = error.response?.data;
-    const errorMessage = errorData?.error?.message || errorData?.message || error.message;
-    
-    console.error(`[Bling API] ❌ Erro ${status} em ${endpoint}:`, {
-      status,
-      message: errorMessage,
-      data: errorData,
-      url: `${BLING_API_URL}${endpoint}`,
-    });
-    
-    // Mensagens amigáveis por tipo de erro
-    let friendlyMessage = '';
-    
-    switch (status) {
-      case 400:
-        friendlyMessage = 'Requisição inválida. Verifique os parâmetros enviados.';
-        break;
-      case 401:
-        friendlyMessage = 'Token de acesso inválido ou expirado. Reautorize o sistema na página de Configurações.';
-        break;
-      case 403:
-        friendlyMessage = 'Acesso negado. Verifique as permissões do aplicativo no Bling.';
-        break;
-      case 404:
-        friendlyMessage = 'Recurso não encontrado. O endpoint pode estar incorreto.';
-        break;
-      case 429:
-        friendlyMessage = 'Limite de requisições atingido. O sistema irá tentar novamente automaticamente em alguns minutos.';
-        break;
-      case 500:
-      case 502:
-      case 503:
-        friendlyMessage = 'Erro no servidor do Bling. Tente novamente em alguns minutos.';
-        break;
-      default:
-        friendlyMessage = `Erro ao acessar API do Bling: ${errorMessage}`;
-    }
-    
-    throw new Error(friendlyMessage);
+
+    throw new Error(errorMessage);
   }
+
+  return await response.json();
 }
 
 /**
@@ -273,31 +220,32 @@ async function blingRequest<T>(
  */
 export async function syncProducts(
   userId: number,
-  onProgress?: (current: number, total: number | null, message: string) => void,
-  incremental: boolean = false
+  incremental: boolean = false,
+  onProgress?: (current: number, total: number | null, message: string) => void
 ): Promise<{ synced: number; errors: number }> {
-  try{
+  try {
     let synced = 0;
     let errors = 0;
     let page = 1;
-    const limit = 100; // Buscar 100 produtos por página
+    const limit = 100; // Máximo permitido pela API
     let hasMore = true;
     let consecutiveEmptyPages = 0;
-    const MAX_EMPTY_PAGES = 3; // Parar após 3 páginas vazias consecutivas
+    const MAX_EMPTY_PAGES = 3; // Se encontrar 3 páginas vazias seguidas, para
 
     // Buscar última sincronização para modo incremental
-    let lastSyncDate: Date | null = null;
+    let dataAlteracaoInicial: string | undefined;
+    
     if (incremental) {
       const lastSync = await db.getLastSuccessfulSync(userId, 'products');
       if (lastSync && lastSync.completedAt) {
-        lastSyncDate = lastSync.completedAt;
-        console.log(`[Bling] Modo incremental ativado - buscando produtos alterados desde ${lastSyncDate.toISOString()}`);
+        dataAlteracaoInicial = lastSync.completedAt.toISOString().split('T')[0];
+        console.log(`[Bling] Modo incremental ativado - buscando produtos alterados desde ${dataAlteracaoInicial}`);
       } else {
-        console.log('[Bling] Primeira sincronização - modo incremental desativado');
+        console.log('[Bling] Primeira sincronização - buscando todos os produtos');
       }
+    } else {
+      console.log('[Bling] Sincronização completa - buscando todos os produtos');
     }
-
-    console.log(`[Bling] Iniciando sincronização ${incremental && lastSyncDate ? 'incremental' : 'completa'} de produtos...`);
 
     while (hasMore) {
       try {
@@ -307,18 +255,14 @@ export async function syncProducts(
         if (onProgress) {
           onProgress(synced, null, `Sincronizando produtos - Página ${page}`);
         }
-        
-        // Construir URL com filtro de data se incremental
+
+        // Construir URL com parâmetros opcionais
         let url = `/produtos?pagina=${page}&limite=${limit}`;
-        if (incremental && lastSyncDate) {
-          const dataAlteracao = lastSyncDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-          url += `&dataAlteracaoInicial=${dataAlteracao}`;
+        if (dataAlteracaoInicial) {
+          url += `&dataAlteracaoInicial=${dataAlteracaoInicial}`;
         }
-        
-        const response = await blingRequest<{ data: BlingProduct[] }>(
-          userId,
-          url
-        );
+
+        const response = await blingRequest<{ data: BlingProduto[] }>(userId, url);
         const produtos = response.data || [];
 
         console.log(`[Bling] Página ${page}: ${produtos.length} produtos retornados`);
@@ -333,65 +277,56 @@ export async function syncProducts(
             break;
           }
           
-          // Continuar para próxima página mesmo se vazia
           page++;
           await delay(REQUEST_DELAY_MS);
           continue;
         }
 
-        // Reset contador de páginas vazias
-        consecutiveEmptyPages = 0;
+        consecutiveEmptyPages = 0; // Reset contador se encontrou produtos
 
         for (const produto of produtos) {
           try {
             await db.upsertProduct({
               blingId: String(produto.id),
               name: produto.nome,
-              code: produto.codigo || null,
-              price: produto.preco ? Math.round(parseFloat(String(produto.preco)) * 100) : 0,
-              cost: produto.precoCusto ? Math.round(parseFloat(String(produto.precoCusto)) * 100) : 0,
-              unit: produto.unidade || null,
-             });
+              code: produto.codigo || undefined,
+              price: produto.preco ? Math.round(produto.preco * 100) : undefined, // converter para centavos
+              cost: produto.precoCusto ? Math.round(produto.precoCusto * 100) : undefined, // converter para centavos
+            });
             synced++;
+
+            // Atualizar progresso a cada 1000 produtos
+            if (synced % 1000 === 0 && onProgress) {
+              onProgress(synced, null, `Sincronizando produtos - ${synced} produtos`);
+            }
           } catch (error) {
-            console.error(`Erro ao sincronizar produto ${produto.id}:`, error);
+            console.error(`Erro ao inserir produto ${produto.id}:`, error);
             errors++;
           }
         }
 
-        // A cada 1000 produtos, mostrar progresso
-        if (synced % 1000 === 0 && synced > 0) {
-          console.log(`[Bling] 📊 Progresso: ${synced} produtos sincronizados...`);
-          if (onProgress) {
-            onProgress(synced, null, `${synced} produtos sincronizados`);
-          }
-        }
-        
-        // Continuar para próxima página
         page++;
         
         // Aguardar antes da próxima página (rate limiting)
         await delay(REQUEST_DELAY_MS);
         
       } catch (error: any) {
-        console.error(`Erro ao buscar página ${page} de produtos:`, error.message);
+        console.error(`Erro ao buscar página ${page}:`, error.message);
         
         // Se for erro 429, parar a sincronização
         if (error.message.includes('429')) {
-          console.error('[Bling] Rate limit atingido. Parando sincronização.');
+          console.log('[Bling] Rate limit atingido. Parando sincronização.');
           throw error;
         }
         
-        // Para outros erros, tentar continuar
-        console.log('[Bling] Tentando continuar após erro...');
-        page++;
-        await delay(REQUEST_DELAY_MS * 2); // Delay maior após erro
+        errors++;
+        break;
       }
     }
 
-    console.log(`[Bling] Sincronização completa! Total: ${synced} produtos sincronizados, ${errors} erros`);
+    console.log(`[Bling] Sincronização de produtos concluída: ${synced} produtos, ${errors} erros`);
     return { synced, errors };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao sincronizar produtos:", error);
     throw error;
   }
@@ -405,83 +340,80 @@ export async function syncInventory(
   onProgress?: (current: number, total: number | null, message: string) => void
 ): Promise<{ synced: number; errors: number }> {
   try {
-    // Primeiro, buscar todos os produtos do banco local
+    // Buscar todos os produtos locais
     const products = await db.getAllProducts();
-    
-    if (products.length === 0) {
-      console.log("[Bling] Nenhum produto encontrado. Sincronize produtos primeiro.");
-      return { synced: 0, errors: 0 };
+    console.log(`[Bling] Sincronizando estoque de ${products.length} produtos...`);
+
+    if (onProgress) {
+      onProgress(0, products.length, `Sincronizando estoque - 0/${products.length}`);
     }
 
     let synced = 0;
     let errors = 0;
 
-    // Processar produtos em lotes para respeitar rate limit
-    const BATCH_SIZE = 10; // Processar 10 produtos por vez
-    
-    console.log(`[Bling] Sincronizando estoque de ${products.length} produtos...`);
-    
+    // Processar em lotes para reduzir número de requisições
     for (let i = 0; i < products.length; i += BATCH_SIZE) {
-      // Atualizar progresso
-      if (onProgress) {
-        onProgress(synced, products.length, `Sincronizando estoque - ${synced}/${products.length}`);
-      }
       const batch = products.slice(i, i + BATCH_SIZE);
-      
-      // Criar array de IDs para buscar em uma única requisição
-      const productIds = batch
-        .filter(p => p.blingId)
-        .map(p => p.blingId)
-        .join(',');
-      
-      if (!productIds) continue;
-      
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(products.length / BATCH_SIZE);
+
+      console.log(`[Bling] Processando lote ${batchNumber}/${totalBatches} (${batch.length} produtos)`);
+
       try {
-        // Buscar estoque de múltiplos produtos de uma vez
+        // Construir parâmetros para buscar estoque de múltiplos produtos
+        const idsParam = batch.map(p => `idsProdutos[]=${p.blingId}`).join('&');
+        
         const response = await blingRequest<{ data: BlingEstoque[] }>(
           userId,
-          `/estoques/saldos?idsProdutos=${productIds}`
+          `/estoques/saldos?${idsParam}`
         );
-        
+
         const estoques = response.data || [];
-        
-        // Mapear estoques aos produtos
+        console.log(`[Bling] Lote ${batchNumber}: ${estoques.length} registros de estoque retornados`);
+
+        // Processar cada estoque retornado
         for (const estoque of estoques) {
-          const product = batch.find(p => p.blingId === String(estoque.produto.id));
-          
-          if (product) {
-            try {
+          try {
+            const product = batch.find(p => p.blingId === String(estoque.produto.id));
+            if (product) {
               await db.upsertInventory({
                 productId: product.id,
-                depositId: estoque.deposito?.id ? String(estoque.deposito.id) : "default",
-                depositName: estoque.deposito?.nome || "Depósito Principal",
-                virtualStock: Math.round(estoque.saldoVirtualTotal || 0),
-                physicalStock: Math.round(estoque.saldoFisicoTotal || 0),
-                lastVirtualSync: new Date(),
+                depositId: String(estoque.deposito.id),
+                depositName: estoque.deposito.nome,
+                virtualStock: Math.round(estoque.saldoVirtualTotal),
+                physicalStock: Math.round(estoque.saldoFisicoTotal),
               });
               synced++;
-              
-              // Atualizar progresso a cada 100 itens
-              if (synced % 100 === 0 && onProgress) {
-                onProgress(synced, products.length, `Sincronizando estoque - ${synced}/${products.length}`);
-              }
-            } catch (error: any) {
-              console.error(`Erro ao salvar estoque do produto ${product.blingId}:`, error.message);
-              errors++;
             }
+          } catch (error) {
+            console.error(`Erro ao inserir estoque do produto ${estoque.produto.id}:`, error);
+            errors++;
           }
         }
-        
-        // Aguardar antes da próxima requisição (rate limiting)
+
+        // Atualizar progresso
+        if (onProgress) {
+          onProgress(synced, products.length, `Sincronizando estoque - ${synced}/${products.length}`);
+        }
+
+        // Aguardar antes do próximo lote (rate limiting)
         if (i + BATCH_SIZE < products.length) {
           await delay(REQUEST_DELAY_MS);
         }
       } catch (error: any) {
-        console.error(`Erro ao sincronizar lote de produtos:`, error.message);
+        console.error(`Erro ao buscar estoque do lote ${batchNumber}:`, error.message);
+        
+        // Se for erro 429, parar a sincronização
+        if (error.message.includes('429')) {
+          console.log('[Bling] Rate limit atingido. Parando sincronização de estoque.');
+          throw error;
+        }
+        
         errors += batch.length;
       }
     }
 
+    console.log(`[Bling] Sincronização de estoque concluída: ${synced} registros, ${errors} erros`);
     return { synced, errors };
   } catch (error) {
     console.error("Erro ao sincronizar estoque:", error);
@@ -526,62 +458,166 @@ export async function syncSales(
     const situacoesValidas = [15, 24]; // atendido e faturado
     const idsSituacoesParam = situacoesValidas.map(id => `idsSituacoes[]=${id}`).join('&');
     
-    const response = await blingRequest<{ data: BlingPedido[] }>(
-      userId,
-      `/pedidos/vendas?dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}&${idsSituacoesParam}`
-    );
-    
-    const pedidos = response.data || [];
-
     let synced = 0;
     let errors = 0;
+    let page = 1;
+    const limit = 100; // Buscar 100 pedidos por página (máximo da API)
+    let hasMore = true;
+    let consecutiveEmptyPages = 0;
+    const MAX_EMPTY_PAGES = 3;
     
-    console.log(`[Bling] Sincronizando ${pedidos.length} pedidos de venda...`);
-    if (onProgress) {
-      onProgress(0, pedidos.length, `Sincronizando vendas - 0/${pedidos.length}`);
-    }
+    console.log(`[Bling] Iniciando sincronização de vendas...`);
 
-    for (const pedido of pedidos) {
-      // Log da situação para debug
-      console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
-      
-      // Validar situação (redundante, mas garante segurança)
-      if (!situacoesValidas.includes(pedido.situacao.id)) {
-        console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
-        continue;
-      }
-      
-      for (const item of pedido.itens) {
-        try {
-          // Buscar produto pelo blingId
-          const product = await db.getProductByBlingId(String(item.produto.id));
+    while (hasMore) {
+      try {
+        console.log(`[Bling] Buscando vendas - página ${page} (${synced} itens sincronizados até agora)`);
+        
+        if (onProgress) {
+          onProgress(synced, null, `Sincronizando vendas - Página ${page}`);
+        }
+        
+        const response = await blingRequest<{ data: BlingPedido[] }>(
+          userId,
+          `/pedidos/vendas?pagina=${page}&limite=${limit}&dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}&${idsSituacoesParam}`
+        );
+        
+        const pedidos = response.data || [];
+        
+        console.log(`[Bling] Página ${page}: ${pedidos.length} pedidos retornados`);
+        
+        if (pedidos.length === 0) {
+          consecutiveEmptyPages++;
+          console.log(`[Bling] Página vazia (${consecutiveEmptyPages}/${MAX_EMPTY_PAGES})`);
           
-          if (product) {
-            await db.insertSale({
-              blingOrderId: String(pedido.id),
-              productId: product.id,
-              quantity: Math.round(item.quantidade),
-              unitPrice: Math.round(item.valor * 100), // converter para centavos
-              totalPrice: Math.round(item.valor * item.quantidade * 100),
-              saleDate: new Date(pedido.data),
-            });
-            synced++;
-            
-            // Atualizar progresso a cada 10 vendas
-            if (synced % 10 === 0 && onProgress) {
-              onProgress(synced, pedidos.length, `Sincronizando vendas - ${synced}/${pedidos.length}`);
+          if (consecutiveEmptyPages >= MAX_EMPTY_PAGES) {
+            console.log('[Bling] Múltiplas páginas vazias consecutivas. Finalizando sincronização.');
+            hasMore = false;
+            break;
+          }
+          
+          page++;
+          await delay(REQUEST_DELAY_MS);
+          continue;
+        }
+        
+        consecutiveEmptyPages = 0;
+
+        for (const pedido of pedidos) {
+          // Log da situação para debug
+          console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
+          
+          // Validar situação (redundante, mas garante segurança)
+          if (!situacoesValidas.includes(pedido.situacao.id)) {
+            console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
+            continue;
+          }
+          
+          for (const item of pedido.itens) {
+            try {
+              // Buscar produto pelo blingId
+              const product = await db.getProductByBlingId(String(item.produto.id));
+              
+              if (product) {
+                await db.insertSale({
+                  blingOrderId: String(pedido.id),
+                  productId: product.id,
+                  quantity: Math.round(item.quantidade),
+                  unitPrice: Math.round(item.valor * 100), // converter para centavos
+                  totalPrice: Math.round(item.valor * item.quantidade * 100),
+                  saleDate: new Date(pedido.data),
+                });
+                synced++;
+                
+                // Atualizar progresso a cada 10 vendas
+                if (synced % 10 === 0 && onProgress) {
+                  onProgress(synced, null, `Sincronizando vendas - ${synced} itens`);
+                }
+              }
+            } catch (error) {
+              // Pode dar erro de duplicação se já existir, ignorar
+              errors++;
             }
           }
-        } catch (error) {
-          // Pode dar erro de duplicação se já existir, ignorar
-          errors++;
         }
+        
+        // Continuar para próxima página
+        page++;
+        
+        // Aguardar antes da próxima página (rate limiting)
+        await delay(REQUEST_DELAY_MS);
+        
+      } catch (error: any) {
+        console.error(`Erro ao buscar página ${page} de vendas:`, error.message);
+        
+        // Se for erro 429, parar a sincronização
+        if (error.message.includes('429')) {
+          console.log('[Bling] Rate limit atingido. Parando sincronização de vendas.');
+          throw error;
+        }
+        
+        errors++;
+        break;
       }
     }
-
+    
+    console.log(`[Bling] Sincronização de vendas concluída: ${synced} itens, ${errors} erros`);
     return { synced, errors };
   } catch (error) {
     console.error("Erro ao sincronizar vendas:", error);
     throw error;
   }
+}
+
+/**
+ * Troca o authorization code por access token
+ */
+export async function exchangeCodeForToken(
+  userId: number,
+  code: string
+): Promise<void> {
+  const config = await db.getBlingConfig(userId);
+  if (!config || !config.clientId || !config.clientSecret) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Credenciais do Bling não configuradas",
+    });
+  }
+
+  const response = await fetch("https://www.bling.com.br/Api/v3/oauth/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      Authorization: `Basic ${Buffer.from(
+        `${config.clientId}:${config.clientSecret}`
+      ).toString("base64")}`,
+    },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code: code,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[Bling] Erro ao trocar código:", errorText);
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Código de autorização inválido ou expirado",
+    });
+  }
+
+  const tokenData: BlingTokenResponse = await response.json();
+
+  // Calcular data de expiração
+  const expiresAt = new Date();
+  expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
+
+  // Salvar tokens no banco
+  await db.upsertBlingConfig({
+    userId,
+    accessToken: tokenData.access_token,
+    refreshToken: tokenData.refresh_token,
+    tokenExpiresAt: expiresAt,
+  });
 }

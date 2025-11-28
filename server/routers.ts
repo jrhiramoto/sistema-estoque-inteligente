@@ -50,26 +50,22 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         try {
-          const tokenData = await blingService.exchangeCodeForToken(
-            input.code,
-            input.clientId,
-            input.clientSecret
-          );
-          
-          const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
-          
+          // Primeiro salvar as credenciais
           await db.upsertBlingConfig({
             userId: ctx.user.id,
             clientId: input.clientId,
             clientSecret: input.clientSecret,
-            accessToken: tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
-            tokenExpiresAt: expiresAt,
-            isActive: true,
-            lastSync: new Date(),
+            accessToken: null,
+            refreshToken: null,
+            tokenExpiresAt: null,
+            isActive: false,
+            lastSync: null,
           });
           
-          return { success: true, message: "Autoriza\u00e7\u00e3o conclu\u00edda com sucesso!" };
+          // Depois trocar o código por token (a função já salva os tokens)
+          await blingService.exchangeCodeForToken(ctx.user.id, input.code);
+          
+          return { success: true, message: "Autorização concluída com sucesso!" };
         } catch (error: any) {
           console.error("[exchangeCode] Erro:", error);
           throw new TRPCError({

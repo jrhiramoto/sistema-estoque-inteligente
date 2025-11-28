@@ -162,3 +162,14 @@
 - [x] Barra de progresso não aparece quando clica em "Sincronizar Agora"
 - [x] Remover sistema de fila - sincronização deve iniciar imediatamente ao clicar
 - [x] Simplificar lógica de concorrência (apenas bloquear se já estiver rodando)
+
+## Bug Crítico - API Retornando HTML
+- [ ] Erro recorrente: "Unexpected token '<', "<!doctype "... is not valid JSON"
+- [ ] Ocorre em queries e mutations na página /settings
+- [ ] Investigar se servidor está crashando ou retornando 404/500
+
+## Problema Crítico - Uso Excessivo de Requisições
+- [ ] Sistema está atingindo limite de 120.000 requisições diárias da API do Bling
+- [ ] Calcular quantas requisições são feitas por sincronização
+- [ ] Identificar requisições desnecessárias ou redundantes
+- [ ] Otimizar sincronização para reduzir número de requisições
