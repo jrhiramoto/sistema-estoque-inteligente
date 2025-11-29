@@ -223,3 +223,11 @@
 - [x] Implementar handler product_supplier.updated
 - [x] Implementar handler product_supplier.deleted
 - [x] Adicionar ao monitoramento de webhooks
+
+
+## Ajuste de Sincronização Automática
+
+- [x] Alterar frequência de 48h para 7 dias (168h)
+- [x] Atualizar cron expression para semanal
+- [x] Atualizar descrição na página de configurações
+- [x] Documentar modelo híbrido (webhooks + fallback semanal)

@@ -25,8 +25,19 @@ export async function startScheduledSync() {
   const frequencyHours = config.syncFrequencyHours || 24;
   
   // Converter frequência em horas para expressão cron
-  // Executar a cada X horas (no minuto 0)
-  const cronExpression = `0 */${frequencyHours} * * *`;
+  let cronExpression: string;
+  
+  if (frequencyHours >= 168) {
+    // Semanal (168h = 7 dias) - Domingo às 3h da manhã
+    cronExpression = '0 0 3 * * 0';
+  } else if (frequencyHours >= 24) {
+    // Diário ou mais - Executar a cada N dias às 3h da manhã
+    const days = Math.floor(frequencyHours / 24);
+    cronExpression = `0 0 3 */${days} * *`;
+  } else {
+    // Menos de 24h - Executar a cada X horas (no minuto 0)
+    cronExpression = `0 */${frequencyHours} * * *`;
+  }
   
   console.log(`[Scheduled Sync] Iniciando job agendado - frequência: a cada ${frequencyHours}h (cron: ${cronExpression})`);
 

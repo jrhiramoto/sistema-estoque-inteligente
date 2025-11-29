@@ -47,7 +47,7 @@ export default function Settings() {
   const [clientSecret, setClientSecret] = useState("");
   const [authCode, setAuthCode] = useState("");
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
-  const [syncFrequencyHours, setSyncFrequencyHours] = useState("24");
+  const [syncFrequencyHours, setSyncFrequencyHours] = useState("168");
 
   useEffect(() => {
     if (hasConfig) {
@@ -59,7 +59,7 @@ export default function Settings() {
   useEffect(() => {
     if (syncConfig) {
       setAutoSyncEnabled(syncConfig.autoSyncEnabled || false);
-      setSyncFrequencyHours(String(syncConfig.syncFrequencyHours || 24));
+      setSyncFrequencyHours(String(syncConfig.syncFrequencyHours || 168));
     }
   }, [syncConfig]);
 
@@ -441,7 +441,7 @@ export default function Settings() {
                   4. Sincronização Automática
                 </CardTitle>
                 <CardDescription>
-                  Configure a sincronização automática de produtos, estoque e vendas
+                  Sincronização periódica como fallback dos webhooks (recomendado: semanal)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -467,7 +467,7 @@ export default function Settings() {
                     <div className="space-y-0.5">
                       <Label htmlFor="auto-sync">Ativar Sincronização Automática</Label>
                       <p className="text-sm text-muted-foreground">
-                        Sincroniza automaticamente apenas os dados alterados desde a última sincronização
+                        Garante consistência dos dados mesmo se webhooks falharem temporariamente
                       </p>
                     </div>
                     <Switch
