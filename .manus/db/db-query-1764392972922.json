@@ -1,0 +1,17 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM products) as total_products,\n  (SELECT COUNT(*) FROM inventory) as total_inventory,\n  (SELECT COUNT(*) FROM sales) as total_sales,\n  (SELECT COUNT(*) FROM product_suppliers) as total_suppliers,\n  (SELECT COUNT(DISTINCT productId) FROM inventory WHERE physicalStock > 0) as products_with_stock;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  (SELECT COUNT(*) FROM products) as total_products,\n  (SELECT COUNT(*) FROM inventory) as total_inventory,\n  (SELECT COUNT(*) FROM sales) as total_sales,\n  (SELECT COUNT(*) FROM product_suppliers) as total_suppliers,\n  (SELECT COUNT(DISTINCT productId) FROM inventory WHERE physicalStock > 0) as products_with_stock;",
+  "rows": [
+    {
+      "total_products": "39916",
+      "total_inventory": "77",
+      "total_sales": "0",
+      "total_suppliers": "0",
+      "products_with_stock": "41"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_products\ttotal_inventory\ttotal_sales\ttotal_suppliers\tproducts_with_stock\n39916\t77\t0\t0\t41\n",
+  "stderr": "",
+  "execution_time_ms": 591
+}

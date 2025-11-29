@@ -1,0 +1,80 @@
+{
+  "query": "SELECT \n  p.id,\n  p.code,\n  p.name,\n  COALESCE(SUM(i.virtualStock), 0) as virtualStock,\n  COALESCE(SUM(i.physicalStock), 0) as physicalStock\nFROM products p\nLEFT JOIN inventory i ON p.id = i.productId\nGROUP BY p.id\nORDER BY p.name\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  p.id,\n  p.code,\n  p.name,\n  COALESCE(SUM(i.virtualStock), 0) as virtualStock,\n  COALESCE(SUM(i.physicalStock), 0) as physicalStock\nFROM products p\nLEFT JOIN inventory i ON p.id = i.productId\nGROUP BY p.id\nORDER BY p.name\nLIMIT 10;",
+  "rows": [
+    {
+      "id": "49336",
+      "code": "207",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49340",
+      "code": "203",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49334",
+      "code": "209",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49337",
+      "code": "206",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49335",
+      "code": "208",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49333",
+      "code": "210",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49339",
+      "code": "204",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49341",
+      "code": "202",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49362",
+      "code": "201",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    },
+    {
+      "id": "49338",
+      "code": "205",
+      "name": "*.",
+      "virtualStock": "0",
+      "physicalStock": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcode\tname\tvirtualStock\tphysicalStock\n49336\t207\t*.\t0\t0\n49340\t203\t*.\t0\t0\n49334\t209\t*.\t0\t0\n49337\t206\t*.\t0\t0\n49335\t208\t*.\t0\t0\n49333\t210\t*.\t0\t0\n49339\t204\t*.\t0\t0\n49341\t202\t*.\t0\t0\n49362\t201\t*.\t0\t0\n49338\t205\t*.\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 124
+}

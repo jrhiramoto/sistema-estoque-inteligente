@@ -169,6 +169,7 @@ export async function getProductsPaginated(params: {
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
   
   // Buscar produtos paginados com estoque
+  console.log('[DEBUG] Executando query getProductsPaginated...');
   const productsList = await db.select({
       id: products.id,
       blingId: products.blingId,
@@ -201,6 +202,8 @@ export async function getProductsPaginated(params: {
     .limit(limit)
     .offset(offset)
     .orderBy(products.name);
+  
+  console.log('[DEBUG] Primeiros 3 produtos:', JSON.stringify(productsList.slice(0, 3), null, 2));
   
   // Contar total (para paginação)
   const countResult = await db.select({ count: sql<number>`count(*)` })
@@ -754,4 +757,38 @@ export async function deleteProductSupplier(blingId: string) {
   } catch (error) {
     console.error('[Database] Error deleting product supplier:', error);
   }
+}
+
+
+// ===== Debug & Stats =====
+
+export async function getDataStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [productCount] = await db.select({ count: sql<number>`count(*)` }).from(products);
+  const [inventoryCount] = await db.select({ count: sql<number>`count(*)` }).from(inventory);
+  const [salesCount] = await db.select({ count: sql<number>`count(*)` }).from(sales);
+  const [suppliersCount] = await db.select({ count: sql<number>`count(*)` }).from(productSuppliers);
+  
+  const productsWithStockResult = await db.execute(sql`
+    SELECT COUNT(DISTINCT productId) as count 
+    FROM inventory 
+    WHERE physicalStock > 0
+  `);
+
+  const sampleInventory = await db.select()
+    .from(inventory)
+    .limit(5);
+
+  const productsWithStock = (productsWithStockResult[0] as unknown as any[])[0]?.count || 0;
+
+  return {
+    products: productCount.count,
+    inventory: inventoryCount.count,
+    sales: salesCount.count,
+    suppliers: suppliersCount.count,
+    productsWithStock,
+    sampleInventory,
+  };
 }

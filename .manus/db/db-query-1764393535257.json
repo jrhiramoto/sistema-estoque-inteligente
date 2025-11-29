@@ -1,0 +1,17 @@
+{
+  "query": "SELECT \n  COUNT(*) as total_sales,\n  COUNT(DISTINCT blingOrderId) as total_orders,\n  COUNT(DISTINCT productId) as products_sold,\n  MIN(saleDate) as first_sale,\n  MAX(saleDate) as last_sale\nFROM sales;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  COUNT(*) as total_sales,\n  COUNT(DISTINCT blingOrderId) as total_orders,\n  COUNT(DISTINCT productId) as products_sold,\n  MIN(saleDate) as first_sale,\n  MAX(saleDate) as last_sale\nFROM sales;",
+  "rows": [
+    {
+      "total_sales": "0",
+      "total_orders": "0",
+      "products_sold": "0",
+      "first_sale": "NULL",
+      "last_sale": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_sales\ttotal_orders\tproducts_sold\tfirst_sale\tlast_sale\n0\t0\t0\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 854
+}

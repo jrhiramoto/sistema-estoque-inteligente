@@ -1,0 +1,50 @@
+{
+  "query": "SELECT \n  p.id,\n  p.name,\n  p.code,\n  COALESCE(SUM(i.physicalStock), 0) as total_physical_stock,\n  COALESCE(SUM(i.virtualStock), 0) as total_virtual_stock,\n  COUNT(i.id) as num_deposits\nFROM products p\nLEFT JOIN inventory i ON p.id = i.productId\nWHERE p.id IN (SELECT DISTINCT productId FROM inventory LIMIT 5)\nGROUP BY p.id\nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  p.id,\n  p.name,\n  p.code,\n  COALESCE(SUM(i.physicalStock), 0) as total_physical_stock,\n  COALESCE(SUM(i.virtualStock), 0) as total_virtual_stock,\n  COUNT(i.id) as num_deposits\nFROM products p\nLEFT JOIN inventory i ON p.id = i.productId\nWHERE p.id IN (SELECT DISTINCT productId FROM inventory LIMIT 5)\nGROUP BY p.id\nLIMIT 5;",
+  "rows": [
+    {
+      "id": "41",
+      "name": "ALGARISMO BLOCO GPR -ALUMINIO Tamanho:95MM;Número:1",
+      "code": "110905",
+      "total_physical_stock": "8",
+      "total_virtual_stock": "8",
+      "num_deposits": "1"
+    },
+    {
+      "id": "62",
+      "name": "ALGARISMO BLOCO GPR -ALUMINIO PRETO Tamanho:95MM;Número:6 ou 9",
+      "code": "110884",
+      "total_physical_stock": "0",
+      "total_virtual_stock": "0",
+      "num_deposits": "1"
+    },
+    {
+      "id": "79",
+      "name": "ALGARISMO IL-ALG-CHAPA -INOX POLIDO Tamanho:100MM;Número:6 ou 9",
+      "code": "110867",
+      "total_physical_stock": "0",
+      "total_virtual_stock": "0",
+      "num_deposits": "1"
+    },
+    {
+      "id": "7",
+      "name": "FECHO ROLETE C/REGULAGEM 911.24.014 -INOX/DOURADO -HAF",
+      "code": "110939",
+      "total_physical_stock": "2",
+      "total_virtual_stock": "2",
+      "num_deposits": "1"
+    },
+    {
+      "id": "8",
+      "name": "MAQUINA AUXILIAR SOMENTE MAÇANETA 911.23.370 -INOX FOSCO",
+      "code": "110938",
+      "total_physical_stock": "1",
+      "total_virtual_stock": "1",
+      "num_deposits": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcode\ttotal_physical_stock\ttotal_virtual_stock\tnum_deposits\n41\tALGARISMO BLOCO GPR -ALUMINIO Tamanho:95MM;Número:1\t110905\t8\t8\t1\n62\tALGARISMO BLOCO GPR -ALUMINIO PRETO Tamanho:95MM;Número:6 ou 9\t110884\t0\t0\t1\n79\tALGARISMO IL-ALG-CHAPA -INOX POLIDO Tamanho:100MM;Número:6 ou 9\t110867\t0\t0\t1\n7\tFECHO ROLETE C/REGULAGEM 911.24.014 -INOX/DOURADO -HAF\t110939\t2\t2\t1\n8\tMAQUINA AUXILIAR SOMENTE MAÇANETA 911.23.370 -INOX FOSCO\t110938\t1\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 87
+}

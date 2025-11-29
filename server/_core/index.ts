@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startScheduledSync } from "../scheduledSync";
 import { webhookEndpoint } from "./webhookEndpoint";
+import { startTokenRenewalJob } from "../tokenRenewalJob";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -99,6 +100,13 @@ async function startServer() {
       await startScheduledSync();
     } catch (error) {
       console.error('[Server] Erro ao iniciar job agendado:', error);
+    }
+    
+    // Iniciar job de renovação automática de token
+    try {
+      startTokenRenewalJob();
+    } catch (error) {
+      console.error('[Server] Erro ao iniciar job de renovação de token:', error);
     }
   });
 }

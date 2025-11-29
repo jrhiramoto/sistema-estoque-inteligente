@@ -1,0 +1,9 @@
+{
+  "query": "SELECT \n  s.id,\n  s.blingOrderId,\n  p.name as produto,\n  s.quantity,\n  s.unitPrice / 100.0 as preco_unitario,\n  s.totalPrice / 100.0 as preco_total,\n  s.orderStatus,\n  s.saleDate\nFROM sales s\nJOIN products p ON s.productId = p.id\nORDER BY s.saleDate DESC\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  s.id,\n  s.blingOrderId,\n  p.name as produto,\n  s.quantity,\n  s.unitPrice / 100.0 as preco_unitario,\n  s.totalPrice / 100.0 as preco_total,\n  s.orderStatus,\n  s.saleDate\nFROM sales s\nJOIN products p ON s.productId = p.id\nORDER BY s.saleDate DESC\nLIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 52
+}

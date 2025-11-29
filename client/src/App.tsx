@@ -9,6 +9,7 @@ import Products from "./pages/Products";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import ApiMonitoring from "./pages/ApiMonitoring";
+import Debug from "./pages/Debug";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path={"/alerts"} component={Alerts} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/api-monitoring"} component={ApiMonitoring} />
+      <Route path={"/debug"} component={Debug} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

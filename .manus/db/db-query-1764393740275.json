@@ -1,0 +1,30 @@
+{
+  "query": "SELECT \n  'Produtos' as tabela, COUNT(*) as total FROM products\nUNION ALL\nSELECT 'Estoque', COUNT(*) FROM inventory\nUNION ALL\nSELECT 'Vendas', COUNT(*) FROM sales\nUNION ALL\nSELECT 'Fornecedores', COUNT(*) FROM product_suppliers\nUNION ALL\nSELECT 'Webhooks', COUNT(*) FROM webhook_events;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  'Produtos' as tabela, COUNT(*) as total FROM products\nUNION ALL\nSELECT 'Estoque', COUNT(*) FROM inventory\nUNION ALL\nSELECT 'Vendas', COUNT(*) FROM sales\nUNION ALL\nSELECT 'Fornecedores', COUNT(*) FROM product_suppliers\nUNION ALL\nSELECT 'Webhooks', COUNT(*) FROM webhook_events;",
+  "rows": [
+    {
+      "tabela": "Fornecedores",
+      "total": "0"
+    },
+    {
+      "tabela": "Webhooks",
+      "total": "7"
+    },
+    {
+      "tabela": "Vendas",
+      "total": "0"
+    },
+    {
+      "tabela": "Estoque",
+      "total": "77"
+    },
+    {
+      "tabela": "Produtos",
+      "total": "39916"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\nFornecedores\t0\nWebhooks\t7\nVendas\t0\nEstoque\t77\nProdutos\t39916\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

@@ -177,6 +177,13 @@ export const appRouter = router({
       }),
   }),
 
+  // Debug
+  debug: router({
+    stats: protectedProcedure.query(async () => {
+      return await db.getDataStats();
+    }),
+  }),
+
   // Produtos
   products: router({
     list: protectedProcedure

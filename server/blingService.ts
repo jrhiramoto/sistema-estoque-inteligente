@@ -143,12 +143,16 @@ async function ensureValidToken(userId: number): Promise<string> {
     });
   }
 
-  // Verificar se o token expirou
+  // Verificar se o token expirou ou expira em menos de 1 hora
   const now = new Date();
   const expiresAt = config.tokenExpiresAt ? new Date(config.tokenExpiresAt) : new Date(0);
-
-  if (now >= expiresAt) {
-    console.log("[Bling] Token expirado, renovando...");
+  const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+  
+  const needsRenewal = oneHourFromNow >= expiresAt;
+  
+  if (needsRenewal) {
+    const hoursRemaining = Math.floor((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+    console.log(`[Bling] Token expira em ${hoursRemaining}h, renovando preventivamente...`);
 
     if (!config.refreshToken) {
       throw new TRPCError({
@@ -642,6 +646,7 @@ export async function syncSales(
                   quantity: Math.round(item.quantidade),
                   unitPrice: Math.round(item.valor * 100), // converter para centavos
                   totalPrice: Math.round(item.valor * item.quantidade * 100),
+                  orderStatus: pedido.situacao?.valor || null,
                   saleDate: new Date(pedido.data),
                 });
                 synced++;

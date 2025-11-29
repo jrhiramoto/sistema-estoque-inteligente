@@ -110,6 +110,7 @@ export const sales = mysqlTable("sales", {
   unitPrice: int("unitPrice").notNull(), // em centavos
   totalPrice: int("totalPrice").notNull(), // em centavos
   
+  orderStatus: varchar("orderStatus", { length: 50 }), // Status do pedido (atendido, faturado, etc)
   saleDate: timestamp("saleDate").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

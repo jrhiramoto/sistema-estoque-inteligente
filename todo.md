@@ -231,3 +231,49 @@
 - [x] Atualizar cron expression para semanal
 - [x] Atualizar descrição na página de configurações
 - [x] Documentar modelo híbrido (webhooks + fallback semanal)
+
+
+## Sincronização Completa de Dados do Bling
+
+### Estoque
+- [ ] Sincronizar saldos de estoque de todos os produtos
+- [ ] Atualizar campo de saldo atual em produtos
+- [ ] Adicionar exibição de saldo na listagem de produtos
+- [ ] Adicionar exibição de saldo na página de detalhes do produto
+
+### Vendas
+- [ ] Sincronizar histórico completo de vendas
+- [ ] Garantir dados para análise ABC (últimos 12 meses mínimo)
+- [ ] Validar integridade dos dados de vendas
+
+### Fornecedores
+- [ ] Sincronizar fornecedores de produtos do Bling
+- [ ] Vincular fornecedores aos produtos correspondentes
+- [ ] Exibir fornecedor principal na listagem de produtos
+- [ ] Criar seção de fornecedores na página de detalhes do produto
+
+
+## Sincronização de Vendas com Filtro de Status
+
+- [x] Adicionar campo orderStatus na tabela sales
+- [x] Atualizar sincronização para filtrar apenas pedidos "atendido" e "faturado"
+- [ ] Executar sincronização completa de vendas
+- [ ] Sincronizar fornecedores e vincular aos produtos
+- [ ] Validar dados sincronizados
+- [ ] Remover logs de debug do código
+
+
+## Renovação Automática de Token do Bling (CRÍTICO)
+
+- [x] Investigar por que token expirou (verificar tokenExpiresAt no banco)
+- [x] Implementar job de renovação automática de token (executar a cada 6h, renova se expira em < 24h)
+- [x] Adicionar tentativa de renovação automática antes de cada sincronização
+- [x] Implementar renovação automática no blingService antes de cada requisição (se token expira em < 1h)
+- [x] Adicionar logs de renovação de token
+- [x] Sistema protegido contra expiração de token
+
+## Sincronização de Fornecedores (PENDENTE)
+
+- [ ] Criar função syncProductSuppliers no blingService
+- [ ] Adicionar sincronização de fornecedores ao fluxo completo
+- [ ] Testar sincronização de fornecedores
