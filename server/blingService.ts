@@ -59,12 +59,68 @@ interface BlingErrorResponse {
 }
 
 // Constantes de rate limiting
-const REQUEST_DELAY_MS = 1000; // 1 segundo entre requisições
+const REQUEST_DELAY_MS = 350; // 350ms = ~2.8 req/s (limite do Bling: 3 req/s)
 const BATCH_SIZE = 100; // Buscar 100 produtos por requisição de estoque
+const MAX_RETRIES = 3; // Máximo de tentativas em caso de erro 429
+const CIRCUIT_BREAKER_THRESHOLD = 5; // Número de erros 429 consecutivos antes de pausar
+const CIRCUIT_BREAKER_PAUSE_MS = 60000; // 1 minuto de pausa após circuit breaker
+
+// Estado do circuit breaker
+let consecutiveRateLimitErrors = 0;
+let circuitBreakerActive = false;
+let circuitBreakerUntil: Date | null = null;
 
 // Helper para aguardar
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Calcula delay com backoff exponencial
+ */
+function getBackoffDelay(attempt: number): number {
+  return REQUEST_DELAY_MS * Math.pow(2, attempt);
+}
+
+/**
+ * Verifica se o circuit breaker está ativo
+ */
+function checkCircuitBreaker(): void {
+  if (circuitBreakerActive && circuitBreakerUntil) {
+    const now = new Date();
+    if (now < circuitBreakerUntil) {
+      const remainingMs = circuitBreakerUntil.getTime() - now.getTime();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: `Circuit breaker ativo. Sistema em pausa por mais ${remainingMin} minuto(s) para evitar bloqueio de IP.`,
+      });
+    } else {
+      // Circuit breaker expirou, resetar
+      circuitBreakerActive = false;
+      circuitBreakerUntil = null;
+      consecutiveRateLimitErrors = 0;
+      console.log('[Bling] Circuit breaker desativado. Sistema pronto para novas requisições.');
+    }
+  }
+}
+
+/**
+ * Ativa o circuit breaker
+ */
+function activateCircuitBreaker(): void {
+  circuitBreakerActive = true;
+  circuitBreakerUntil = new Date(Date.now() + CIRCUIT_BREAKER_PAUSE_MS);
+  console.error(`[Bling] ⚠️ CIRCUIT BREAKER ATIVADO! Sistema em pausa por ${CIRCUIT_BREAKER_PAUSE_MS / 60000} minuto(s) para evitar bloqueio de IP.`);
+}
+
+/**
+ * Reseta contador de erros de rate limit
+ */
+function resetRateLimitErrors(): void {
+  if (consecutiveRateLimitErrors > 0) {
+    consecutiveRateLimitErrors = 0;
+  }
 }
 
 /**
@@ -144,17 +200,21 @@ async function ensureValidToken(userId: number): Promise<string> {
 }
 
 /**
- * Faz uma requisição autenticada para a API do Bling
+ * Faz uma requisição autenticada para a API do Bling com retry e backoff exponencial
  */
 async function blingRequest<T>(
   userId: number,
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  attempt: number = 0
 ): Promise<T> {
+  // Verificar circuit breaker
+  checkCircuitBreaker();
+  
   const token = await ensureValidToken(userId);
   const url = `https://www.bling.com.br/Api/v3${endpoint}`;
 
-  console.log(`[Bling] Requisição: ${url}`);
+  console.log(`[Bling] Requisição: ${url}${attempt > 0 ? ` (tentativa ${attempt + 1}/${MAX_RETRIES + 1})` : ''}`);
 
   const response = await fetch(url, {
     ...options,
@@ -171,6 +231,7 @@ async function blingRequest<T>(
   if (!response.ok) {
     const contentType = response.headers.get("content-type");
     let errorMessage = `Erro ${response.status}: ${response.statusText}`;
+    let isRateLimitError = false;
 
     // Tentar extrair informações úteis do erro
     if (contentType?.includes("application/json")) {
@@ -193,6 +254,7 @@ async function blingRequest<T>(
         errorMessage = "Não autorizado (401). Token pode estar inválido.";
       } else if (htmlText.includes("429") || htmlText.includes("Too Many Requests")) {
         errorMessage = "Limite de requisições atingido (429). Aguarde alguns minutos.";
+        isRateLimitError = true;
       } else if (htmlText.includes("500") || htmlText.includes("Internal Server Error")) {
         errorMessage = "Erro interno do servidor Bling (500). Tente novamente mais tarde.";
       } else {
@@ -204,13 +266,39 @@ async function blingRequest<T>(
 
     console.error(`[Bling] Erro detalhado: ${errorMessage}`);
 
-    // Tratamento especial para rate limit
-    if (response.status === 429) {
-      throw new Error("Limite de requisições atingido. O sistema irá tentar novamente automaticamente em alguns minutos.");
+    // Tratamento especial para rate limit (429)
+    if (response.status === 429 || isRateLimitError) {
+      consecutiveRateLimitErrors++;
+      console.warn(`[Bling] ⚠️ Rate limit atingido (erro ${consecutiveRateLimitErrors}/${CIRCUIT_BREAKER_THRESHOLD})`);
+      
+      // Verificar se deve ativar circuit breaker
+      if (consecutiveRateLimitErrors >= CIRCUIT_BREAKER_THRESHOLD) {
+        activateCircuitBreaker();
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Circuit breaker ativado após ${CIRCUIT_BREAKER_THRESHOLD} erros 429 consecutivos. Sistema em pausa por ${CIRCUIT_BREAKER_PAUSE_MS / 60000} minuto(s).`,
+        });
+      }
+      
+      // Tentar retry com backoff exponencial
+      if (attempt < MAX_RETRIES) {
+        const backoffDelay = getBackoffDelay(attempt);
+        console.log(`[Bling] Aguardando ${backoffDelay}ms antes de tentar novamente...`);
+        await delay(backoffDelay);
+        return blingRequest<T>(userId, endpoint, options, attempt + 1);
+      }
+      
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "Limite de requisições atingido após múltiplas tentativas. Aguarde alguns minutos e tente novamente.",
+      });
     }
 
     throw new Error(errorMessage);
   }
+
+  // Requisição bem-sucedida, resetar contador de erros
+  resetRateLimitErrors();
 
   return await response.json();
 }

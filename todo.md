@@ -173,3 +173,7 @@
 - [ ] Calcular quantas requisições são feitas por sincronização
 - [ ] Identificar requisições desnecessárias ou redundantes
 - [ ] Otimizar sincronização para reduzir número de requisições
+- [x] Otimizar rate limiting: reduzir delay de 1000ms para 350ms (~2.8 req/s)
+- [x] Implementar backoff exponencial inteligente para erro 429
+- [x] Adicionar circuit breaker para evitar bloqueio de IP
+- [x] Adicionar retry inteligente com limite de 3 tentativas
