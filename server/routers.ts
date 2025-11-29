@@ -7,9 +7,11 @@ import { z } from "zod";
 import * as db from "./db";
 import * as blingService from "./blingService";
 import * as syncManager from "./syncManager";
+import { webhookRouter } from "./webhookRouter";
 
 export const appRouter = router({
   system: systemRouter,
+  webhook: webhookRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

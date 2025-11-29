@@ -183,3 +183,35 @@
 - [x] Implementar página de monitoramento com gráficos
 - [x] Adicionar status do circuit breaker em tempo real
 - [x] Mostrar histórico de erros 429 e recuperações
+
+## Webhooks do Bling (Sincronização em Tempo Real)
+
+### Infraestrutura Base
+- [x] Criar tabela webhook_events para idempotência
+- [x] Criar endpoint POST /api/webhooks/bling
+- [x] Implementar validação HMAC-SHA256
+- [x] Implementar sistema de idempotência com eventId
+- [x] Adicionar logging detalhado de webhooks
+
+### Handlers de Recursos
+- [x] Implementar handler product.created
+- [x] Implementar handler product.updated
+- [x] Implementar handler product.deleted
+- [x] Implementar handler stock.created
+- [x] Implementar handler stock.updated
+- [x] Implementar handler stock.deleted
+- [x] Implementar handler virtual_stock.updated
+- [x] Implementar handler order.created
+- [x] Implementar handler order.updated
+- [x] Implementar handler order.deleted
+
+### Monitoramento
+- [x] Adicionar métricas de webhooks ao painel de monitoramento
+- [x] Criar visualização de últimos webhooks recebidos
+- [x] Adicionar alertas de falhas de validação HMAC
+- [x] Mostrar estatísticas por recurso e ação
+
+### Integração
+- [x] Integrar webhooks com análise ABC (vendas em tempo real)
+- [x] Atualizar alertas de estoque em tempo real
+- [x] Documentar configuração no Bling

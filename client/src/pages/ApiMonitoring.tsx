@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Activity, AlertTriangle, CheckCircle2, Clock, TrendingUp, Zap } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, TrendingUp, Zap, Webhook } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -22,6 +22,16 @@ export default function ApiMonitoring() {
   const { data: recentErrors, isLoading: loadingErrors } = trpc.apiMonitoring.getRecentErrors.useQuery(
     { limit: 10 },
     { enabled: !!user }
+  );
+  
+  const { data: webhookStats } = trpc.webhook.getStats.useQuery(
+    { days: 7 },
+    { enabled: !!user, refetchInterval: 30000 }
+  );
+  
+  const { data: recentWebhooks } = trpc.webhook.getRecent.useQuery(
+    { limit: 10 },
+    { enabled: !!user, refetchInterval: 30000 }
   );
 
   if (authLoading || loadingToday || loadingStats) {
@@ -239,6 +249,77 @@ export default function ApiMonitoring() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Webhooks do Bling */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Webhook className="h-5 w-5" />
+              <div>
+                <CardTitle>Webhooks Recebidos</CardTitle>
+                <CardDescription>Notificações em tempo real do Bling</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4 mb-6">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Total (7 dias)</p>
+                <p className="text-2xl font-bold">{webhookStats?.total || 0}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Processados</p>
+                <p className="text-2xl font-bold text-green-600">{webhookStats?.processed || 0}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Falhas</p>
+                <p className="text-2xl font-bold text-red-600">{webhookStats?.failed || 0}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Taxa de Sucesso</p>
+                <p className="text-2xl font-bold">{webhookStats?.successRate || 0}%</p>
+              </div>
+            </div>
+            
+            {recentWebhooks && recentWebhooks.length > 0 ? (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium mb-3">Últimos Webhooks</h4>
+                {recentWebhooks.map((webhook) => (
+                  <div key={webhook.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                    <div className="flex items-center gap-3">
+                      <Badge variant={webhook.processed ? "default" : "secondary"}>
+                        {webhook.resource}.{webhook.action}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {webhook.payloadPreview}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {webhook.error ? (
+                        <Badge variant="destructive">Erro</Badge>
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(webhook.receivedAt).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Webhook className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <p className="text-sm text-muted-foreground">
+                  Nenhum webhook recebido ainda
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Configure os webhooks na área do integrador do Bling
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Informações sobre Limites */}
         <Card>

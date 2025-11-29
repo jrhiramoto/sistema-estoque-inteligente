@@ -245,3 +245,29 @@ export const apiUsageLog = mysqlTable("api_usage_log", {
 
 export type ApiUsageLog = typeof apiUsageLog.$inferSelect;
 export type InsertApiUsageLog = typeof apiUsageLog.$inferInsert;
+
+
+/**
+ * Registro de webhooks recebidos do Bling
+ * Usado para idempotência e auditoria
+ */
+export const webhookEvents = mysqlTable("webhook_events", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: varchar("event_id", { length: 64 }).notNull().unique(), // ID único do evento do Bling
+  resource: varchar("resource", { length: 50 }).notNull(), // product, stock, order, etc
+  action: varchar("action", { length: 20 }).notNull(), // created, updated, deleted
+  companyId: varchar("company_id", { length: 64 }), // ID da empresa no Bling
+  version: varchar("version", { length: 10 }).default("v1").notNull(),
+  payload: text("payload").notNull(), // JSON completo do webhook
+  processed: boolean("processed").default(false).notNull(),
+  processedAt: timestamp("processed_at"),
+  error: text("error"), // Mensagem de erro se houver
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+}, (table) => ({
+  eventIdIdx: { name: "idx_event_id", columns: [table.eventId] },
+  resourceActionIdx: { name: "idx_resource_action", columns: [table.resource, table.action] },
+  receivedAtIdx: { name: "idx_received_at", columns: [table.receivedAt] },
+}));
+
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+export type InsertWebhookEvent = typeof webhookEvents.$inferInsert;

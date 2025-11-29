@@ -3,10 +3,10 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, 
   inventoryCounts, alerts, countSchedule, blingConfig,
-  syncHistory, syncConfig, apiUsageLog,
+  syncHistory, syncConfig, apiUsageLog, webhookEvents,
   Product, Inventory, Sale, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
-  ApiUsageLog, InsertApiUsageLog
+  ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -596,4 +596,113 @@ export async function getRecentRateLimitErrors(userId: number, limit: number = 1
     ))
     .orderBy(desc(apiUsageLog.timestamp))
     .limit(limit);
+}
+
+
+// ===== Webhook Management =====
+
+export async function checkWebhookExists(eventId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.select().from(webhookEvents)
+    .where(eq(webhookEvents.eventId, eventId))
+    .limit(1);
+  
+  return result.length > 0;
+}
+
+export async function insertWebhookEvent(event: InsertWebhookEvent): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const result = await db.insert(webhookEvents).values(event);
+    return result[0].insertId;
+  } catch (error) {
+    console.error('[Database] Error inserting webhook event:', error);
+    return null;
+  }
+}
+
+export async function markWebhookProcessed(eventId: string, error?: string) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.update(webhookEvents)
+      .set({
+        processed: true,
+        processedAt: new Date(),
+        error: error || null,
+      })
+      .where(eq(webhookEvents.eventId, eventId));
+  } catch (err) {
+    console.error('[Database] Error marking webhook as processed:', err);
+  }
+}
+
+export async function getRecentWebhooks(limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(webhookEvents)
+    .orderBy(desc(webhookEvents.receivedAt))
+    .limit(limit);
+}
+
+export async function getWebhookStats(days: number = 7) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const events = await db.select().from(webhookEvents)
+    .where(gte(webhookEvents.receivedAt, startDate));
+  
+  const total = events.length;
+  const processed = events.filter(e => e.processed).length;
+  const failed = events.filter(e => e.error).length;
+  
+  // Agrupar por recurso
+  const byResource: Record<string, number> = {};
+  events.forEach(e => {
+    byResource[e.resource] = (byResource[e.resource] || 0) + 1;
+  });
+  
+  // Agrupar por ação
+  const byAction: Record<string, number> = {};
+  events.forEach(e => {
+    byAction[e.action] = (byAction[e.action] || 0) + 1;
+  });
+  
+  return {
+    total,
+    processed,
+    failed,
+    successRate: total > 0 ? ((processed - failed) / total * 100).toFixed(1) : '0',
+    byResource,
+    byAction,
+  };
+}
+
+
+export async function getSalesByOrderId(orderId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(sales)
+    .where(eq(sales.blingOrderId, orderId));
+}
+
+export async function deleteSale(saleId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.delete(sales).where(eq(sales.id, saleId));
+  } catch (error) {
+    console.error('[Database] Error deleting sale:', error);
+  }
 }
