@@ -4,9 +4,11 @@ import {
   InsertUser, users, products, inventory, sales, 
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
+  productSuppliers,
   Product, Inventory, Sale, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
-  ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent
+  ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
+  ProductSupplier, InsertProductSupplier
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -704,5 +706,52 @@ export async function deleteSale(saleId: number) {
     await db.delete(sales).where(eq(sales.id, saleId));
   } catch (error) {
     console.error('[Database] Error deleting sale:', error);
+  }
+}
+
+
+// ===== Product Supplier Management =====
+
+export async function upsertProductSupplier(supplier: InsertProductSupplier) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.insert(productSuppliers).values(supplier).onDuplicateKeyUpdate({
+      set: {
+        productId: supplier.productId,
+        blingProductId: supplier.blingProductId,
+        supplierId: supplier.supplierId,
+        supplierName: supplier.supplierName,
+        description: supplier.description,
+        code: supplier.code,
+        costPrice: supplier.costPrice,
+        purchasePrice: supplier.purchasePrice,
+        isDefault: supplier.isDefault,
+        warranty: supplier.warranty,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('[Database] Error upserting product supplier:', error);
+  }
+}
+
+export async function getProductSuppliersByProductId(productId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(productSuppliers)
+    .where(eq(productSuppliers.productId, productId));
+}
+
+export async function deleteProductSupplier(blingId: string) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.delete(productSuppliers).where(eq(productSuppliers.blingId, blingId));
+  } catch (error) {
+    console.error('[Database] Error deleting product supplier:', error);
   }
 }

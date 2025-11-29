@@ -271,3 +271,33 @@ export const webhookEvents = mysqlTable("webhook_events", {
 
 export type WebhookEvent = typeof webhookEvents.$inferSelect;
 export type InsertWebhookEvent = typeof webhookEvents.$inferInsert;
+
+
+/**
+ * Produto Fornecedor - Vinculação de produtos com fornecedores
+ */
+export const productSuppliers = mysqlTable("product_suppliers", {
+  id: int("id").autoincrement().primaryKey(),
+  blingId: varchar("blingId", { length: 64 }).notNull().unique(),
+  
+  productId: int("productId").notNull(), // Referência ao produto local
+  blingProductId: varchar("blingProductId", { length: 64 }).notNull(), // ID do produto no Bling
+  
+  supplierId: varchar("supplierId", { length: 64 }).notNull(), // ID do fornecedor no Bling
+  supplierName: varchar("supplierName", { length: 255 }),
+  
+  description: text("description"),
+  code: varchar("code", { length: 100 }), // Código do produto no fornecedor
+  
+  costPrice: int("costPrice").default(0).notNull(), // Preço de custo em centavos
+  purchasePrice: int("purchasePrice").default(0).notNull(), // Preço de compra em centavos
+  
+  isDefault: boolean("isDefault").default(false).notNull(), // Fornecedor padrão
+  warranty: int("warranty").default(0), // Garantia em meses
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductSupplier = typeof productSuppliers.$inferSelect;
+export type InsertProductSupplier = typeof productSuppliers.$inferInsert;

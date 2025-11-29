@@ -91,6 +91,10 @@ export async function processWebhook(
         await handleOrderWebhook(action, webhook.data);
         break;
       
+      case 'product_supplier':
+        await handleProductSupplierWebhook(action, webhook.data);
+        break;
+      
       default:
         console.warn(`[Webhook] Unknown resource: ${resource}`);
     }
@@ -313,5 +317,72 @@ async function handleOrderWebhook(action: string, data: any) {
     
     default:
       console.warn(`[Webhook] Unknown order action: ${action}`);
+  }
+}
+
+
+/**
+ * Handler para webhooks de produto fornecedor
+ */
+async function handleProductSupplierWebhook(action: string, data: any) {
+  console.log(`[Webhook] Handling product_supplier.${action}`, data);
+  
+  const supplierId = data.id;
+  const productId = data.produto?.id;
+  const contactId = data.contato?.id;
+  
+  switch (action) {
+    case 'created':
+    case 'updated':
+      // Produto fornecedor criado ou atualizado
+      console.log(`[Webhook] Product supplier ${action}: ${supplierId}`);
+      
+      try {
+        // Buscar produto local pelo blingProductId
+        const localProduct = await db.getProductByBlingId(productId?.toString() || '');
+        
+        if (!localProduct) {
+          console.warn(`[Webhook] Product not found for supplier ${supplierId}, skipping`);
+          return;
+        }
+        
+        // Preparar dados do fornecedor
+        const supplierData = {
+          blingId: supplierId.toString(),
+          productId: localProduct.id,
+          blingProductId: productId?.toString() || '',
+          supplierId: contactId?.toString() || '',
+          supplierName: data.contato?.nome || null,
+          description: data.descricao || null,
+          code: data.codigo || null,
+          costPrice: data.precoCusto ? Math.round(data.precoCusto * 100) : 0,
+          purchasePrice: data.precoCompra ? Math.round(data.precoCompra * 100) : 0,
+          isDefault: data.padrao || false,
+          warranty: data.garantia || 0,
+        };
+        
+        // Upsert no banco
+        await db.upsertProductSupplier(supplierData);
+        
+        console.log(`[Webhook] ✅ Product supplier ${action}: ${supplierId} for product ${localProduct.name}`);
+      } catch (error) {
+        console.error(`[Webhook] Error processing product supplier ${supplierId}:`, error);
+      }
+      break;
+    
+    case 'deleted':
+      // Produto fornecedor excluído
+      console.log(`[Webhook] Product supplier deleted: ${supplierId}`);
+      
+      try {
+        await db.deleteProductSupplier(supplierId.toString());
+        console.log(`[Webhook] ✅ Product supplier deleted: ${supplierId}`);
+      } catch (error) {
+        console.error(`[Webhook] Error deleting product supplier ${supplierId}:`, error);
+      }
+      break;
+    
+    default:
+      console.warn(`[Webhook] Unknown product_supplier action: ${action}`);
   }
 }

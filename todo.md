@@ -215,3 +215,11 @@
 - [x] Integrar webhooks com análise ABC (vendas em tempo real)
 - [x] Atualizar alertas de estoque em tempo real
 - [x] Documentar configuração no Bling
+
+## Webhook de Produto Fornecedor
+
+- [x] Criar tabela product_suppliers no schema
+- [x] Implementar handler product_supplier.created
+- [x] Implementar handler product_supplier.updated
+- [x] Implementar handler product_supplier.deleted
+- [x] Adicionar ao monitoramento de webhooks
