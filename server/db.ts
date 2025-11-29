@@ -3,9 +3,10 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, 
   inventoryCounts, alerts, countSchedule, blingConfig,
-  syncHistory, syncConfig,
+  syncHistory, syncConfig, apiUsageLog,
   Product, Inventory, Sale, Alert, InventoryCount, CountSchedule, BlingConfig,
-  InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig
+  InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
+  ApiUsageLog, InsertApiUsageLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -517,4 +518,82 @@ export async function upsertSyncConfig(config: InsertSyncConfig) {
   } else {
     await db.insert(syncConfig).values(config);
   }
+}
+
+
+// ===== API Usage Tracking =====
+
+export async function logApiUsage(log: InsertApiUsageLog) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.insert(apiUsageLog).values(log);
+  } catch (error) {
+    console.error('[Database] Error logging API usage:', error);
+  }
+}
+
+export async function getApiUsageToday(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return db.select().from(apiUsageLog)
+    .where(and(
+      eq(apiUsageLog.userId, userId),
+      gte(apiUsageLog.timestamp, today)
+    ))
+    .orderBy(desc(apiUsageLog.timestamp));
+}
+
+export async function getApiUsageStats(userId: number, days: number = 7) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const logs = await db.select().from(apiUsageLog)
+    .where(and(
+      eq(apiUsageLog.userId, userId),
+      gte(apiUsageLog.timestamp, startDate)
+    ));
+  
+  const totalRequests = logs.length;
+  const rateLimitErrors = logs.filter(l => l.isRateLimitError).length;
+  const avgResponseTime = logs.length > 0 
+    ? logs.reduce((sum, l) => sum + (l.responseTime || 0), 0) / logs.length 
+    : 0;
+  
+  // Agrupar por dia
+  const byDay: Record<string, number> = {};
+  logs.forEach(log => {
+    const day = log.timestamp.toISOString().split('T')[0];
+    byDay[day] = (byDay[day] || 0) + 1;
+  });
+  
+  return {
+    totalRequests,
+    rateLimitErrors,
+    avgResponseTime: Math.round(avgResponseTime),
+    byDay,
+    dailyAverage: Math.round(totalRequests / days),
+  };
+}
+
+export async function getRecentRateLimitErrors(userId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(apiUsageLog)
+    .where(and(
+      eq(apiUsageLog.userId, userId),
+      eq(apiUsageLog.isRateLimitError, true)
+    ))
+    .orderBy(desc(apiUsageLog.timestamp))
+    .limit(limit);
 }

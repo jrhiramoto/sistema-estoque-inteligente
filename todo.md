@@ -177,3 +177,9 @@
 - [x] Implementar backoff exponencial inteligente para erro 429
 - [x] Adicionar circuit breaker para evitar bloqueio de IP
 - [x] Adicionar retry inteligente com limite de 3 tentativas
+- [x] Criar schema para rastreamento de uso de API (apiUsageLog)
+- [x] Implementar coleta automática de métricas no blingService
+- [x] Criar endpoints tRPC para consultar métricas de API
+- [x] Implementar página de monitoramento com gráficos
+- [x] Adicionar status do circuit breaker em tempo real
+- [x] Mostrar histórico de erros 429 e recuperações

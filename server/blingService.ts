@@ -206,13 +206,15 @@ async function blingRequest<T>(
   userId: number,
   endpoint: string,
   options: RequestInit = {},
-  attempt: number = 0
+  attempt: number = 0,
+  syncHistoryId?: number
 ): Promise<T> {
   // Verificar circuit breaker
   checkCircuitBreaker();
   
   const token = await ensureValidToken(userId);
   const url = `https://www.bling.com.br/Api/v3${endpoint}`;
+  const startTime = Date.now();
 
   console.log(`[Bling] Requisição: ${url}${attempt > 0 ? ` (tentativa ${attempt + 1}/${MAX_RETRIES + 1})` : ''}`);
 
@@ -225,8 +227,10 @@ async function blingRequest<T>(
     },
   });
 
+  const responseTime = Date.now() - startTime;
+
   // Log do status
-  console.log(`[Bling] Status: ${response.status} ${response.statusText}`);
+  console.log(`[Bling] Status: ${response.status} ${response.statusText} (${responseTime}ms)`);
 
   if (!response.ok) {
     const contentType = response.headers.get("content-type");
@@ -271,6 +275,19 @@ async function blingRequest<T>(
       consecutiveRateLimitErrors++;
       console.warn(`[Bling] ⚠️ Rate limit atingido (erro ${consecutiveRateLimitErrors}/${CIRCUIT_BREAKER_THRESHOLD})`);
       
+      // Registrar erro de rate limit
+      await db.logApiUsage({
+        userId,
+        endpoint,
+        method: options.method || 'GET',
+        statusCode: response.status,
+        responseTime,
+        isRateLimitError: true,
+        retryAttempt: attempt,
+        circuitBreakerActive,
+        syncHistoryId,
+      });
+      
       // Verificar se deve ativar circuit breaker
       if (consecutiveRateLimitErrors >= CIRCUIT_BREAKER_THRESHOLD) {
         activateCircuitBreaker();
@@ -285,7 +302,7 @@ async function blingRequest<T>(
         const backoffDelay = getBackoffDelay(attempt);
         console.log(`[Bling] Aguardando ${backoffDelay}ms antes de tentar novamente...`);
         await delay(backoffDelay);
-        return blingRequest<T>(userId, endpoint, options, attempt + 1);
+        return blingRequest<T>(userId, endpoint, options, attempt + 1, syncHistoryId);
       }
       
       throw new TRPCError({
@@ -299,6 +316,19 @@ async function blingRequest<T>(
 
   // Requisição bem-sucedida, resetar contador de erros
   resetRateLimitErrors();
+
+  // Registrar métrica de sucesso
+  await db.logApiUsage({
+    userId,
+    endpoint,
+    method: options.method || 'GET',
+    statusCode: response.status,
+    responseTime,
+    isRateLimitError: false,
+    retryAttempt: attempt,
+    circuitBreakerActive,
+    syncHistoryId,
+  });
 
   return await response.json();
 }

@@ -225,3 +225,23 @@ export const syncConfig = mysqlTable("sync_config", {
 
 export type SyncConfig = typeof syncConfig.$inferSelect;
 export type InsertSyncConfig = typeof syncConfig.$inferInsert;
+
+/**
+ * Rastreamento de uso da API do Bling
+ */
+export const apiUsageLog = mysqlTable("api_usage_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  endpoint: varchar("endpoint", { length: 500 }).notNull(),
+  method: varchar("method", { length: 10 }).notNull().default("GET"),
+  statusCode: int("status_code").notNull(),
+  responseTime: int("response_time"), // em milissegundos
+  isRateLimitError: boolean("is_rate_limit_error").default(false).notNull(),
+  retryAttempt: int("retry_attempt").default(0).notNull(),
+  circuitBreakerActive: boolean("circuit_breaker_active").default(false).notNull(),
+  syncHistoryId: int("sync_history_id"), // Relacionar com sincronização
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type ApiUsageLog = typeof apiUsageLog.$inferSelect;
+export type InsertApiUsageLog = typeof apiUsageLog.$inferInsert;

@@ -11,7 +11,8 @@ import {
   Package, 
   TrendingUp,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  Activity
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -178,7 +179,7 @@ export default function Home() {
             </div>
 
             {/* Ações Rápidas */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               <Link href="/products">
                 <Card className="hover:bg-accent cursor-pointer transition-colors">
                   <CardHeader>
@@ -215,6 +216,16 @@ export default function Home() {
                     <BarChart3 className="w-8 h-8 text-purple-600 mb-2" />
                     <CardTitle className="text-lg">Configurações</CardTitle>
                     <CardDescription>Integração e parâmetros</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+
+              <Link href="/api-monitoring">
+                <Card className="hover:bg-accent cursor-pointer transition-colors">
+                  <CardHeader>
+                    <Activity className="w-8 h-8 text-green-600 mb-2" />
+                    <CardTitle className="text-lg">Monitoramento API</CardTitle>
+                    <CardDescription>Uso e performance da API</CardDescription>
                   </CardHeader>
                 </Card>
               </Link>

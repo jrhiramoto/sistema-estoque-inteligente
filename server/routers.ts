@@ -346,6 +346,25 @@ export const appRouter = router({
     }),
   }),
 
+  // Monitoramento de API
+  apiMonitoring: router({
+    getUsageToday: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getApiUsageToday(ctx.user.id);
+    }),
+    
+    getUsageStats: protectedProcedure
+      .input(z.object({ days: z.number().default(7) }))
+      .query(async ({ ctx, input }) => {
+        return await db.getApiUsageStats(ctx.user.id, input.days);
+      }),
+    
+    getRecentErrors: protectedProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ ctx, input }) => {
+        return await db.getRecentRateLimitErrors(ctx.user.id, input.limit);
+      }),
+  }),
+
   // Dashboard - Métricas gerais
   dashboard: router({
     overview: protectedProcedure.query(async () => {
