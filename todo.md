@@ -356,3 +356,9 @@
 ## Melhorias de UX - Pedidos de Venda
 
 - [x] Adicionar botão de retorno ao dashboard na página de Pedidos de Venda
+
+## Correção de Erro JSON Inválido
+
+- [x] Investigar erro "Unexpected token '<'" na página de configurações
+- [x] Identificar qual mutation está retornando HTML ao invés de JSON
+- [x] Corrigir endpoint que está causando o erro (adicionar validação de Content-Type)

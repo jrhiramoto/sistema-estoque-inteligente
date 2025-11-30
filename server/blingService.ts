@@ -344,6 +344,14 @@ export async function blingRequest<T>(
     syncHistoryId,
   });
 
+  // Validar Content-Type antes de parsear JSON
+  const contentType = response.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    const text = await response.text();
+    console.error(`[Bling] Resposta não-JSON recebida (Content-Type: ${contentType}):`, text.substring(0, 500));
+    throw new Error(`API retornou ${contentType || 'conteúdo desconhecido'} em vez de JSON. Verifique se o endpoint está correto.`);
+  }
+
   return await response.json();
 }
 
