@@ -1,11 +1,11 @@
 import { eq, desc, and, gte, lte, sql, isNull, or, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
-  InsertUser, users, products, inventory, sales, 
+  InsertUser, users, products, inventory, sales, orders,
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
   productSuppliers,
-  Product, Inventory, Sale, Alert, InventoryCount, CountSchedule, BlingConfig,
+  Product, Inventory, Sale, Order, InsertOrder, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
   ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
   ProductSupplier, InsertProductSupplier
@@ -790,5 +790,107 @@ export async function getDataStats() {
     suppliers: suppliersCount.count,
     productsWithStock,
     sampleInventory,
+  };
+}
+
+// ===== Orders Management =====
+
+export async function listOrders(params?: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return { orders: [], total: 0 };
+
+  const { limit = 50, offset = 0, search, status } = params || {};
+
+  let conditions = [];
+  
+  if (search) {
+    conditions.push(
+      or(
+        like(orders.orderNumber, `%${search}%`),
+        like(orders.customerName, `%${search}%`),
+        like(orders.customerDocument, `%${search}%`)
+      )
+    );
+  }
+  
+  if (status) {
+    conditions.push(eq(orders.status, status));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [ordersList, countResult] = await Promise.all([
+    db
+      .select()
+      .from(orders)
+      .where(whereClause)
+      .orderBy(desc(orders.orderDate))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(whereClause),
+  ]);
+
+  return {
+    orders: ordersList,
+    total: Number(countResult[0]?.count || 0),
+  };
+}
+
+export async function getOrderById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getOrderByBlingId(blingId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(orders).where(eq(orders.blingId, blingId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertOrder(order: InsertOrder) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await getOrderByBlingId(order.blingId);
+
+  if (existing) {
+    await db
+      .update(orders)
+      .set({ ...order, updatedAt: new Date() })
+      .where(eq(orders.id, existing.id));
+    return existing.id;
+  } else {
+    const result = await db.insert(orders).values(order);
+    return result[0].insertId;
+  }
+}
+
+export async function getOrdersStats() {
+  const db = await getDb();
+  if (!db) return { total: 0, totalAmount: 0 };
+
+  const result = await db
+    .select({
+      total: sql<number>`count(*)`,
+      totalAmount: sql<number>`sum(${orders.totalAmount})`,
+    })
+    .from(orders);
+
+  return {
+    total: Number(result[0]?.total || 0),
+    totalAmount: Number(result[0]?.totalAmount || 0),
   };
 }

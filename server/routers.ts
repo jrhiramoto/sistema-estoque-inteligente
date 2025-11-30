@@ -445,6 +445,37 @@ export const appRouter = router({
       };
     }),
   }),
+
+  // Pedidos de Venda
+  orders: router({
+    list: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        search: z.string().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.listOrders(input);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const order = await db.getOrderById(input.id);
+        if (!order) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Pedido não encontrado',
+          });
+        }
+        return order;
+      }),
+
+    stats: protectedProcedure.query(async () => {
+      return await db.getOrdersStats();
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

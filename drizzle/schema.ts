@@ -99,6 +99,31 @@ export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = typeof inventory.$inferInsert;
 
 /**
+ * Pedidos de venda
+ */
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  blingId: varchar("blingId", { length: 64 }).notNull().unique(),
+  orderNumber: varchar("orderNumber", { length: 100 }).notNull(),
+  
+  customerName: varchar("customerName", { length: 255 }),
+  customerDocument: varchar("customerDocument", { length: 20 }),
+  
+  status: varchar("status", { length: 50 }), // Status do pedido (atendido, faturado, etc)
+  statusId: int("statusId"), // ID da situação no Bling
+  
+  totalAmount: int("totalAmount").notNull().default(0), // Valor total em centavos
+  itemsCount: int("itemsCount").notNull().default(0), // Quantidade de itens
+  
+  orderDate: timestamp("orderDate").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+
+/**
  * Histórico de vendas
  */
 export const sales = mysqlTable("sales", {

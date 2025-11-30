@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
+import Orders from "./pages/Orders";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import ApiMonitoring from "./pages/ApiMonitoring";
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/products"} component={Products} />
+      <Route path={"/orders"} component={Orders} />
       <Route path={"/alerts"} component={Alerts} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/api-monitoring"} component={ApiMonitoring} />

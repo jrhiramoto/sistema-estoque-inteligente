@@ -12,7 +12,8 @@ import {
   TrendingUp,
   ArrowRight,
   AlertTriangle,
-  Activity
+  Activity,
+  ShoppingCart
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -186,6 +187,16 @@ export default function Home() {
                     <Package className="w-8 h-8 text-primary mb-2" />
                     <CardTitle className="text-lg">Produtos</CardTitle>
                     <CardDescription>Gerenciar produtos e estoque</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+
+              <Link href="/orders">
+                <Card className="hover:bg-accent cursor-pointer transition-colors">
+                  <CardHeader>
+                    <ShoppingCart className="w-8 h-8 text-blue-600 mb-2" />
+                    <CardTitle className="text-lg">Pedidos de Venda</CardTitle>
+                    <CardDescription>Gerenciar pedidos e vendas</CardDescription>
                   </CardHeader>
                 </Card>
               </Link>

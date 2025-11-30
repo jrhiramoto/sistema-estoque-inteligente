@@ -343,3 +343,12 @@
 - [x] Verificar logs do servidor no momento do erro (18:17:08)
 - [x] Identificar qual query específica está falhando
 - [x] Aplicar correção similar à getSyncConfig em outras queries (getConfig)
+
+## Módulo de Pedidos de Venda
+
+- [x] Criar queries no backend para listar pedidos (ordenados por data, mais recentes primeiro)
+- [x] Criar endpoint tRPC para pedidos de venda
+- [x] Criar página Orders.tsx para listagem de pedidos
+- [x] Adicionar card "Pedidos de Venda" no dashboard
+- [x] Adicionar rota /orders no App.tsx
+- [ ] Testar listagem de pedidos após sincronização
