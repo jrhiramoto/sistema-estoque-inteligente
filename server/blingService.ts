@@ -177,9 +177,19 @@ async function ensureValidToken(userId: number): Promise<string> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[Bling] Erro ao renovar token:", errorText);
+      
+      // Limpar tokens inválidos do banco
+      await db.upsertBlingConfig({
+        userId,
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiresAt: null,
+        isActive: false,
+      });
+      
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Falha ao renovar token. Você precisa autorizar o aplicativo novamente.",
+        message: "Seu token do Bling expirou. Por favor, vá em Configurações e autorize o aplicativo novamente (Passo 2).",
       });
     }
 
@@ -206,7 +216,7 @@ async function ensureValidToken(userId: number): Promise<string> {
 /**
  * Faz uma requisição autenticada para a API do Bling com retry e backoff exponencial
  */
-async function blingRequest<T>(
+export async function blingRequest<T>(
   userId: number,
   endpoint: string,
   options: RequestInit = {},
@@ -743,4 +753,23 @@ export async function exchangeCodeForToken(
     refreshToken: tokenData.refresh_token,
     tokenExpiresAt: expiresAt,
   });
+}
+
+/**
+ * Lista todas as situações de pedidos disponíveis no Bling
+ */
+export async function listOrderSituations(userId: number): Promise<Array<{ id: number; nome: string; cor: string }>> {
+  console.log('[Bling] Listando situações de pedidos...');
+  
+  const response = await blingRequest<{
+    data: Array<{
+      id: number;
+      nome: string;
+      cor: string;
+    }>;
+  }>(userId, '/situacoes/modulos/Vendas');
+  
+  console.log(`[Bling] ✓ ${response.data.length} situações encontradas`);
+  
+  return response.data;
 }

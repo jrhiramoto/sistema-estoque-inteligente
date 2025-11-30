@@ -110,6 +110,38 @@ export default function Settings() {
       toast.error(error.message || "Erro ao salvar configuração");
     },
   });
+  
+  const listOrderSituations = trpc.bling.listOrderSituations.useQuery(
+    undefined,
+    { enabled: false } // Só executa quando chamado manualmente
+  );
+  
+  const handleListSituations = async () => {
+    try {
+      const result = await listOrderSituations.refetch();
+      if (result.data) {
+        const situationsText = result.data
+          .map(s => `ID: ${s.id} - ${s.nome}`)
+          .join('\n');
+        
+        toast.success(
+          <div className="space-y-2">
+            <p className="font-semibold">Situações de Pedidos do Bling:</p>
+            <pre className="text-xs whitespace-pre-wrap max-h-60 overflow-y-auto">
+              {situationsText}
+            </pre>
+          </div>,
+          { duration: 10000 }
+        );
+      }
+    } catch (error: any) {
+      // Se erro de autorização, invalidar config para atualizar UI
+      if (error.message?.includes('expirou') || error.message?.includes('autorize')) {
+        utils.bling.getConfig.invalidate();
+      }
+      toast.error(error.message || "Erro ao listar situações");
+    }
+  };
 
   const handleSaveCredentials = () => {
     if (!clientId || !clientSecret) {
@@ -414,7 +446,19 @@ export default function Settings() {
 
                 <Separator />
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <Button
+                    onClick={handleListSituations}
+                    disabled={listOrderSituations.isFetching}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {listOrderSituations.isFetching ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    Listar Situações de Pedidos
+                  </Button>
+                  
                   <Button
                     onClick={handleSync}
                     disabled={syncAll.isPending || syncStatus?.isRunning}

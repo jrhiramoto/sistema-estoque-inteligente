@@ -175,6 +175,21 @@ export const appRouter = router({
         
         return { success: true };
       }),
+    
+    // Listar situações de pedidos disponíveis no Bling
+    listOrderSituations: protectedProcedure.query(async ({ ctx }) => {
+      try {
+        const situations = await blingService.listOrderSituations(ctx.user.id);
+        return situations;
+      } catch (error: any) {
+        console.error("[listOrderSituations] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao listar situações de pedidos",
+          cause: error,
+        });
+      }
+    }),
   }),
 
   // Debug

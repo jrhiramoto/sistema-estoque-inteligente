@@ -277,3 +277,45 @@
 - [ ] Criar função syncProductSuppliers no blingService
 - [ ] Adicionar sincronização de fornecedores ao fluxo completo
 - [ ] Testar sincronização de fornecedores
+
+
+## Correção de Erro ao Listar Situações de Pedidos
+
+- [x] Corrigir erro ao listar situações de pedidos quando token está expirado
+- [x] Melhorar mensagem de erro quando usuário precisa reautorizar
+- [x] Adicionar tratamento de erro UNAUTHORIZED no frontend
+
+## Validação Pós-Reconexão com Bling
+
+### Teste de Conexão
+- [ ] Verificar status "Conectado" na página de Configurações
+- [ ] Confirmar token válido no banco de dados
+- [ ] Testar requisição simples à API do Bling
+
+### Sincronização Manual Completa
+- [ ] Executar sincronização manual de produtos
+- [ ] Executar sincronização manual de estoque
+- [ ] Executar sincronização manual de vendas
+- [x] Adicionar sincronização de fornecedores ao fluxo
+- [ ] Executar sincronização completa (full)
+
+### Validação de Dados
+- [ ] Verificar quantidade de produtos sincronizados
+- [ ] Verificar saldos de estoque atualizados
+- [ ] Verificar vendas sincronizadas (com filtro de status)
+- [ ] Verificar fornecedores vinculados aos produtos
+- [ ] Comparar amostra de dados com Bling
+
+### Teste de Webhooks
+- [ ] Criar produto de teste no Bling
+- [ ] Verificar se webhook foi recebido
+- [ ] Editar produto no Bling
+- [ ] Verificar atualização em tempo real
+- [ ] Lançar movimento de estoque no Bling
+- [ ] Verificar atualização de saldo
+
+### Monitoramento
+- [ ] Verificar painel de Monitoramento API
+- [ ] Confirmar taxa de sucesso de webhooks
+- [ ] Verificar consumo de requisições
+- [ ] Validar logs de renovação automática de token

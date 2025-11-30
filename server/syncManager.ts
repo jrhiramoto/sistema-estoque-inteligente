@@ -6,6 +6,7 @@
 
 import * as db from "./db";
 import * as blingService from "./blingService";
+import { syncAllProductSuppliers } from "./syncProductSuppliers";
 
 // Lock global de sincronização
 let syncLock: {
@@ -156,7 +157,7 @@ async function executeSyncInternal(
         });
         break;
       case "full":
-        // Sincronização completa (produtos + estoque + vendas)
+        // Sincronização completa (produtos + estoque + vendas + fornecedores)
         const products = await blingService.syncProducts(userId, false, (current, total, message) => {
           updateProgress(current, total, `Produtos: ${message}`);
         });
@@ -167,8 +168,19 @@ async function executeSyncInternal(
           updateProgress(current, total, `Vendas: ${message}`);
         });
         
+        // Sincronizar fornecedores de produtos
+        console.log('[Sync] Iniciando sincronização de fornecedores...');
+        const suppliers = await syncAllProductSuppliers(
+          userId,
+          blingService.blingRequest,
+          (current, total) => {
+            updateProgress(current, total, `Fornecedores: ${current}/${total} produtos processados`);
+          }
+        );
+        console.log(`[Sync] Fornecedores sincronizados: ${suppliers.totalSuppliers} de ${suppliers.totalProducts} produtos`);
+        
         result = {
-          synced: products.synced + inventory.synced + sales.synced,
+          synced: products.synced + inventory.synced + sales.synced + suppliers.totalSuppliers,
           errors: products.errors + inventory.errors + sales.errors,
         };
         break;

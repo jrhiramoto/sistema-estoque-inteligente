@@ -1,0 +1,18 @@
+{
+  "query": "SELECT userId, accessToken IS NOT NULL as hasAccessToken, refreshToken IS NOT NULL as hasRefreshToken, tokenExpiresAt, TIMESTAMPDIFF(MINUTE, NOW(), tokenExpiresAt) as minutesUntilExpiry, updatedAt FROM bling_config ORDER BY updatedAt DESC LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT userId, accessToken IS NOT NULL as hasAccessToken, refreshToken IS NOT NULL as hasRefreshToken, tokenExpiresAt, TIMESTAMPDIFF(MINUTE, NOW(), tokenExpiresAt) as minutesUntilExpiry, updatedAt FROM bling_config ORDER BY updatedAt DESC LIMIT 1;",
+  "rows": [
+    {
+      "userId": "1",
+      "hasAccessToken": "1",
+      "hasRefreshToken": "1",
+      "tokenExpiresAt": "2025-11-29 16:52:18",
+      "minutesUntilExpiry": "359",
+      "updatedAt": "2025-11-29 10:52:18"
+    }
+  ],
+  "messages": [],
+  "stdout": "userId\thasAccessToken\thasRefreshToken\ttokenExpiresAt\tminutesUntilExpiry\tupdatedAt\n1\t1\t1\t2025-11-29 16:52:18\t359\t2025-11-29 10:52:18\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}
