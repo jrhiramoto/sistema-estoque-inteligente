@@ -331,3 +331,9 @@
 - [x] Investigar qual query está retornando erro "Não encontrado"
 - [x] Corrigir mensagem de erro para ser mais específica
 - [x] Adicionar tratamento de erro adequado no frontend
+
+## Correção de Erro Persistente "Não encontrado" (getSyncConfig)
+
+- [x] Verificar se getSyncConfig está retornando null corretamente
+- [x] Garantir que todas as queries retornem null ao invés de undefined
+- [x] Adicionar valor padrão para syncConfig quando não existir no banco

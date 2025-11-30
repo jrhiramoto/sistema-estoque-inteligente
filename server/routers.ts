@@ -154,7 +154,19 @@ export const appRouter = router({
     
     // Configuração de sincronização automática
     getSyncConfig: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getSyncConfig(ctx.user.id);
+      let config = await db.getSyncConfig(ctx.user.id);
+      
+      // Se não existir, criar com valores padrão
+      if (!config) {
+        await db.upsertSyncConfig({
+          userId: ctx.user.id,
+          autoSyncEnabled: false,
+          syncFrequencyHours: 168, // 1 semana
+        });
+        config = await db.getSyncConfig(ctx.user.id);
+      }
+      
+      return config;
     }),
     
     saveSyncConfig: protectedProcedure
