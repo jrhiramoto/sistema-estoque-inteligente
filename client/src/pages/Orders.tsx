@@ -27,6 +27,7 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Select,
@@ -101,11 +102,19 @@ export default function Orders() {
   return (
     <div className="container py-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Pedidos de Venda</h1>
-        <p className="text-muted-foreground mt-2">
-          Gerencie todos os pedidos de venda sincronizados do Bling
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Pedidos de Venda</h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie todos os pedidos de venda sincronizados do Bling
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <a href="/">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Dashboard
+          </a>
+        </Button>
       </div>
 
       {/* Stats Cards */}

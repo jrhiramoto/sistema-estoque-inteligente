@@ -352,3 +352,7 @@
 - [x] Adicionar card "Pedidos de Venda" no dashboard
 - [x] Adicionar rota /orders no App.tsx
 - [ ] Testar listagem de pedidos após sincronização
+
+## Melhorias de UX - Pedidos de Venda
+
+- [x] Adicionar botão de retorno ao dashboard na página de Pedidos de Venda
