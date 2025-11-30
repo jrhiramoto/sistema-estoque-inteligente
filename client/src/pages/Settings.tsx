@@ -449,9 +449,10 @@ export default function Settings() {
                 <div className="flex justify-between">
                   <Button
                     onClick={handleListSituations}
-                    disabled={listOrderSituations.isFetching}
+                    disabled={listOrderSituations.isFetching || !config?.isActive}
                     variant="outline"
                     size="sm"
+                    title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
                   >
                     {listOrderSituations.isFetching ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />

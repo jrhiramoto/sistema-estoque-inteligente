@@ -131,7 +131,7 @@ async function ensureValidToken(userId: number): Promise<string> {
   if (!config) {
     throw new TRPCError({
       code: "NOT_FOUND",
-      message: "Configuração do Bling não encontrada",
+      message: "Configuração do Bling não encontrada. Por favor, configure suas credenciais primeiro (Passo 1).",
     });
   }
 
