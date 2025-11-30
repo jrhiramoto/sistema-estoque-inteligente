@@ -25,7 +25,23 @@ export const appRouter = router({
   // Configuração do Bling
   bling: router({
     getConfig: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getBlingConfig(ctx.user.id);
+      let config = await db.getBlingConfig(ctx.user.id);
+      
+      // Se não existir, criar com valores padrão
+      if (!config) {
+        await db.upsertBlingConfig({
+          userId: ctx.user.id,
+          clientId: null,
+          clientSecret: null,
+          accessToken: null,
+          refreshToken: null,
+          tokenExpiresAt: null,
+          isActive: false,
+        });
+        config = await db.getBlingConfig(ctx.user.id);
+      }
+      
+      return config;
     }),
     
     saveConfig: protectedProcedure

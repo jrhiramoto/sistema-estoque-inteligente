@@ -337,3 +337,9 @@
 - [x] Verificar se getSyncConfig está retornando null corretamente
 - [x] Garantir que todas as queries retornem null ao invés de undefined
 - [x] Adicionar valor padrão para syncConfig quando não existir no banco
+
+## Investigar Erro "Não encontrado" Persistente
+
+- [x] Verificar logs do servidor no momento do erro (18:17:08)
+- [x] Identificar qual query específica está falhando
+- [x] Aplicar correção similar à getSyncConfig em outras queries (getConfig)
