@@ -752,6 +752,7 @@ export async function exchangeCodeForToken(
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     tokenExpiresAt: expiresAt,
+    isActive: true, // Marcar como ativo após autorização bem-sucedida
   });
 }
 

@@ -319,3 +319,9 @@
 - [ ] Confirmar taxa de sucesso de webhooks
 - [ ] Verificar consumo de requisições
 - [ ] Validar logs de renovação automática de token
+
+## Correção de Status Após Autorização OAuth
+
+- [x] Corrigir atualização automática do status "Conectado" após autorização
+- [x] Garantir que isActive seja definido como true após troca de código por token
+- [x] Invalidar cache da query getConfig no frontend após autorização bem-sucedida
