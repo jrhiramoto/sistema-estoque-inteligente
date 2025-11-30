@@ -362,3 +362,15 @@
 - [x] Investigar erro "Unexpected token '<'" na página de configurações
 - [x] Identificar qual mutation está retornando HTML ao invés de JSON
 - [x] Corrigir endpoint que está causando o erro (adicionar validação de Content-Type)
+
+## Sincronizações Granulares
+
+- [x] Criar endpoint separado para sincronizar apenas produtos
+- [x] Criar endpoint separado para sincronizar apenas vendas
+- [x] Criar endpoint separado para sincronizar apenas fornecedores
+- [x] Adicionar tipo "suppliers" ao schema e syncManager
+- [x] Aplicar migração do banco de dados
+- [x] Atualizar interface de Configurações com botões individuais
+- [x] Adicionar indicadores de progresso para cada tipo de sincronização
+- [x] Manter botão "Sincronizar Tudo" para sincronização completa
+- [x] Testar cada sincronização individual

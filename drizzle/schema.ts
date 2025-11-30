@@ -219,7 +219,7 @@ export type InsertCountSchedule = typeof countSchedule.$inferInsert;
  */
 export const syncHistory = mysqlTable("sync_history", {
   id: int("id").autoincrement().primaryKey(),
-  syncType: mysqlEnum("sync_type", ["products", "inventory", "sales", "full"]).notNull(),
+  syncType: mysqlEnum("sync_type", ["products", "inventory", "sales", "suppliers", "full"]).notNull(),
   status: mysqlEnum("status", ["running", "completed", "failed", "queued", "retrying"]).notNull(),
   itemsSynced: int("items_synced").default(0).notNull(),
   itemsErrors: int("items_errors").default(0).notNull(),

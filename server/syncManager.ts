@@ -98,7 +98,7 @@ function releaseLock() {
  */
 export async function executeSync(
   userId: number,
-  syncType: "products" | "inventory" | "sales" | "full",
+  syncType: "products" | "inventory" | "sales" | "suppliers" | "full",
   triggeredBy: "manual" | "scheduled" | "webhook" = "manual"
 ): Promise<{ success: boolean; historyId: number; queued: boolean; message: string }> {
   
@@ -133,7 +133,7 @@ export async function executeSync(
  */
 async function executeSyncInternal(
   userId: number,
-  syncType: "products" | "inventory" | "sales" | "full",
+  syncType: "products" | "inventory" | "sales" | "suppliers" | "full",
   triggeredBy: "manual" | "scheduled" | "webhook",
   historyId: number
 ) {
@@ -155,6 +155,15 @@ async function executeSyncInternal(
         result = await blingService.syncSales(userId, false, (current, total, message) => {
           updateProgress(current, total, message);
         });
+        break;
+      case "suppliers":
+        result = await syncAllProductSuppliers(
+          userId,
+          blingService.blingRequest,
+          (current, total) => {
+            updateProgress(current, total, `Fornecedores: ${current}/${total} produtos processados`);
+          }
+        );
         break;
       case "full":
         // Sincronização completa (produtos + estoque + vendas + fornecedores)

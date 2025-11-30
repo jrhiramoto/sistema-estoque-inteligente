@@ -136,6 +136,20 @@ export const appRouter = router({
       }
     }),
     
+    syncSuppliers: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const result = await syncManager.executeSync(ctx.user.id, "suppliers", "manual");
+        return result;
+      } catch (error: any) {
+        console.error("[syncSuppliers] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao sincronizar fornecedores",
+          cause: error,
+        });
+      }
+    }),
+    
     syncAll: protectedProcedure.mutation(async ({ ctx }) => {
       try {
         const result = await syncManager.executeSync(ctx.user.id, "full", "manual");

@@ -485,7 +485,7 @@ export async function getRecentSyncHistory(limit: number = 10) {
   return db.select().from(syncHistory).orderBy(desc(syncHistory.startedAt)).limit(limit);
 }
 
-export async function getLastSuccessfulSync(userId: number, syncType: 'products' | 'inventory' | 'sales' | 'full') {
+export async function getLastSuccessfulSync(userId: number, syncType: 'products' | 'inventory' | 'sales' | 'suppliers' | 'full') {
   const db = await getDb();
   if (!db) return null;
   

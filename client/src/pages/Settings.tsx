@@ -93,11 +93,52 @@ export default function Settings() {
       if (data.queued) {
         toast.info(data.message);
       } else {
-        toast.success(data.message);
+        toast.success("Sincronização completa iniciada!");
       }
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao sincronizar");
+    },
+  });
+  
+  const syncProducts = trpc.bling.syncProducts.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      utils.dashboard.overview.invalidate();
+      toast.success("Sincronização de produtos iniciada!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao sincronizar produtos");
+    },
+  });
+  
+  const syncInventory = trpc.bling.syncInventory.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      toast.success("Sincronização de estoque iniciada!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao sincronizar estoque");
+    },
+  });
+  
+  const syncSales = trpc.bling.syncSales.useMutation({
+    onSuccess: () => {
+      utils.orders.list.invalidate();
+      utils.orders.stats.invalidate();
+      toast.success("Sincronização de vendas iniciada!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao sincronizar vendas");
+    },
+  });
+  
+  const syncSuppliers = trpc.bling.syncSuppliers.useMutation({
+    onSuccess: () => {
+      toast.success("Sincronização de fornecedores iniciada!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao sincronizar fornecedores");
     },
   });
   
@@ -446,32 +487,102 @@ export default function Settings() {
 
                 <Separator />
 
-                <div className="flex justify-between">
-                  <Button
-                    onClick={handleListSituations}
-                    disabled={listOrderSituations.isFetching || !config?.isActive}
-                    variant="outline"
-                    size="sm"
-                    title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
-                  >
-                    {listOrderSituations.isFetching ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    Listar Situações de Pedidos
-                  </Button>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Sincronizações Granulares</h4>
+                    <Button
+                      onClick={handleListSituations}
+                      disabled={listOrderSituations.isFetching || !config?.isActive}
+                      variant="outline"
+                      size="sm"
+                      title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
+                    >
+                      {listOrderSituations.isFetching ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
+                      Listar Situações de Pedidos
+                    </Button>
+                  </div>
                   
-                  <Button
-                    onClick={handleSync}
-                    disabled={syncAll.isPending || syncStatus?.isRunning}
-                    size="lg"
-                  >
-                    {(syncAll.isPending || syncStatus?.isRunning) ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    {syncStatus?.isRunning ? "Sincronizando..." : "Sincronizar Agora"}
-                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Sincronize apenas o que você precisa para economizar tempo e chamadas à API.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button
+                      onClick={() => syncProducts.mutate()}
+                      disabled={syncProducts.isPending || syncStatus?.isRunning}
+                      variant="outline"
+                      className="h-auto flex-col gap-2 py-4"
+                    >
+                      {syncProducts.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-5 h-5" />
+                      )}
+                      <span className="text-xs">Produtos</span>
+                    </Button>
+                    
+                    <Button
+                      onClick={() => syncInventory.mutate()}
+                      disabled={syncInventory.isPending || syncStatus?.isRunning}
+                      variant="outline"
+                      className="h-auto flex-col gap-2 py-4"
+                    >
+                      {syncInventory.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-5 h-5" />
+                      )}
+                      <span className="text-xs">Estoque</span>
+                    </Button>
+                    
+                    <Button
+                      onClick={() => syncSales.mutate()}
+                      disabled={syncSales.isPending || syncStatus?.isRunning}
+                      variant="outline"
+                      className="h-auto flex-col gap-2 py-4"
+                    >
+                      {syncSales.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-5 h-5" />
+                      )}
+                      <span className="text-xs">Vendas</span>
+                    </Button>
+                    
+                    <Button
+                      onClick={() => syncSuppliers.mutate()}
+                      disabled={syncSuppliers.isPending || syncStatus?.isRunning}
+                      variant="outline"
+                      className="h-auto flex-col gap-2 py-4"
+                    >
+                      {syncSuppliers.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-5 h-5" />
+                      )}
+                      <span className="text-xs">Fornecedores</span>
+                    </Button>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleSync}
+                      disabled={syncAll.isPending || syncStatus?.isRunning}
+                      size="lg"
+                      className="w-full md:w-auto"
+                    >
+                      {(syncAll.isPending || syncStatus?.isRunning) ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                      )}
+                      {syncStatus?.isRunning ? "Sincronizando..." : "Sincronizar Tudo"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
