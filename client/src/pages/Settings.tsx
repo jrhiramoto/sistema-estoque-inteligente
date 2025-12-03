@@ -13,6 +13,8 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -48,6 +50,8 @@ export default function Settings() {
   const [authCode, setAuthCode] = useState("");
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [syncFrequencyHours, setSyncFrequencyHours] = useState("168");
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testOrdersData, setTestOrdersData] = useState<any>(null);
 
   useEffect(() => {
     if (hasConfig) {
@@ -156,6 +160,18 @@ export default function Settings() {
     undefined,
     { enabled: false } // Só executa quando chamado manualmente
   );
+  
+  const testFetchOrders = trpc.bling.testFetchOrders.useMutation({
+    onSuccess: (data) => {
+      console.log('[Test] Pedidos retornados:', data);
+      setTestOrdersData(data);
+      setShowTestModal(true);
+      toast.success(`Teste concluído! ${data.count} pedidos encontrados.`);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao buscar pedidos: ${error.message}`);
+    },
+  });
   
   const handleListSituations = async () => {
     try {
@@ -489,12 +505,12 @@ export default function Settings() {
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">Sincronizações Granulares</h4>
+                       <div className="flex items-center gap-2 mb-4">
                     <Button
-                      onClick={handleListSituations}
-                      disabled={listOrderSituations.isFetching || !config?.isActive}
                       variant="outline"
                       size="sm"
+                      onClick={handleListSituations}
+                      disabled={!config?.isActive || listOrderSituations.isFetching}
                       title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
                     >
                       {listOrderSituations.isFetching ? (
@@ -502,6 +518,20 @@ export default function Settings() {
                       ) : null}
                       Listar Situações de Pedidos
                     </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => testFetchOrders.mutate({})}
+                      disabled={!config?.isActive || testFetchOrders.isPending}
+                      title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
+                    >
+                      {testFetchOrders.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
+                      Testar Busca de Pedidos (5 últimos)
+                    </Button>
+                  </div>
                   </div>
                   
                   <p className="text-sm text-muted-foreground">
@@ -702,6 +732,133 @@ export default function Settings() {
           </Card>
         </div>
       </div>
+      
+      {/* Modal de Visualização de Pedidos de Teste */}
+      <Dialog open={showTestModal} onOpenChange={setShowTestModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Pedidos de Venda - Teste de Busca</DialogTitle>
+            <DialogDescription>
+              {testOrdersData?.count || 0} pedidos encontrados nos últimos 30 dias
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[60vh] pr-4">
+            {testOrdersData?.pedidos && testOrdersData.pedidos.length > 0 ? (
+              <div className="space-y-4">
+                {testOrdersData.pedidos.map((pedido: any, index: number) => (
+                  <Card key={pedido.id || index}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">
+                          Pedido #{pedido.numero}
+                        </CardTitle>
+                        <Badge variant={pedido.situacao?.valor === 1 ? "default" : "secondary"}>
+                          Situação ID: {pedido.situacao?.id}
+                        </Badge>
+                      </div>
+                      <CardDescription>
+                        ID Bling: {pedido.id} | Data: {pedido.data}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {/* Informações do Cliente */}
+                      {pedido.contato && (
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-sm font-medium mb-1">Cliente</p>
+                          <p className="text-sm">{pedido.contato.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {pedido.contato.tipoPessoa === 'J' ? 'CNPJ' : 'CPF'}: {pedido.contato.numeroDocumento}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Informações do Pedido */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Produtos</p>
+                          <p className="text-sm font-medium">{pedido.totalProdutos}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Valor Total</p>
+                          <p className="text-sm font-medium">R$ {pedido.total?.toFixed(2)}</p>
+                        </div>
+                        {pedido.dataSaida && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">Data Saída</p>
+                            <p className="text-sm font-medium">{pedido.dataSaida}</p>
+                          </div>
+                        )}
+                        {pedido.dataPrevista && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">Data Prevista</p>
+                            <p className="text-sm font-medium">{pedido.dataPrevista}</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Itens do Pedido */}
+                      {pedido.itens && pedido.itens.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Itens ({pedido.itens.length})</p>
+                          <div className="space-y-2">
+                            {pedido.itens.slice(0, 3).map((item: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                                <div className="flex-1">
+                                  <p className="font-medium">{item.produto?.nome || 'Produto sem nome'}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Código: {item.produto?.codigo || 'N/A'} | ID: {item.produto?.id}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">{item.quantidade}x R$ {item.valor?.toFixed(2)}</p>
+                                  {item.desconto > 0 && (
+                                    <p className="text-xs text-orange-600">Desc: R$ {item.desconto?.toFixed(2)}</p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            {pedido.itens.length > 3 && (
+                              <p className="text-xs text-muted-foreground text-center">
+                                + {pedido.itens.length - 3} itens adicionais
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Loja */}
+                      {pedido.loja && (
+                        <div className="text-xs text-muted-foreground">
+                          Loja: {pedido.loja.nome} (ID: {pedido.loja.id})
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum pedido encontrado
+              </div>
+            )}
+          </ScrollArea>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowTestModal(false)}>
+              Fechar
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('Dados completos:', testOrdersData);
+                toast.success('Dados completos exibidos no console (F12)');
+              }}
+            >
+              Ver JSON Completo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

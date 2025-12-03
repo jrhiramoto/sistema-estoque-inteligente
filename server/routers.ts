@@ -218,6 +218,18 @@ export const appRouter = router({
         return { success: true };
       }),
     
+    // Endpoint de teste para buscar pedidos de venda
+    testFetchOrders: protectedProcedure
+      .input(z.object({
+        dataInicial: z.string().optional(),
+        dataFinal: z.string().optional(),
+        limite: z.number().min(1).max(100).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { testFetchOrders } = await import('./blingService');
+        return await testFetchOrders(ctx.user.id, input);
+      }),
+    
     // Listar situações de pedidos disponíveis no Bling
     listOrderSituations: protectedProcedure.query(async ({ ctx }) => {
       try {

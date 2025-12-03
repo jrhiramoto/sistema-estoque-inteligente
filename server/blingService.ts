@@ -782,3 +782,87 @@ export async function listOrderSituations(userId: number): Promise<Array<{ id: n
   
   return response.data;
 }
+
+
+/**
+ * Função de teste para buscar pedidos de venda do Bling
+ * Retorna dados brutos para validação antes de implementar sincronização completa
+ */
+export async function testFetchOrders(
+  userId: number,
+  options: {
+    dataInicial?: string;
+    dataFinal?: string;
+    limite?: number;
+  } = {}
+) {
+  const {
+    dataInicial = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias atrás
+    dataFinal = new Date().toISOString().split('T')[0], // hoje
+    limite = 5, // buscar apenas 5 pedidos para teste
+  } = options;
+
+  console.log(`[Bling Test] Buscando pedidos de venda - Data: ${dataInicial} a ${dataFinal}, Limite: ${limite}`);
+
+  try {
+    // Buscar pedidos sem filtro de situação para ver o que retorna
+    const response = await blingRequest<{ data: any[] }>(
+      userId,
+      `/pedidos/vendas?pagina=1&limite=${limite}&dataInicial=${dataInicial}&dataFinal=${dataFinal}`
+    );
+
+    const pedidos = response.data || [];
+    
+    console.log(`[Bling Test] ${pedidos.length} pedidos retornados`);
+    
+    // Log detalhado de cada pedido para análise
+    pedidos.forEach((pedido, index) => {
+      console.log(`[Bling Test] Pedido ${index + 1}:`, JSON.stringify(pedido, null, 2));
+    });
+
+    return {
+      success: true,
+      count: pedidos.length,
+      pedidos: pedidos.map((p: any) => ({
+        id: p.id,
+        numero: p.numero,
+        numeroLoja: p.numeroLoja,
+        data: p.data,
+        dataSaida: p.dataSaida,
+        dataPrevista: p.dataPrevista,
+        totalProdutos: p.totalProdutos,
+        total: p.total,
+        contato: p.contato ? {
+          id: p.contato.id,
+          nome: p.contato.nome,
+          tipoPessoa: p.contato.tipoPessoa,
+          numeroDocumento: p.contato.numeroDocumento,
+        } : null,
+        situacao: p.situacao ? {
+          id: p.situacao.id,
+          valor: p.situacao.valor,
+        } : null,
+        loja: p.loja ? {
+          id: p.loja.id,
+          nome: p.loja.nome,
+        } : null,
+        itens: p.itens ? p.itens.map((item: any) => ({
+          produto: {
+            id: item.produto?.id,
+            nome: item.produto?.nome,
+            codigo: item.produto?.codigo,
+          },
+          quantidade: item.quantidade,
+          valor: item.valor,
+          desconto: item.desconto,
+        })) : [],
+      })),
+    };
+  } catch (error: any) {
+    console.error('[Bling Test] Erro ao buscar pedidos:', error);
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `Erro ao buscar pedidos de teste: ${error.message}`,
+    });
+  }
+}

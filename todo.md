@@ -374,3 +374,19 @@
 - [x] Adicionar indicadores de progresso para cada tipo de sincronização
 - [x] Manter botão "Sincronizar Tudo" para sincronização completa
 - [x] Testar cada sincronização individual
+
+## Correção de Sincronização de Vendas
+
+- [x] Estudar documentação da API do Bling para pedidos de venda
+- [x] Identificar endpoint correto e parâmetros necessários
+- [x] Criar endpoint de teste para buscar alguns pedidos
+- [ ] Validar estrutura de dados retornada com usuário
+- [ ] Corrigir mapeamento de campos (número, data, cliente, itens, valor)
+- [ ] Implementar sincronização completa de vendas
+- [ ] Testar sincronização e validar dados no banco
+
+## Melhorias de UX - Teste de Pedidos
+
+- [x] Criar modal para exibir pedidos de teste de forma visual
+- [x] Mostrar dados dos pedidos em formato tabular/card
+- [x] Facilitar validação sem precisar abrir console do navegador
