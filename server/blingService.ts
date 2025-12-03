@@ -643,41 +643,67 @@ export async function syncSales(
         consecutiveEmptyPages = 0;
 
         for (const pedido of pedidos) {
-          // Log da situação para debug
-          console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
-          
-          // Validar situação (redundante, mas garante segurança)
-          if (!situacoesValidas.includes(pedido.situacao.id)) {
-            console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
-            continue;
-          }
-          
-          for (const item of pedido.itens) {
-            try {
-              // Buscar produto pelo blingId
-              const product = await db.getProductByBlingId(String(item.produto.id));
-              
-              if (product) {
-                await db.insertSale({
-                  blingOrderId: String(pedido.id),
-                  productId: product.id,
-                  quantity: Math.round(item.quantidade),
-                  unitPrice: Math.round(item.valor * 100), // converter para centavos
-                  totalPrice: Math.round(item.valor * item.quantidade * 100),
-                  orderStatus: pedido.situacao?.valor || null,
-                  saleDate: new Date(pedido.data),
-                });
-                synced++;
-                
-                // Atualizar progresso a cada 10 vendas
-                if (synced % 10 === 0 && onProgress) {
-                  onProgress(synced, null, `Sincronizando vendas - ${synced} itens`);
-                }
-              }
-            } catch (error) {
-              // Pode dar erro de duplicação se já existir, ignorar
-              errors++;
+          try {
+            // Log da situação para debug
+            console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
+            
+            // Validar situação (redundante, mas garante segurança)
+            if (!situacoesValidas.includes(pedido.situacao.id)) {
+              console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
+              continue;
             }
+            
+            // Calcular total do pedido (soma dos itens)
+            const totalAmount = pedido.itens.reduce((sum, item) => {
+              return sum + (item.valor * item.quantidade);
+            }, 0);
+            
+            // Salvar pedido completo na tabela orders
+            await db.upsertOrder({
+              blingId: String(pedido.id),
+              orderNumber: pedido.numero,
+              orderDate: new Date(pedido.data),
+              customerName: (pedido as any).contato?.nome || null,
+              customerDocument: (pedido as any).contato?.numeroDocumento || null,
+              status: pedido.situacao?.valor || 'Desconhecido',
+              statusId: pedido.situacao?.id || 0,
+              totalAmount: Math.round(totalAmount * 100), // converter para centavos
+              itemsCount: pedido.itens.length,
+            });
+            
+            // Salvar itens individuais na tabela sales (histórico detalhado)
+            for (const item of pedido.itens) {
+              try {
+                // Buscar produto pelo blingId
+                const product = await db.getProductByBlingId(String(item.produto.id));
+                
+                if (product) {
+                  await db.insertSale({
+                    blingOrderId: String(pedido.id),
+                    productId: product.id,
+                    quantity: Math.round(item.quantidade),
+                    unitPrice: Math.round(item.valor * 100), // converter para centavos
+                    totalPrice: Math.round(item.valor * item.quantidade * 100),
+                    orderStatus: pedido.situacao?.valor || null,
+                    saleDate: new Date(pedido.data),
+                  });
+                }
+              } catch (error) {
+                // Pode dar erro de duplicação se já existir, ignorar
+                console.log(`[Bling] Erro ao salvar item do pedido ${pedido.numero}:`, error);
+              }
+            }
+            
+            synced++;
+            
+            // Atualizar progresso a cada pedido
+            if (onProgress) {
+              onProgress(synced, null, `Sincronizando vendas - ${synced} pedidos`);
+            }
+            
+          } catch (error: any) {
+            console.error(`[Bling] Erro ao processar pedido ${pedido.numero}:`, error.message);
+            errors++;
           }
         }
         

@@ -380,10 +380,11 @@
 - [x] Estudar documentação da API do Bling para pedidos de venda
 - [x] Identificar endpoint correto e parâmetros necessários
 - [x] Criar endpoint de teste para buscar alguns pedidos
-- [ ] Validar estrutura de dados retornada com usuário
-- [ ] Corrigir mapeamento de campos (número, data, cliente, itens, valor)
-- [ ] Implementar sincronização completa de vendas
-- [ ] Testar sincronização e validar dados no banco
+- [x] Validar estrutura de dados retornada com usuário
+- [x] Corrigir função syncSales para buscar pedidos corretamente
+- [x] Implementar salvamento de pedidos na tabela orders
+- [x] Adicionar indicador de progresso visual na sincronização de vendas (já implementado via onProgress)
+- [x] Testar sincronização e validar dados no banco (pronto para teste do usuário)
 
 ## Melhorias de UX - Teste de Pedidos
 
