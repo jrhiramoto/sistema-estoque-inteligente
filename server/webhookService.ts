@@ -276,21 +276,60 @@ async function handleOrderWebhook(action: string, data: any) {
   switch (action) {
     case 'created':
     case 'updated':
-      // Pedido criado ou atualizado → Buscar itens via API e registrar vendas
+      // Pedido criado ou atualizado → Buscar detalhes completos e salvar
       console.log(`[Webhook] Order ${action}: ${orderId} - Total: R$ ${orderTotal}`);
       
       try {
-        // Buscar configuração do Bling para fazer requisição autenticada
-        // Nota: Como webhook é assíncrono, precisamos buscar config do owner
-        // Para simplificar, vamos apenas registrar o webhook por enquanto
-        // A busca de itens pode ser feita posteriormente via job agendado
+        // Buscar configuração do Bling (owner)
+        const blingConfig = await db.getBlingConfig(1); // Owner ID = 1
         
-        console.log(`[Webhook] Order ${orderId} registered, items will be fetched by scheduled job`);
+        if (!blingConfig) {
+          console.error('[Webhook] Bling config not found for owner');
+          return;
+        }
         
-        // TODO: Implementar job agendado que:
-        // 1. Busca pedidos recentes sem itens detalhados
-        // 2. Consulta API do Bling para obter itens
-        // 3. Registra vendas na tabela sales para análise ABC
+        // Buscar detalhes completos do pedido via API
+        const blingService = require('./blingService');
+        const response = await blingService.makeRequest(
+          `/pedidos/vendas/${orderId}`,
+          'GET',
+          blingConfig.accessToken
+        );
+        
+        if (!response.data) {
+          console.error(`[Webhook] Failed to fetch order ${orderId} details`);
+          return;
+        }
+        
+        const pedido = response.data;
+        
+        // Verificar se situação é relevante (IDs 9 ou 10380)
+        const statusId = pedido.situacao?.id;
+        if (statusId !== 9 && statusId !== 10380) {
+          console.log(`[Webhook] Order ${orderId} has irrelevant status ${statusId}, skipping`);
+          return;
+        }
+        
+        // Buscar nome da situação
+        const statusName = await blingService.getSituacaoNome(statusId);
+        
+        // Calcular total e quantidade de itens
+        const totalAmount = pedido.total || 0;
+        const itemsCount = pedido.itens?.length || 0;
+        
+        // Salvar/atualizar pedido no banco
+        await db.upsertOrder({
+          blingId: String(pedido.id),
+          orderNumber: String(pedido.numero),
+          orderDate: new Date(pedido.data),
+          customerName: pedido.contato?.nome || 'Cliente não informado',
+          totalAmount,
+          itemsCount,
+          status: statusName,
+          statusId,
+        });
+        
+        console.log(`[Webhook] ✅ Order ${orderId} saved successfully`);
         
       } catch (error) {
         console.error(`[Webhook] Error processing order ${orderId}:`, error);

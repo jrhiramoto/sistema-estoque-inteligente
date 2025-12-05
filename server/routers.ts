@@ -402,6 +402,67 @@ export const appRouter = router({
         });
       }
     }),
+    
+    // Registrar webhook no Bling
+    registerWebhook: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const { blingRequest } = await import('./blingService');
+        
+        // Obter URL pública do sistema
+        const webhookUrl = `${process.env.VITE_FRONTEND_FORGE_API_URL || 'https://3000-ioo03l8ysgl09eq24gr3e-47328ca2.manusvm.computer'}/api/webhooks/bling`;
+        
+        // Registrar webhook para eventos de pedidos
+        const response = await blingRequest(
+          ctx.user.id,
+          '/webhooks',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              url: webhookUrl,
+              events: [
+                'order.created',
+                'order.updated',
+              ],
+              description: 'Webhook para sincroniza\u00e7\u00e3o autom\u00e1tica de pedidos',
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        console.log('[registerWebhook] Webhook registrado:', response);
+        
+        return {
+          success: true,
+          message: 'Webhook registrado com sucesso!',
+          webhookUrl,
+        };
+      } catch (error: any) {
+        console.error('[registerWebhook] Erro:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Erro ao registrar webhook',
+          cause: error,
+        });
+      }
+    }),
+    
+    // Listar webhooks registrados
+    listWebhooks: protectedProcedure.query(async ({ ctx }) => {
+      try {
+        const { blingRequest } = await import('./blingService');
+        const response = await blingRequest<{ data: any[] }>(ctx.user.id, '/webhooks');
+        return response.data || [];
+      } catch (error: any) {
+        console.error('[listWebhooks] Erro:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Erro ao listar webhooks',
+          cause: error,
+        });
+      }
+    }),
   }),
 
   // Debug

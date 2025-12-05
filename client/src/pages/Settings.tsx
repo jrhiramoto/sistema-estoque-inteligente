@@ -148,6 +148,20 @@ export default function Settings() {
     },
   });
   
+  const registerWebhook = trpc.bling.registerWebhook.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message || "Webhook registrado com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao registrar webhook");
+    },
+  });
+  
+  const { data: webhooks } = trpc.bling.listWebhooks.useQuery(
+    undefined,
+    { enabled: !!user && hasConfig }
+  );
+  
   const saveSyncConfig = trpc.bling.saveSyncConfig.useMutation({
     onSuccess: () => {
       utils.bling.getSyncConfig.invalidate();
@@ -631,6 +645,48 @@ export default function Settings() {
                       )}
                       <span className="text-xs">Fornecedores</span>
                     </Button>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Webhook Automático */}
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="text-sm font-medium mb-1">Sincronização Automática via Webhook</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Registre um webhook no Bling para receber novos pedidos automaticamente, sem precisar sincronizar manualmente.
+                      </p>
+                    </div>
+                    
+                    {webhooks && webhooks.length > 0 ? (
+                      <div className="rounded-lg border bg-green-50 dark:bg-green-950/30 p-3">
+                        <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Webhook ativo - Pedidos serão sincronizados automaticamente
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => registerWebhook.mutate()}
+                        disabled={registerWebhook.isPending || !hasConfig}
+                        variant="default"
+                        className="w-full"
+                      >
+                        {registerWebhook.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Registrando...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Ativar Sincronização Automática
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                   
                   {/* Indicador de Progresso */}

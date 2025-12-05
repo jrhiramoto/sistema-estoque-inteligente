@@ -491,3 +491,17 @@
 - [x] Identificar causa das chaves duplicadas (selectDistinct em 2 campos)
 - [x] Corrigir query getUniqueOrderStatuses para remover duplicatas
 - [x] Validar que não há mais erros de chaves duplicadas (13 situações únicas)
+
+## Melhoria - Atualizar Nome da Situação 10380
+
+- [x] Atualizar registros com statusId 10380 para status "Faturado" (já estava correto)
+- [x] Validar que Seção 4 mostra "Faturado" ao invés de "Situação 10380"
+
+## Verificação - Webhook de Vendas Automático
+
+- [x] Localizar implementação do webhook no código (endpoint /api/webhooks/bling)
+- [x] Verificar validação HMAC-SHA256 (implementada)
+- [x] Implementar salvamento automático de pedidos via webhook
+- [x] Criar endpoint tRPC para registrar webhook no Bling
+- [x] Adicionar botão na interface para registrar webhook
+- [ ] Testar recepção e processamento de novos pedidos
