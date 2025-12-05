@@ -16,13 +16,15 @@ interface BlingProduto {
 interface BlingEstoque {
   produto: {
     id: number;
-  };
-  deposito: {
-    id: number;
-    nome: string;
+    codigo?: string;
   };
   saldoVirtualTotal: number;
   saldoFisicoTotal: number;
+  depositos: Array<{
+    id: number;
+    saldoFisico: number;
+    saldoVirtual: number;
+  }>;
 }
 
 interface BlingPedido {
@@ -552,13 +554,28 @@ export async function syncInventory(
           try {
             const product = batch.find(p => p.blingId === String(estoque.produto.id));
             if (product) {
-              await db.upsertInventory({
-                productId: product.id,
-                depositId: String(estoque.deposito.id),
-                depositName: estoque.deposito.nome,
-                virtualStock: Math.round(estoque.saldoVirtualTotal),
-                physicalStock: Math.round(estoque.saldoFisicoTotal),
-              });
+              // A API retorna saldos totais e array de depósitos
+              // Vamos salvar um registro por depósito
+              if (estoque.depositos && estoque.depositos.length > 0) {
+                for (const deposito of estoque.depositos) {
+                  await db.upsertInventory({
+                    productId: product.id,
+                    depositId: String(deposito.id),
+                    depositName: 'Depósito Principal', // API não retorna nome do depósito
+                    virtualStock: Math.round(deposito.saldoVirtual),
+                    physicalStock: Math.round(deposito.saldoFisico),
+                  });
+                }
+              } else {
+                // Se não houver depósitos, salvar apenas os totais
+                await db.upsertInventory({
+                  productId: product.id,
+                  depositId: '0',
+                  depositName: 'Depósito Principal',
+                  virtualStock: Math.round(estoque.saldoVirtualTotal),
+                  physicalStock: Math.round(estoque.saldoFisicoTotal),
+                });
+              }
               synced++;
             }
           } catch (error) {

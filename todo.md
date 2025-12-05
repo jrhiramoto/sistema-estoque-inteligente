@@ -575,3 +575,16 @@
 - [x] Testar correção na página /settings
 
 **Solução:** Query `listWebhooks` agora retorna array vazio ao invés de lançar exceção quando webhook não está registrado ou não há autorização.
+
+
+## BUG - Saldos de Estoque Incorretos
+
+- [x] Analisar relatório CSV do Bling para identificar estrutura correta
+- [x] Comparar campos do relatório com código atual de sincronização
+- [x] Identificar qual campo do Bling corresponde ao saldo real de estoque
+- [x] Corrigir função syncInventory() no blingService.ts
+- [x] Atualizar interface BlingEstoque com estrutura real da API
+- [x] Testar correção comparando com dados do relatório
+- [ ] Executar nova sincronização de estoque completa
+
+**Solução:** API do Bling retorna array `depositos` ao invés de objeto `deposito`. Código corrigido para processar corretamente os saldos por depósito. Valores validados com relatório CSV (28007=2, 70905=13, 27999=3).
