@@ -1,0 +1,55 @@
+{
+  "query": "SELECT \n  p.id,\n  p.code,\n  p.name,\n  p.abcClass,\n  p.price as price_cents,\n  COALESCE(SUM(i.physicalStock), 0) as total_stock,\n  (COALESCE(SUM(i.physicalStock), 0) * p.price / 100) as stock_value_reais\nFROM products p\nLEFT JOIN inventory i ON p.id = i.productId\nWHERE p.abcClass = 'A'\nGROUP BY p.id\nORDER BY stock_value_reais DESC\nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  p.id,\n  p.code,\n  p.name,\n  p.abcClass,\n  p.price as price_cents,\n  COALESCE(SUM(i.physicalStock), 0) as total_stock,\n  (COALESCE(SUM(i.physicalStock), 0) * p.price / 100) as stock_value_reais\nFROM products p\nLEFT JOIN inventory i ON p.id = i.productId\nWHERE p.abcClass = 'A'\nGROUP BY p.id\nORDER BY stock_value_reais DESC\nLIMIT 5;",
+  "rows": [
+    {
+      "id": "47086",
+      "code": "25001",
+      "name": "PUXADOR SORENTO GRANADO Furação:224MM (ZP5451.224);Cor:Preto",
+      "abcClass": "A",
+      "price_cents": "27150",
+      "total_stock": "39",
+      "stock_value_reais": "10588.5000"
+    },
+    {
+      "id": "53681",
+      "code": "36543",
+      "name": "PRENDEDOR 10315 -IM Cor:ZCR",
+      "abcClass": "A",
+      "price_cents": "6580",
+      "total_stock": "143",
+      "stock_value_reais": "9409.4000"
+    },
+    {
+      "id": "35073",
+      "code": "92894",
+      "name": "BATEDOR DE PORTA CHAO 300 -7/8 Cor:Inox escovado",
+      "abcClass": "A",
+      "price_cents": "5800",
+      "total_stock": "137",
+      "stock_value_reais": "7946.0000"
+    },
+    {
+      "id": "50681",
+      "code": "75153",
+      "name": "CABIDE QUADRADO 106060 -3/4 -KETJ Tamanho:1 gancho;Cor:Cromado",
+      "abcClass": "A",
+      "price_cents": "11540",
+      "total_stock": "62",
+      "stock_value_reais": "7154.8000"
+    },
+    {
+      "id": "49010",
+      "code": "21649",
+      "name": "PRENDEDOR 10315 -IM Cor:Escovado",
+      "abcClass": "A",
+      "price_cents": "6580",
+      "total_stock": "96",
+      "stock_value_reais": "6316.8000"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcode\tname\tabcClass\tprice_cents\ttotal_stock\tstock_value_reais\n47086\t25001\tPUXADOR SORENTO GRANADO Furação:224MM (ZP5451.224);Cor:Preto\tA\t27150\t39\t10588.5000\n53681\t36543\tPRENDEDOR 10315 -IM Cor:ZCR\tA\t6580\t143\t9409.4000\n35073\t92894\tBATEDOR DE PORTA CHAO 300 -7/8 Cor:Inox escovado\tA\t5800\t137\t7946.0000\n50681\t75153\tCABIDE QUADRADO 106060 -3/4 -KETJ Tamanho:1 gancho;Cor:Cromado\tA\t11540\t62\t7154.8000\n49010\t21649\tPRENDEDOR 10315 -IM Cor:Escovado\tA\t6580\t96\t6316.8000\n",
+  "stderr": "",
+  "execution_time_ms": 84
+}

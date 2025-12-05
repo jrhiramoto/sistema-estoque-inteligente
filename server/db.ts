@@ -1314,7 +1314,14 @@ export async function getAbcStockMetrics() {
     };
 
     stockByProduct.forEach((data) => {
-      const stockValue = (data.totalStock * data.price) / 100; // converter centavos para reais
+      // Ignorar produtos sem estoque
+      if (data.totalStock <= 0) {
+        return;
+      }
+      
+      // price em centavos, totalStock é quantidade
+      // Dividir por 100 para converter centavos em reais
+      const stockValue = (data.totalStock * data.price) / 100;
       const stockQuantity = data.totalStock;
       
       // Classificar produto

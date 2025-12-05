@@ -178,7 +178,7 @@ export default function AbcAnalysis() {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value / 100);
+    }).format(value); // valor já vem em reais do backend
   };
 
   const formatDate = (date: Date | string | null | undefined) => {

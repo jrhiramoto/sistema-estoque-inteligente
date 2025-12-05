@@ -548,3 +548,13 @@
 - [x] Atualizar backend para retornar métricas de estoque por classe
 - [x] Atualizar frontend para exibir "Valor em Estoque" e "Quantidade em Estoque"
 - [x] Testar com dados reais incluindo produtos Classe D
+
+## BUG - Cálculo Incorreto do Valor em Estoque nos Cards ABCD
+
+- [x] Corrigir função getAbcStockMetrics() - valor em R$ está errado
+- [x] O valor deve ser: soma de (quantidade_estoque × preço_venda) de CADA produto da classe
+- [x] Verificar se está somando corretamente os estoques de múltiplos depósitos
+- [x] Corrigir badge Classe D - deve mostrar apenas produtos COM estoque físico > 0
+- [x] Testar com dados reais e validar valores corretos
+
+**Solução:** Removida divisão dupla por 100 (backend já retorna em reais, frontend não deve dividir novamente). Adicionado filtro para contar apenas produtos com estoque > 0.
