@@ -558,3 +558,11 @@
 - [x] Testar com dados reais e validar valores corretos
 
 **Solução:** Removida divisão dupla por 100 (backend já retorna em reais, frontend não deve dividir novamente). Adicionado filtro para contar apenas produtos com estoque > 0.
+
+## Verificação - Webhook de Estoque Automático
+
+- [ ] Verificar se webhook de estoque do Bling está configurado
+- [ ] Verificar rota do webhook no servidor (endpoint)
+- [ ] Testar recebimento de notificações do Bling
+- [ ] Validar que saldos são atualizados automaticamente
+- [ ] Verificar logs de webhook para confirmar funcionamento

@@ -409,7 +409,9 @@ export const appRouter = router({
         const { blingRequest } = await import('./blingService');
         
         // Obter URL pública do sistema
-        const webhookUrl = `${process.env.VITE_FRONTEND_FORGE_API_URL || 'https://3000-ioo03l8ysgl09eq24gr3e-47328ca2.manusvm.computer'}/api/webhooks/bling`;
+        // Usar a URL do servidor Express (não VITE_FRONTEND_FORGE_API_URL que aponta para forge.manus.ai)
+        const baseUrl = process.env.PUBLIC_URL || 'https://3000-ioo03l8ysgl09eq24gr3e-47328ca2.manusvm.computer';
+        const webhookUrl = `${baseUrl}/api/webhooks/bling`;
         
         // Registrar webhook para eventos de pedidos
         const response = await blingRequest(
