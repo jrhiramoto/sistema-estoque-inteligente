@@ -674,29 +674,6 @@ export async function syncSales(
               itemsCount: pedido.itens.length,
             });
             
-            // Salvar itens individuais na tabela sales (histórico detalhado)
-            for (const item of pedido.itens) {
-              try {
-                // Buscar produto pelo blingId
-                const product = await db.getProductByBlingId(String(item.produto.id));
-                
-                if (product) {
-                  await db.insertSale({
-                    blingOrderId: String(pedido.id),
-                    productId: product.id,
-                    quantity: Math.round(item.quantidade),
-                    unitPrice: Math.round(item.valor * 100), // converter para centavos
-                    totalPrice: Math.round(item.valor * item.quantidade * 100),
-                    orderStatus: pedido.situacao?.valor || null,
-                    saleDate: new Date(pedido.data),
-                  });
-                }
-              } catch (error) {
-                // Pode dar erro de duplicação se já existir, ignorar
-                console.log(`[Bling] Erro ao salvar item do pedido ${pedido.numero}:`, error);
-              }
-            }
-            
             synced++;
             
             // Atualizar progresso a cada pedido

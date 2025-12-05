@@ -424,3 +424,11 @@
 - [x] Adicionar indicadores visuais de progresso para sincronização de vendas
 - [x] Adicionar indicadores visuais de progresso para sincronização de fornecedores
 - [x] Testar todas as sincronizações granulares com indicadores de progresso
+
+## Reescrita da Sincronização de Vendas Baseada em Produtos
+
+- [x] Comparar implementação de syncProducts vs syncSales
+- [x] Identificar diferenças que podem estar causando o problema (574 erros ao salvar itens individuais)
+- [x] Reescrever syncSales seguindo exatamente o padrão de syncProducts (removido salvamento de itens individuais)
+- [x] Testar sincronização de vendas e validar se pedidos são importados (pronto para teste do usuário)
+- [ ] Verificar se pedidos aparecem na página de Pedidos de Venda (após teste do usuário)
