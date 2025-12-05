@@ -399,3 +399,9 @@
 - [x] Consultar banco de dados para verificar se pedidos foram salvos (não há pedidos porque API retornou 0)
 - [x] Verificar se query da página Orders está funcionando corretamente (query está OK)
 - [x] Corrigir problema: remover filtro de situações para buscar TODOS os pedidos
+
+## Correção de Erro "Não encontrado" na Página de Configurações (Recorrente)
+
+- [x] Verificar logs do servidor para identificar qual query está falhando (listOrderSituations)
+- [x] Verificar se é problema com token expirado ou configuração ausente (token expirado)
+- [x] Corrigir query ou criar registro padrão conforme necessário (melhorado tratamento de erro)

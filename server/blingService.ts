@@ -799,17 +799,31 @@ export async function exchangeCodeForToken(
 export async function listOrderSituations(userId: number): Promise<Array<{ id: number; nome: string; cor: string }>> {
   console.log('[Bling] Listando situações de pedidos...');
   
-  const response = await blingRequest<{
-    data: Array<{
-      id: number;
-      nome: string;
-      cor: string;
-    }>;
-  }>(userId, '/situacoes/modulos/Vendas');
-  
-  console.log(`[Bling] ✓ ${response.data.length} situações encontradas`);
-  
-  return response.data;
+  try {
+    const response = await blingRequest<{
+      data: Array<{
+        id: number;
+        nome: string;
+        cor: string;
+      }>;
+    }>(userId, '/situacoes/modulos/Vendas');
+    
+    console.log(`[Bling] ✓ ${response.data.length} situações encontradas`);
+    
+    return response.data;
+  } catch (error: any) {
+    console.error('[listOrderSituations] Erro:', error);
+    
+    // Se o erro for de autenticação, lançar mensagem mais clara
+    if (error.message?.includes('Não encontrado') || error.message?.includes('Unauthorized')) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Você precisa autorizar o aplicativo no Passo 2 antes de listar situações de pedidos.',
+      });
+    }
+    
+    throw error;
+  }
 }
 
 
