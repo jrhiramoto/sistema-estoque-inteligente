@@ -11,6 +11,16 @@ interface BlingProduto {
   situacao?: string;
   tipo?: string;
   formato?: string;
+  fornecedor?: {
+    id: number;
+    contato?: {
+      id: number;
+      nome: string;
+    };
+    codigo?: string;
+    precoCusto?: number;
+    precoCompra?: number;
+  };
 }
 
 interface BlingEstoque {
@@ -485,6 +495,7 @@ export async function syncProducts(
 
         for (const produto of produtos) {
           try {
+            // Salvar produto
             await db.upsertProduct({
               blingId: String(produto.id),
               name: produto.nome,
@@ -492,6 +503,27 @@ export async function syncProducts(
               price: produto.preco ? Math.round(produto.preco * 100) : undefined, // converter para centavos
               cost: produto.precoCusto ? Math.round(produto.precoCusto * 100) : undefined, // converter para centavos
             });
+            
+            // Salvar fornecedor se existir
+            if (produto.fornecedor?.contato?.nome) {
+              const productDb = await db.getProductByBlingId(String(produto.id));
+              if (productDb) {
+                // blingId = combinação de produto + fornecedor para unicidade
+                const supplierBlingId = `${produto.id}-${produto.fornecedor.id}`;
+                await db.upsertProductSupplier({
+                  blingId: supplierBlingId,
+                  productId: productDb.id,
+                  blingProductId: String(produto.id),
+                  supplierId: String(produto.fornecedor.id),
+                  supplierName: produto.fornecedor.contato.nome,
+                  code: produto.fornecedor.codigo || undefined,
+                  costPrice: produto.fornecedor.precoCusto ? Math.round(produto.fornecedor.precoCusto * 100) : undefined,
+                  purchasePrice: produto.fornecedor.precoCompra ? Math.round(produto.fornecedor.precoCompra * 100) : 0,
+                  isDefault: true, // Assumir como padrão se é o único
+                });
+              }
+            }
+            
             synced++;
 
             // Atualizar progresso a cada 1000 produtos

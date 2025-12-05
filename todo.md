@@ -608,3 +608,23 @@
 **Produtos ocultos:**
 - Códigos entre 50000 e 51000 (inclusive)
 - Códigos abaixo de 2000
+
+
+## Validação de Preços e Fornecedores + Webhook
+
+- [x] Analisar estrutura da planilha produtos.csv do Bling
+- [x] Comparar preços de venda entre planilha e banco de dados
+- [x] Comparar fornecedores entre planilha e banco de dados
+- [x] Identificar campos corretos da API do Bling para preço e fornecedor
+- [x] Corrigir sincronização de produtos para salvar fornecedores
+- [x] Atualizar interface BlingProduto com campo fornecedor
+- [x] Implementar salvamento de fornecedor na sincronização
+- [x] Verificar webhook de fornecedor (já implementado)
+- [ ] Executar sincronização completa de produtos para popular fornecedores
+- [ ] Registrar webhook product_supplier no Bling
+
+**Descobertas:**
+- ✅ API do Bling retorna fornecedor em `produto.fornecedor.contato.nome`
+- ✅ Preços estão corretos na API (campo `preco`)
+- ❌ Fornecedores estavam NULL no banco (não eram salvos)
+- ✅ Webhook `product_supplier` já implementado, só falta registrar no Bling
