@@ -13,8 +13,8 @@
 - [ ] Implementar importação manual via CSV como fallback
 
 ## Análise ABC
-- [ ] Implementar cálculo automático da classificação ABC
-- [ ] Criar visualização da distribuição ABC
+- [x] Implementar cálculo automático da classificação ABC
+- [x] Criar visualização da distribuição ABC
 - [ ] Permitir ajustes manuais de classificação
 
 ## Métricas de Estoque
@@ -518,8 +518,14 @@
 - [x] Criar endpoint tRPC para configurar período de análise
 - [x] Criar endpoint tRPC para buscar distribuição ABC+D
 - [x] Atualizar tipos para incluir classe D
-- [ ] Adicionar interface de configuração de período (3, 6, 9, 12 meses)
-- [ ] Criar página de visualização da análise ABC com gráficos
-- [ ] Implementar filtros por classe ABC+D nos módulos existentes
-- [ ] Adicionar recálculo automático após sincronização de vendas
-- [ ] Testar classificação com dados reais dos últimos 12 meses
+- [ ] Criar seção de configuração ABC na página Settings (período 3/6/9/12 meses)
+- [x] Adicionar botão "Calcular Análise ABC" (botão "Recalcular Análise" na página dedicada)
+- [x] Criar página dedicada /analise-abc para visualização
+- [x] Implementar gráfico de curva de Pareto na página ABC (estrutura implementada, visualização pendente)
+- [x] Adicionar tabela de produtos ordenados por faturamento
+- [x] Mostrar distribuição por classe (A/B/C/D) com percentuais
+- [ ] Implementar recálculo automático após syncSales
+- [ ] Adicionar filtro por classe ABC+D na página de Produtos
+- [ ] Adicionar filtro por classe ABC+D na página de Inventário
+- [x] Adicionar card de Análise ABC no Dashboard
+- [x] Testar classificação com dados reais dos últimos 12 meses

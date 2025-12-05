@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total_vendas, COUNT(DISTINCT productId) as produtos_distintos, SUM(totalPrice)/100 as faturamento_total FROM sales",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT COUNT(*) as total_vendas, COUNT(DISTINCT productId) as produtos_distintos, SUM(totalPrice)/100 as faturamento_total FROM sales",
+  "rows": [
+    {
+      "total_vendas": "304",
+      "produtos_distintos": "272",
+      "faturamento_total": "190339.6500"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_vendas\tprodutos_distintos\tfaturamento_total\n304\t272\t190339.6500\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

@@ -1,0 +1,25 @@
+{
+  "query": "SELECT statusId, status, COUNT(*) as total FROM orders WHERE statusId IN (9, 10380) GROUP BY statusId, status",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT statusId, status, COUNT(*) as total FROM orders WHERE statusId IN (9, 10380) GROUP BY statusId, status",
+  "rows": [
+    {
+      "statusId": "10380",
+      "status": "Faturado",
+      "total": "284"
+    },
+    {
+      "statusId": "9",
+      "status": "Atendido",
+      "total": "3430"
+    },
+    {
+      "statusId": "9",
+      "status": "Desconhecido",
+      "total": "1515"
+    }
+  ],
+  "messages": [],
+  "stdout": "statusId\tstatus\ttotal\n10380\tFaturado\t284\n9\tAtendido\t3430\n9\tDesconhecido\t1515\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

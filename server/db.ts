@@ -181,6 +181,9 @@ export async function getProductsPaginated(params: {
       unit: products.unit,
       abcClass: products.abcClass,
       abcClassManual: products.abcClassManual,
+      abcRevenue: products.abcRevenue,
+      abcPercentage: products.abcPercentage,
+      abcLastCalculated: products.abcLastCalculated,
       shouldStock: products.shouldStock,
       minStock: products.minStock,
       maxStock: products.maxStock,
@@ -337,6 +340,40 @@ export async function insertSale(sale: Omit<Sale, "id" | "createdAt">) {
   
   const result = await db.insert(sales).values(sale as any);
   return result[0].insertId;
+}
+
+export async function upsertSale(sale: Omit<Sale, "id" | "createdAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Verificar se já existe venda com mesmo blingOrderId e productId
+  const existing = await db.select()
+    .from(sales)
+    .where(
+      and(
+        eq(sales.blingOrderId, sale.blingOrderId),
+        eq(sales.productId, sale.productId)
+      )
+    )
+    .limit(1);
+  
+  if (existing.length > 0) {
+    // Atualizar
+    await db.update(sales)
+      .set({
+        quantity: sale.quantity,
+        unitPrice: sale.unitPrice,
+        totalPrice: sale.totalPrice,
+        orderStatus: sale.orderStatus,
+        saleDate: sale.saleDate,
+      })
+      .where(eq(sales.id, existing[0].id));
+    return existing[0].id;
+  } else {
+    // Inserir
+    const result = await db.insert(sales).values(sale as any);
+    return result[0].insertId;
+  }
 }
 
 export async function calculateAvgSales12Months(productId: number) {

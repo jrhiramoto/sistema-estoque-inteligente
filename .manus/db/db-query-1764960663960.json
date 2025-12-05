@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, MIN(saleDate) as primeira_venda, MAX(saleDate) as ultima_venda FROM sales",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT COUNT(*) as total, MIN(saleDate) as primeira_venda, MAX(saleDate) as ultima_venda FROM sales",
+  "rows": [
+    {
+      "total": "140",
+      "primeira_venda": "2025-12-02 00:00:00",
+      "ultima_venda": "2025-12-05 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tprimeira_venda\tultima_venda\n140\t2025-12-02 00:00:00\t2025-12-05 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

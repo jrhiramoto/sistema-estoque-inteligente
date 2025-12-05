@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, name, price FROM products WHERE isActive = 1 AND price > 0 LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT id, name, price FROM products WHERE isActive = 1 AND price > 0 LIMIT 10",
+  "rows": [
+    {
+      "id": "1",
+      "name": "GUARNIÇÃO MANN INTERNA/EURO 904.21.370 -FOSCO -HAF",
+      "price": "14820"
+    },
+    {
+      "id": "2",
+      "name": "GUARNIÇÃO COSMUS INTERNA/EURO 904.22.271 -INP -HAF",
+      "price": "41010"
+    },
+    {
+      "id": "3",
+      "name": "GUARNIÇÃO BAUER INTERNA/EURO 904.21.381 -FOSCO -HAF",
+      "price": "19420"
+    },
+    {
+      "id": "4",
+      "name": "GUARNIÇÃO HESSE INTERNA/EURO 904.21.410 -FOSCO -HAF",
+      "price": "24470"
+    },
+    {
+      "id": "5",
+      "name": "GUARNIÇÃO HEGEL INTERNA/EURO 904.21.360 -FOSCO -HAF",
+      "price": "14810"
+    },
+    {
+      "id": "6",
+      "name": "CILINDRO C/BOTÃO EUROPERFIL HAF. 916.59.410 -N. FOSCO",
+      "price": "42370"
+    },
+    {
+      "id": "7",
+      "name": "FECHO ROLETE C/REGULAGEM 911.24.014 -INOX/DOURADO -HAF",
+      "price": "20460"
+    },
+    {
+      "id": "8",
+      "name": "MAQUINA AUXILIAR SOMENTE MAÇANETA 911.23.370 -INOX FOSCO",
+      "price": "20750"
+    },
+    {
+      "id": "9",
+      "name": "PRENDEDOR MAGNÉTICO PHANTON 938.70.009 - TRANSPARENTE -HAF",
+      "price": "18850"
+    },
+    {
+      "id": "10",
+      "name": "MÁQUINA AUXILIAR SEM CILINDRO 911.22.490 -INOX FOSCO -HAF",
+      "price": "18670"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tprice\n1\tGUARNIÇÃO MANN INTERNA/EURO 904.21.370 -FOSCO -HAF\t14820\n2\tGUARNIÇÃO COSMUS INTERNA/EURO 904.22.271 -INP -HAF\t41010\n3\tGUARNIÇÃO BAUER INTERNA/EURO 904.21.381 -FOSCO -HAF\t19420\n4\tGUARNIÇÃO HESSE INTERNA/EURO 904.21.410 -FOSCO -HAF\t24470\n5\tGUARNIÇÃO HEGEL INTERNA/EURO 904.21.360 -FOSCO -HAF\t14810\n6\tCILINDRO C/BOTÃO EUROPERFIL HAF. 916.59.410 -N. FOSCO\t42370\n7\tFECHO ROLETE C/REGULAGEM 911.24.014 -INOX/DOURADO -HAF\t20460\n8\tMAQUINA AUXILIAR SOMENTE MAÇANETA 911.23.370 -INOX FOSCO\t20750\n9\tPRENDEDOR MAGNÉTICO PHANTON 938.70.009 - TRANSPARENTE -HAF\t18850\n10\tMÁQUINA AUXILIAR SEM CILINDRO 911.22.490 -INOX FOSCO -HAF\t18670\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

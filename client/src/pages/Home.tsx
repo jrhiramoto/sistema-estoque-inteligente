@@ -221,6 +221,16 @@ export default function Home() {
                 </Card>
               </Link>
 
+              <Link href="/analise-abc">
+                <Card className="hover:bg-accent cursor-pointer transition-colors">
+                  <CardHeader>
+                    <BarChart3 className="w-8 h-8 text-indigo-600 mb-2" />
+                    <CardTitle className="text-lg">Análise ABC</CardTitle>
+                    <CardDescription>Classificação de produtos</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+
               <Link href="/settings">
                 <Card className="hover:bg-accent cursor-pointer transition-colors">
                   <CardHeader>

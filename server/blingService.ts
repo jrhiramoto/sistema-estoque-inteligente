@@ -686,6 +686,22 @@ export async function syncSales(
             // Log da situação para debug
             console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
             
+            // Buscar detalhes do pedido para obter itens (API de listagem não retorna itens)
+            let pedidoDetalhado = pedido;
+            if (!pedido.itens || pedido.itens.length === 0) {
+              try {
+                const detalhesResponse = await blingRequest<{ data: BlingPedido }>(
+                  userId,
+                  `/pedidos/vendas/${pedido.id}`
+                );
+                pedidoDetalhado = detalhesResponse.data;
+                console.log(`[Bling] Pedido ${pedido.numero} - Detalhes obtidos, ${pedidoDetalhado.itens?.length || 0} itens`);
+              } catch (error) {
+                console.error(`[Bling] Erro ao buscar detalhes do pedido ${pedido.numero}:`, error);
+                // Continuar com pedido sem itens
+              }
+            }
+            
             // TEMPORÁRIO: Removendo validação de situações para buscar TODOS os pedidos
             // if (!situacoesValidas.includes(pedido.situacao.id)) {
             //   console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
@@ -696,13 +712,13 @@ export async function syncSales(
             // Usar campo 'total' da API se disponível, senão calcular dos itens
             let totalAmount = 0;
             
-            if (pedido.total !== undefined && pedido.total !== null) {
+            if (pedidoDetalhado.total !== undefined && pedidoDetalhado.total !== null) {
               // Usar total fornecido pela API
-              totalAmount = pedido.total;
+              totalAmount = pedidoDetalhado.total;
               console.log(`[Bling] Pedido ${pedido.numero} - Total da API: ${totalAmount}`);
-            } else if (pedido.itens && Array.isArray(pedido.itens) && pedido.itens.length > 0) {
+            } else if (pedidoDetalhado.itens && Array.isArray(pedidoDetalhado.itens) && pedidoDetalhado.itens.length > 0) {
               // Calcular dos itens
-              totalAmount = pedido.itens.reduce((sum, item) => {
+              totalAmount = pedidoDetalhado.itens.reduce((sum, item) => {
                 return sum + (item.valor * item.quantidade);
               }, 0);
               console.log(`[Bling] Pedido ${pedido.numero} - Total calculado dos itens: ${totalAmount}`);
@@ -710,7 +726,7 @@ export async function syncSales(
               console.warn(`[Bling] Pedido ${pedido.numero} - SEM TOTAL E SEM ITENS! Usando 0.`);
             }
             
-            const itemsCount = pedido.itens && Array.isArray(pedido.itens) ? pedido.itens.length : 0;
+            const itemsCount = pedidoDetalhado.itens && Array.isArray(pedidoDetalhado.itens) ? pedidoDetalhado.itens.length : 0;
             
             // Buscar nome correto da situação usando o ID
             const statusId = pedido.situacao?.id || 0;
@@ -736,6 +752,33 @@ export async function syncSales(
               console.error(`[Bling] Dados do pedido:`, JSON.stringify(pedido, null, 2));
               errors++;
               continue;
+            }
+            
+            // Salvar itens individuais na tabela sales para análise ABC
+            if (pedidoDetalhado.itens && Array.isArray(pedidoDetalhado.itens)) {
+              for (const item of pedidoDetalhado.itens) {
+                try {
+                  // Buscar produto pelo código do Bling
+                  const produto = await db.getProductByBlingId(String(item.produto?.id || 0));
+                  
+                  if (produto) {
+                    await db.upsertSale({
+                      blingOrderId: String(pedido.id),
+                      productId: produto.id,
+                      quantity: item.quantidade,
+                      unitPrice: Math.round(item.valor * 100), // converter para centavos
+                      totalPrice: Math.round(item.valor * item.quantidade * 100), // converter para centavos
+                      orderStatus: statusNome,
+                      saleDate: new Date(pedido.data),
+                    });
+                  } else {
+                    console.warn(`[Bling] Produto ${item.produto?.id} do pedido ${pedido.numero} não encontrado no banco`);
+                  }
+                } catch (error) {
+                  console.error(`[Bling] Erro ao salvar item do pedido ${pedido.numero}:`, error);
+                  // Não incrementar errors pois o pedido foi salvo com sucesso
+                }
+              }
             }
             
             synced++;

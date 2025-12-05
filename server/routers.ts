@@ -721,6 +721,55 @@ export const appRouter = router({
         total: products.length,
       };
     }),
+    
+    getProducts: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        search: z.string().optional(),
+        classFilter: z.enum(["A", "B", "C", "D", "all"]).optional(),
+        sortBy: z.enum(["revenue", "name", "code"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const products = await db.getAllProducts();
+        
+        let filtered = products;
+        
+        // Filtrar por classe
+        if (input?.classFilter && input.classFilter !== "all") {
+          filtered = filtered.filter(p => p.abcClass === input.classFilter);
+        }
+        
+        // Busca por texto
+        if (input?.search) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(p => 
+            p.name?.toLowerCase().includes(searchLower) ||
+            p.code?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        // Ordenação
+        if (input?.sortBy === "revenue") {
+          filtered.sort((a, b) => (b.abcRevenue || 0) - (a.abcRevenue || 0));
+        } else if (input?.sortBy === "name") {
+          filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        } else if (input?.sortBy === "code") {
+          filtered.sort((a, b) => (a.code || "").localeCompare(b.code || ""));
+        } else {
+          // Padrão: ordenar por faturamento
+          filtered.sort((a, b) => (b.abcRevenue || 0) - (a.abcRevenue || 0));
+        }
+        
+        const total = filtered.length;
+        const offset = input?.offset || 0;
+        const limit = input?.limit || 1000;
+        
+        return {
+          products: filtered.slice(offset, offset + limit),
+          total,
+        };
+      }),
   }),
 
   // Pedidos de Venda
