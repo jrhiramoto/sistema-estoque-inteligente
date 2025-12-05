@@ -414,3 +414,13 @@
 - [x] Criar interface em Configurações para visualizar e selecionar situações
 - [x] Aplicar filtro de situações na query de listagem de pedidos
 - [x] Testar fluxo completo: sincronizar → configurar situações → ver pedidos filtrados
+
+## Correção de Sincronização de Vendas e Indicadores de Progresso
+
+- [x] Verificar logs do servidor para identificar problema na sincronização de vendas
+- [x] Corrigir script/mutation de sincronização de vendas (script está OK, problema era falta de feedback visual)
+- [x] Adicionar indicadores visuais de progresso para sincronização de produtos
+- [x] Adicionar indicadores visuais de progresso para sincronização de estoque
+- [x] Adicionar indicadores visuais de progresso para sincronização de vendas
+- [x] Adicionar indicadores visuais de progresso para sincronização de fornecedores
+- [x] Testar todas as sincronizações granulares com indicadores de progresso

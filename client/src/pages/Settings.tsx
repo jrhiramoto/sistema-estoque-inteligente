@@ -597,6 +597,46 @@ export default function Settings() {
                     </Button>
                   </div>
                   
+                  {/* Indicador de Progresso */}
+                  {syncStatus?.isRunning && syncStatus.currentSync && (
+                    <Card className="border-primary/50 bg-primary/5">
+                      <CardContent className="pt-6 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            <span className="font-medium">
+                              Sincronizando {syncStatus.currentSync.syncType === 'products' ? 'Produtos' : 
+                                             syncStatus.currentSync.syncType === 'inventory' ? 'Estoque' :
+                                             syncStatus.currentSync.syncType === 'sales' ? 'Vendas' :
+                                             syncStatus.currentSync.syncType === 'suppliers' ? 'Fornecedores' :
+                                             syncStatus.currentSync.syncType === 'full' ? 'Tudo' : syncStatus.currentSync.syncType}
+                            </span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {syncStatus.currentSync.progress?.current || 0} itens processados
+                          </span>
+                        </div>
+                        
+                        {syncStatus.currentSync.progress && syncStatus.currentSync.progress.total > 0 && (
+                          <div className="space-y-1">
+                            <Progress 
+                              value={(syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100} 
+                              className="h-2"
+                            />
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>{syncStatus.currentSync.progress.current} / {syncStatus.currentSync.progress.total}</span>
+                              <span>{Math.round((syncStatus.currentSync.progress.current / syncStatus.currentSync.progress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {syncStatus.currentSync.progress?.message && (
+                          <p className="text-sm text-muted-foreground">{syncStatus.currentSync.progress.message}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                  
                   <Separator />
                   
                   <div className="flex justify-center">
