@@ -613,7 +613,7 @@ export async function syncInventory(
 }
 
 /**
- * Sincroniza vendas do Bling (últimos 30 dias)
+ * Sincroniza vendas do Bling (últimos 12 meses)
  */
 export async function syncSales(
   userId: number,
@@ -630,16 +630,16 @@ export async function syncSales(
         dataInicial = lastSync.completedAt;
         console.log(`[Bling] Modo incremental ativado para vendas - buscando desde ${dataInicial.toISOString()}`);
       } else {
-        // Se não houver sincronização anterior, buscar últimos 30 dias
+        // Se não houver sincronização anterior, buscar últimos 12 meses
         dataInicial = new Date();
-        dataInicial.setDate(dataInicial.getDate() - 30);
-        console.log('[Bling] Primeira sincronização de vendas - buscando últimos 30 dias');
+        dataInicial.setDate(dataInicial.getDate() - 365);
+        console.log('[Bling] Primeira sincronização de vendas - buscando últimos 12 meses');
       }
     } else {
-      // Modo completo: buscar últimos 30 dias
+      // Modo completo: buscar últimos 12 meses
       dataInicial = new Date();
-      dataInicial.setDate(dataInicial.getDate() - 30);
-      console.log('[Bling] Sincronização completa de vendas - últimos 30 dias');
+      dataInicial.setDate(dataInicial.getDate() - 365);
+      console.log('[Bling] Sincronização completa de vendas - últimos 12 meses');
     }
     
     const dataFinal = new Date();

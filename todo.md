@@ -462,3 +462,10 @@
 - [x] Implementar cache de situações para evitar requisições desnecessárias
 - [x] Atualizar Seção 4 (filtro de situações) para usar campo correto (já estava correto)
 - [ ] Testar sincronização e validar situações corretas
+
+## Melhoria - Período de Sincronização de Pedidos
+
+- [x] Identificar onde está definido o período atual (30 dias)
+- [x] Alterar período de sincronização para 12 meses (365 dias)
+- [ ] Testar sincronização com período estendido
+- [ ] Validar que análise ABC terá dados suficientes
