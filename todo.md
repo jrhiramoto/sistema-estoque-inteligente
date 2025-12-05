@@ -529,3 +529,12 @@
 - [ ] Adicionar filtro por classe ABC+D na página de Inventário
 - [x] Adicionar card de Análise ABC no Dashboard
 - [x] Testar classificação com dados reais dos últimos 12 meses
+
+## Melhoria - Cards ABCD na Análise ABC
+
+- [x] Alterar metodologia dos cards ABCD para mostrar duas barras:
+  * Barra 1: Valor em R$ do faturamento da classe (% em relação ao total)
+  * Barra 2: Quantidade de produtos da classe (% em relação ao total)
+- [x] Atualizar backend para retornar métricas de valor e quantidade por classe
+- [x] Atualizar frontend dos cards ABCD com layout de duas barras
+- [x] Testar visualização com dados reais

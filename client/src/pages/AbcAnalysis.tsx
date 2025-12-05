@@ -105,29 +105,37 @@ export default function AbcAnalysis() {
     const revenueB = classB.reduce((sum: number, p: any) => sum + (p.abcRevenue || 0), 0);
     const revenueC = classC.reduce((sum: number, p: any) => sum + (p.abcRevenue || 0), 0);
 
+    // Total de produtos classificados (A+B+C+D)
+    const totalClassified = classA.length + classB.length + classC.length + classD.length;
+
     return {
       totalRevenue,
       avgRevenue,
       productsWithSales: productsWithSales.length,
+      totalClassified,
       classA: {
         count: classA.length,
         revenue: revenueA,
-        percentage: totalRevenue > 0 ? (revenueA / totalRevenue) * 100 : 0,
+        revenuePercentage: totalRevenue > 0 ? (revenueA / totalRevenue) * 100 : 0,
+        countPercentage: totalClassified > 0 ? (classA.length / totalClassified) * 100 : 0,
       },
       classB: {
         count: classB.length,
         revenue: revenueB,
-        percentage: totalRevenue > 0 ? (revenueB / totalRevenue) * 100 : 0,
+        revenuePercentage: totalRevenue > 0 ? (revenueB / totalRevenue) * 100 : 0,
+        countPercentage: totalClassified > 0 ? (classB.length / totalClassified) * 100 : 0,
       },
       classC: {
         count: classC.length,
         revenue: revenueC,
-        percentage: totalRevenue > 0 ? (revenueC / totalRevenue) * 100 : 0,
+        revenuePercentage: totalRevenue > 0 ? (revenueC / totalRevenue) * 100 : 0,
+        countPercentage: totalClassified > 0 ? (classC.length / totalClassified) * 100 : 0,
       },
       classD: {
         count: classD.length,
         revenue: 0,
-        percentage: 0,
+        revenuePercentage: 0,
+        countPercentage: totalClassified > 0 ? (classD.length / totalClassified) * 100 : 0,
       },
     };
   }, [products]);
@@ -330,14 +338,33 @@ export default function AbcAnalysis() {
             <div className="text-2xl font-bold text-green-700">
               {metrics ? formatCurrency(metrics.classA.revenue) : "R$ 0,00"}
             </div>
-            <p className="text-sm text-green-600 mt-1">
-              {metrics?.classA.percentage.toFixed(1)}% do faturamento
-            </p>
-            <div className="mt-4 h-2 bg-green-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 transition-all"
-                style={{ width: `${metrics?.classA.percentage || 0}%` }}
-              />
+            
+            {/* Barra 1: Faturamento */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-green-600 mb-1">
+                <span>Faturamento</span>
+                <span className="font-semibold">{metrics?.classA.revenuePercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-green-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-green-500 transition-all"
+                  style={{ width: `${metrics?.classA.revenuePercentage || 0}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Barra 2: Quantidade de Produtos */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-green-600 mb-1">
+                <span>Quantidade</span>
+                <span className="font-semibold">{metrics?.classA.countPercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-green-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-green-600 transition-all"
+                  style={{ width: `${metrics?.classA.countPercentage || 0}%` }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -356,14 +383,33 @@ export default function AbcAnalysis() {
             <div className="text-2xl font-bold text-blue-700">
               {metrics ? formatCurrency(metrics.classB.revenue) : "R$ 0,00"}
             </div>
-            <p className="text-sm text-blue-600 mt-1">
-              {metrics?.classB.percentage.toFixed(1)}% do faturamento
-            </p>
-            <div className="mt-4 h-2 bg-blue-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all"
-                style={{ width: `${metrics?.classB.percentage || 0}%` }}
-              />
+            
+            {/* Barra 1: Faturamento */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-blue-600 mb-1">
+                <span>Faturamento</span>
+                <span className="font-semibold">{metrics?.classB.revenuePercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 transition-all"
+                  style={{ width: `${metrics?.classB.revenuePercentage || 0}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Barra 2: Quantidade de Produtos */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-blue-600 mb-1">
+                <span>Quantidade</span>
+                <span className="font-semibold">{metrics?.classB.countPercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-600 transition-all"
+                  style={{ width: `${metrics?.classB.countPercentage || 0}%` }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -382,14 +428,33 @@ export default function AbcAnalysis() {
             <div className="text-2xl font-bold text-yellow-700">
               {metrics ? formatCurrency(metrics.classC.revenue) : "R$ 0,00"}
             </div>
-            <p className="text-sm text-yellow-600 mt-1">
-              {metrics?.classC.percentage.toFixed(1)}% do faturamento
-            </p>
-            <div className="mt-4 h-2 bg-yellow-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-yellow-500 transition-all"
-                style={{ width: `${metrics?.classC.percentage || 0}%` }}
-              />
+            
+            {/* Barra 1: Faturamento */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-yellow-600 mb-1">
+                <span>Faturamento</span>
+                <span className="font-semibold">{metrics?.classC.revenuePercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-yellow-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-yellow-500 transition-all"
+                  style={{ width: `${metrics?.classC.revenuePercentage || 0}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Barra 2: Quantidade de Produtos */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-yellow-600 mb-1">
+                <span>Quantidade</span>
+                <span className="font-semibold">{metrics?.classC.countPercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-yellow-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-yellow-600 transition-all"
+                  style={{ width: `${metrics?.classC.countPercentage || 0}%` }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -408,11 +473,30 @@ export default function AbcAnalysis() {
             <div className="text-2xl font-bold text-gray-700">
               R$ 0,00
             </div>
-            <p className="text-sm text-gray-600 mt-1">
-              Produtos sem giro
-            </p>
-            <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-gray-500" style={{ width: "0%" }} />
+            
+            {/* Barra 1: Faturamento */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                <span>Faturamento</span>
+                <span className="font-semibold">0.0%</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-gray-500" style={{ width: "0%" }} />
+              </div>
+            </div>
+            
+            {/* Barra 2: Quantidade de Produtos */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                <span>Quantidade</span>
+                <span className="font-semibold">{metrics?.classD.countPercentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gray-600 transition-all"
+                  style={{ width: `${metrics?.classD.countPercentage || 0}%` }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
