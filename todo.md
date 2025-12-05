@@ -505,3 +505,21 @@
 - [x] Criar endpoint tRPC para registrar webhook no Bling
 - [x] Adicionar botão na interface para registrar webhook
 - [ ] Testar recepção e processamento de novos pedidos
+
+## Feature - Análise ABC+D de Produtos
+
+- [x] Adicionar campos abcClass (A/B/C/D), abcRevenue, abcPercentage, abcLastCalculated na tabela products
+- [x] Criar tabela abc_config para configuração de período de análise
+- [x] Aplicar migrações no banco de dados (pnpm db:push)
+- [x] Implementar função de cálculo de faturamento por produto
+- [x] Implementar lógica de classificação ABC+D (A=80%, B=15%, C=5%, D=0%)
+- [x] Criar funções getAbcConfig e updateAbcConfig
+- [x] Criar endpoint tRPC para calcular análise ABC
+- [x] Criar endpoint tRPC para configurar período de análise
+- [x] Criar endpoint tRPC para buscar distribuição ABC+D
+- [x] Atualizar tipos para incluir classe D
+- [ ] Adicionar interface de configuração de período (3, 6, 9, 12 meses)
+- [ ] Criar página de visualização da análise ABC com gráficos
+- [ ] Implementar filtros por classe ABC+D nos módulos existentes
+- [ ] Adicionar recálculo automático após sincronização de vendas
+- [ ] Testar classificação com dados reais dos últimos 12 meses

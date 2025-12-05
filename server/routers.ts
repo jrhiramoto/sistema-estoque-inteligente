@@ -476,7 +476,7 @@ export const appRouter = router({
   products: router({
     list: protectedProcedure
       .input(z.object({
-        abcClass: z.enum(["A", "B", "C"]).optional(),
+        abcClass: z.enum(["A", "B", "C", "D"]).optional(),
         search: z.string().optional(),
         page: z.number().default(1),
         limit: z.number().default(50),
@@ -508,7 +508,7 @@ export const appRouter = router({
         reorderPoint: z.number().optional(),
         safetyStock: z.number().optional(),
         shouldStock: z.boolean().optional(),
-        abcClass: z.enum(["A", "B", "C"]).optional(),
+        abcClass: z.enum(["A", "B", "C", "D"]).optional(),
         abcClassManual: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -687,6 +687,38 @@ export const appRouter = router({
         totalAlerts: alerts.length,
         abcDistribution,
         alertsBySeverity,
+      };
+    }),
+  }),
+
+  // Análise ABC+D
+  abc: router({
+    getConfig: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getAbcConfig(ctx.user.id);
+    }),
+    
+    updateConfig: protectedProcedure
+      .input(z.object({
+        analysisMonths: z.number().min(1).max(24),
+        autoRecalculate: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateAbcConfig(ctx.user.id, input);
+        return { success: true };
+      }),
+    
+    calculate: protectedProcedure.mutation(async ({ ctx }) => {
+      return await db.calculateAbcClassification(ctx.user.id);
+    }),
+    
+    getDistribution: protectedProcedure.query(async () => {
+      const products = await db.getAllProducts();
+      return {
+        A: products.filter(p => p.abcClass === "A").length,
+        B: products.filter(p => p.abcClass === "B").length,
+        C: products.filter(p => p.abcClass === "C").length,
+        D: products.filter(p => p.abcClass === "D").length,
+        total: products.length,
       };
     }),
   }),

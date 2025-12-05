@@ -1,10 +1,10 @@
-import { eq, desc, and, gte, lte, sql, isNull, or, like } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNull, or, like, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, orders,
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
-  productSuppliers, validOrderStatuses,
+  productSuppliers, validOrderStatuses, abcConfig,
   Product, Inventory, Sale, Order, InsertOrder, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
   ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
@@ -138,7 +138,7 @@ export async function getAllProducts() {
 }
 
 export async function getProductsPaginated(params: {
-  abcClass?: "A" | "B" | "C";
+  abcClass?: "A" | "B" | "C" | "D";
   search?: string;
   limit: number;
   offset: number;
@@ -1002,4 +1002,221 @@ export async function getActiveStatusIds(userId: number): Promise<number[]> {
     );
   
   return result.map(r => r.statusId);
+}
+
+
+// ===== ABC Analysis =====
+
+/**
+ * Busca ou cria configuração de análise ABC
+ */
+export async function getAbcConfig(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(abcConfig)
+    .where(eq(abcConfig.userId, userId))
+    .limit(1);
+  
+  if (result.length === 0) {
+    // Criar configuração padrão
+    await db.insert(abcConfig).values({
+      userId,
+      analysisMonths: 12,
+      autoRecalculate: true,
+    });
+    
+    return {
+      userId,
+      analysisMonths: 12,
+      autoRecalculate: true,
+      lastCalculation: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+  
+  return result[0];
+}
+
+/**
+ * Atualiza configuração de análise ABC
+ */
+export async function updateAbcConfig(userId: number, config: { analysisMonths?: number; autoRecalculate?: boolean }) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(abcConfig)
+    .set({
+      ...config,
+      updatedAt: new Date(),
+    })
+    .where(eq(abcConfig.userId, userId));
+}
+
+/**
+ * Calcula faturamento por produto no período especificado
+ */
+export async function calculateProductRevenue(userId: number, months: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - months);
+  
+  // Buscar IDs de situações válidas
+  const validStatusIds = await getActiveStatusIds(userId);
+  
+  if (validStatusIds.length === 0) {
+    console.warn('[ABC] Nenhuma situação válida configurada');
+    return [];
+  }
+  
+  // Calcular faturamento por produto
+  const result = await db
+    .select({
+      productId: sales.productId,
+      totalRevenue: sql<number>`SUM(${sales.totalPrice})`.as('totalRevenue'),
+      totalQuantity: sql<number>`SUM(${sales.quantity})`.as('totalQuantity'),
+    })
+    .from(sales)
+    .innerJoin(orders, eq(sales.blingOrderId, orders.blingId))
+    .where(
+      and(
+        gte(orders.orderDate, startDate),
+        inArray(orders.statusId, validStatusIds)
+      )
+    )
+    .groupBy(sales.productId)
+    .orderBy(desc(sql`SUM(${sales.totalPrice})`));
+  
+  return result.map(r => ({
+    productId: r.productId,
+    totalRevenue: Number(r.totalRevenue || 0),
+    totalQuantity: Number(r.totalQuantity || 0),
+  }));
+}
+
+/**
+ * Classifica produtos em ABC+D
+ * A = 80% do faturamento
+ * B = 15% do faturamento  
+ * C = 5% do faturamento
+ * D = 0% do faturamento (sem vendas)
+ */
+export async function calculateAbcClassification(userId: number) {
+  const db = await getDb();
+  if (!db) return { success: false, message: 'Database not available' };
+  
+  try {
+    // Buscar configuração
+    const config = await getAbcConfig(userId);
+    if (!config) {
+      return { success: false, message: 'Configuração ABC não encontrada' };
+    }
+    
+    // Calcular faturamento por produto
+    const productRevenues = await calculateProductRevenue(userId, config.analysisMonths);
+    
+    // Calcular faturamento total
+    const totalRevenue = productRevenues.reduce((sum, p) => sum + p.totalRevenue, 0);
+    
+    if (totalRevenue === 0) {
+      return { success: false, message: 'Nenhuma venda encontrada no período' };
+    }
+    
+    // Calcular percentual acumulado e classificar
+    let accumulatedRevenue = 0;
+    const classifications: Array<{
+      productId: number;
+      abcClass: 'A' | 'B' | 'C' | 'D';
+      abcRevenue: number;
+      abcPercentage: number;
+    }> = [];
+    
+    for (const product of productRevenues) {
+      accumulatedRevenue += product.totalRevenue;
+      const accumulatedPercentage = (accumulatedRevenue / totalRevenue) * 100;
+      const productPercentage = (product.totalRevenue / totalRevenue) * 100;
+      
+      let abcClass: 'A' | 'B' | 'C' | 'D';
+      if (accumulatedPercentage <= 80) {
+        abcClass = 'A';
+      } else if (accumulatedPercentage <= 95) {
+        abcClass = 'B';
+      } else {
+        abcClass = 'C';
+      }
+      
+      classifications.push({
+        productId: product.productId,
+        abcClass,
+        abcRevenue: product.totalRevenue,
+        abcPercentage: Math.round(productPercentage * 100), // Armazenar como 0-10000 (0-100.00%)
+      });
+    }
+    
+    // Buscar todos os produtos
+    const allProducts = await db.select({ id: products.id }).from(products);
+    const productsWithSales = new Set(classifications.map(c => c.productId));
+    
+    // Produtos sem vendas = classe D
+    for (const product of allProducts) {
+      if (!productsWithSales.has(product.id)) {
+        classifications.push({
+          productId: product.id,
+          abcClass: 'D',
+          abcRevenue: 0,
+          abcPercentage: 0,
+        });
+      }
+    }
+    
+    // Atualizar produtos no banco
+    const now = new Date();
+    for (const classification of classifications) {
+      await db
+        .update(products)
+        .set({
+          abcClass: classification.abcClass,
+          abcRevenue: classification.abcRevenue,
+          abcPercentage: classification.abcPercentage,
+          abcLastCalculated: now,
+          updatedAt: now,
+        })
+        .where(eq(products.id, classification.productId));
+    }
+    
+    // Atualizar data da última calculação
+    await db
+      .update(abcConfig)
+      .set({
+        lastCalculation: now,
+        updatedAt: now,
+      })
+      .where(eq(abcConfig.userId, userId));
+    
+    return {
+      success: true,
+      message: 'Análise ABC+D calculada com sucesso',
+      stats: {
+        totalProducts: allProducts.length,
+        classA: classifications.filter(c => c.abcClass === 'A').length,
+        classB: classifications.filter(c => c.abcClass === 'B').length,
+        classC: classifications.filter(c => c.abcClass === 'C').length,
+        classD: classifications.filter(c => c.abcClass === 'D').length,
+        totalRevenue,
+        analysisMonths: config.analysisMonths,
+      },
+    };
+  } catch (error) {
+    console.error('[ABC] Erro ao calcular classificação:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+    };
+  }
 }

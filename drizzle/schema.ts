@@ -51,8 +51,11 @@ export const products = mysqlTable("products", {
   cost: int("cost").notNull().default(0), // em centavos
   unit: varchar("unit", { length: 20 }),
   
-  // Classificação ABC
-  abcClass: mysqlEnum("abcClass", ["A", "B", "C"]),
+  // Classificação ABC+D
+  abcClass: mysqlEnum("abcClass", ["A", "B", "C", "D"]),
+  abcRevenue: int("abcRevenue").default(0).notNull(), // Faturamento no período analisado (centavos)
+  abcPercentage: int("abcPercentage").default(0).notNull(), // Percentual do faturamento total (0-10000 = 0-100.00%)
+  abcLastCalculated: timestamp("abcLastCalculated"),
   abcClassManual: boolean("abcClassManual").default(false).notNull(),
   
   // Parâmetros de estoque
@@ -344,3 +347,20 @@ export const validOrderStatuses = mysqlTable("valid_order_statuses", {
 
 export type ValidOrderStatus = typeof validOrderStatuses.$inferSelect;
 export type InsertValidOrderStatus = typeof validOrderStatuses.$inferInsert;
+
+/**
+ * Configuração de análise ABC
+ * Armazena o período de análise configurado pelo usuário
+ */
+export const abcConfig = mysqlTable("abc_config", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  analysisMonths: int("analysisMonths").default(12).notNull(), // Período de análise em meses (3, 6, 9, 12)
+  lastCalculation: timestamp("lastCalculation"),
+  autoRecalculate: boolean("autoRecalculate").default(true).notNull(), // Recalcular após sincronização
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AbcConfig = typeof abcConfig.$inferSelect;
+export type InsertAbcConfig = typeof abcConfig.$inferInsert;
