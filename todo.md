@@ -469,3 +469,11 @@
 - [x] Alterar período de sincronização para 12 meses (365 dias)
 - [ ] Testar sincronização com período estendido
 - [ ] Validar que análise ABC terá dados suficientes
+
+## Bug - Nomes das Situações como "Desconhecido"
+
+- [x] Criar mapeamento manual de situações (ID 9 = Atendido, etc.)
+- [x] Implementar função para atualizar situações em lote
+- [x] Adicionar botão na interface para executar atualização
+- [ ] Executar atualização em lote dos 6.500 pedidos
+- [ ] Validar que situações aparecem corretas

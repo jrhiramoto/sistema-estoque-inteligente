@@ -230,6 +230,12 @@ export const appRouter = router({
         return await testFetchOrders(ctx.user.id, input);
       }),
     
+    // Endpoint para atualizar nomes das situações dos pedidos
+    updateOrderStatusNames: protectedProcedure.mutation(async ({ ctx }) => {
+      const { updateOrderStatusNames } = await import('./blingService');
+      return await updateOrderStatusNames(ctx.user.id);
+    }),
+    
     // Endpoint para buscar pedido específico por número
     fetchOrderByNumber: protectedProcedure
       .input(z.object({ orderNumber: z.string() }))

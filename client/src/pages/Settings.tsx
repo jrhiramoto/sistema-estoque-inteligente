@@ -224,6 +224,19 @@ export default function Settings() {
     },
   });
   
+  const updateOrderStatusNames = trpc.bling.updateOrderStatusNames.useMutation({
+    onSuccess: (data) => {
+      utils.orders.list.invalidate();
+      toast.success(`✅ ${data.updated} pedidos atualizados com sucesso!`);
+      if (data.errors > 0) {
+        toast.warning(`⚠️ ${data.errors} erros durante a atualização`);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar situações: ${error.message}`);
+    },
+  });
+  
   const handleListSituations = async () => {
     try {
       const result = await listOrderSituations.refetch();
@@ -620,6 +633,19 @@ export default function Settings() {
                         🔍 Buscar Pedido
                       </Button>
                     </div>
+                    
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => updateOrderStatusNames.mutate()}
+                      disabled={updateOrderStatusNames.isPending}
+                      className="w-full"
+                    >
+                      {updateOrderStatusNames.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
+                      ⚙️ Atualizar Nomes das Situações (6.500 pedidos)
+                    </Button>
                   </div>
                   </div>
                   

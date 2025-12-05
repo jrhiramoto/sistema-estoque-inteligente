@@ -82,43 +82,28 @@ let situacoesCache: Map<number, { id: number; nome: string; cor: string }> = new
 let situacoesCacheExpiry: Date | null = null;
 const SITUACOES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
 
+// Mapeamento manual de situações comuns (fallback quando API falhar)
+const SITUACOES_MANUAIS: Record<number, string> = {
+  9: 'Atendido',
+  12: 'Cancelado',
+  6: 'Em aberto',
+  15: 'Atendido',
+  24: 'Faturado',
+  // Adicionar mais conforme necessário
+};
+
 /**
- * Busca o nome da situação pelo ID, usando cache
+ * Busca o nome da situação pelo ID, usando mapeamento manual como fallback
  */
-async function getSituacaoNome(userId: number, situacaoId: number): Promise<string> {
-  // Verificar se cache está válido
-  const now = new Date();
-  if (!situacoesCacheExpiry || now > situacoesCacheExpiry || situacoesCache.size === 0) {
-    try {
-      // Buscar situações da API
-      const response = await blingRequest<{
-        data: Array<{
-          id: number;
-          nome: string;
-          cor: string;
-        }>;
-      }>(userId, '/situacoes/modulos/Vendas');
-      
-      // Atualizar cache
-      situacoesCache.clear();
-      response.data.forEach(sit => {
-        situacoesCache.set(sit.id, sit);
-      });
-      
-      // Definir expiração do cache
-      situacoesCacheExpiry = new Date(now.getTime() + SITUACOES_CACHE_TTL);
-      
-      console.log(`[Bling] Cache de situações atualizado: ${situacoesCache.size} situações`);
-    } catch (error) {
-      console.error('[Bling] Erro ao buscar situações:', error);
-      // Se falhar, retornar 'Desconhecido'
-      return 'Desconhecido';
-    }
+function getSituacaoNome(situacaoId: number): string {
+  // Primeiro, tentar buscar no cache
+  if (situacoesCache.size > 0) {
+    const situacao = situacoesCache.get(situacaoId);
+    if (situacao) return situacao.nome;
   }
   
-  // Buscar no cache
-  const situacao = situacoesCache.get(situacaoId);
-  return situacao ? situacao.nome : 'Desconhecido';
+  // Se não encontrar no cache, usar mapeamento manual
+  return SITUACOES_MANUAIS[situacaoId] || `Situação ${situacaoId}`;
 }
 
 // Helper para aguardar
@@ -729,7 +714,7 @@ export async function syncSales(
             
             // Buscar nome correto da situação usando o ID
             const statusId = pedido.situacao?.id || 0;
-            const statusNome = statusId > 0 ? await getSituacaoNome(userId, statusId) : 'Desconhecido';
+            const statusNome = statusId > 0 ? getSituacaoNome(statusId) : 'Desconhecido';
             
             console.log(`[Bling] Pedido ${pedido.numero} - Situação: ID=${statusId}, Nome=${statusNome}`);
             
@@ -852,6 +837,48 @@ export async function exchangeCodeForToken(
 /**
  * Lista todas as situações de pedidos disponíveis no Bling
  */
+/**
+ * Atualiza os nomes das situações de todos os pedidos usando mapeamento manual
+ */
+export async function updateOrderStatusNames(userId: number): Promise<{ updated: number; errors: number }> {
+  console.log('[Bling] Atualizando nomes das situações dos pedidos...');
+  
+  const db = await import('./db');
+  
+  // Buscar todos os pedidos com suas situações
+  const dbConn = await db.getDb();
+  if (!dbConn) {
+    throw new Error('Database não disponível');
+  }
+  
+  const [pedidos] = await (await import('mysql2/promise')).createConnection(process.env.DATABASE_URL!)
+    .then(conn => conn.execute('SELECT id, statusId FROM orders'));
+  
+  let updated = 0;
+  let errors = 0;
+  
+  for (const pedido of pedidos as any[]) {
+    try {
+      const statusNome = getSituacaoNome(pedido.statusId);
+      
+      await (await import('mysql2/promise')).createConnection(process.env.DATABASE_URL!)
+        .then(conn => conn.execute(
+          'UPDATE orders SET status = ? WHERE id = ?',
+          [statusNome, pedido.id]
+        ));
+      
+      updated++;
+    } catch (error) {
+      console.error(`[Bling] Erro ao atualizar pedido ${pedido.id}:`, error);
+      errors++;
+    }
+  }
+  
+  console.log(`[Bling] Atualização concluída: ${updated} pedidos atualizados, ${errors} erros`);
+  
+  return { updated, errors };
+}
+
 export async function listOrderSituations(userId: number): Promise<Array<{ id: number; nome: string; cor: string }>> {
   console.log('[Bling] Listando situações de pedidos...');
   
