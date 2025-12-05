@@ -230,6 +230,83 @@ export const appRouter = router({
         return await testFetchOrders(ctx.user.id, input);
       }),
     
+    // Endpoint de debug para testar salvamento de 1 pedido
+    debugSaveOrder: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const { testFetchOrders } = await import('./blingService');
+        const result = await testFetchOrders(ctx.user.id, { limite: 1 });
+        
+        if (!result.success || result.pedidos.length === 0) {
+          return { success: false, error: 'Nenhum pedido encontrado' };
+        }
+        
+        const pedido = result.pedidos[0];
+        console.log('[debugSaveOrder] ===== ESTRUTURA COMPLETA DO PEDIDO =====');
+        console.log(JSON.stringify(pedido, null, 2));
+        console.log('[debugSaveOrder] ===== FIM DA ESTRUTURA =====');
+        
+        console.log('[debugSaveOrder] Verificando campo itens:', pedido.itens);
+        console.log('[debugSaveOrder] Tipo de itens:', typeof pedido.itens);
+        console.log('[debugSaveOrder] É array?', Array.isArray(pedido.itens));
+        console.log('[debugSaveOrder] Quantidade de itens:', pedido.itens?.length || 0);
+        
+        // Calcular valor total
+        let totalAmount = 0;
+        if (pedido.itens && Array.isArray(pedido.itens)) {
+          totalAmount = pedido.itens.reduce((sum: number, item: any) => {
+            console.log('[debugSaveOrder] Item:', item, 'Valor:', item.valor, 'Quantidade:', item.quantidade);
+            return sum + (item.valor * item.quantidade);
+          }, 0);
+        } else {
+          console.log('[debugSaveOrder] ⚠️ AVISO: pedido.itens não é um array válido!');
+        }
+        
+        console.log('[debugSaveOrder] Valor total calculado:', totalAmount);
+        
+        // Tentar salvar
+        try {
+          const orderData = {
+            blingId: String(pedido.id),
+            orderNumber: pedido.numero,
+            orderDate: new Date(pedido.data),
+            customerName: pedido.contato?.nome || null,
+            customerDocument: pedido.contato?.numeroDocumento || null,
+            status: String(pedido.situacao?.valor || 'Desconhecido'),
+            statusId: pedido.situacao?.id || 0,
+            totalAmount: Math.round(totalAmount * 100),
+            itemsCount: pedido.itens?.length || 0,
+          };
+          
+          console.log('[debugSaveOrder] Tentando salvar com dados:', JSON.stringify(orderData, null, 2));
+          
+          await db.upsertOrder(orderData);
+          
+          return { 
+            success: true, 
+            message: 'Pedido salvo com sucesso!',
+            pedido,
+            orderData
+          };
+        } catch (dbError: any) {
+          console.error('[debugSaveOrder] Erro ao salvar no banco:', dbError);
+          return { 
+            success: false, 
+            error: dbError.message || String(dbError),
+            stack: dbError.stack,
+            pedido,
+            cause: dbError.cause
+          };
+        }
+      } catch (error: any) {
+        console.error('[debugSaveOrder] Erro geral:', error);
+        return { 
+          success: false, 
+          error: error.message || String(error),
+          stack: error.stack
+        };
+      }
+    }),
+    
     // Listar situações únicas encontradas nos pedidos importados
     getUniqueOrderStatuses: protectedProcedure
       .query(async ({ ctx }) => {

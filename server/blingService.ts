@@ -29,11 +29,18 @@ interface BlingPedido {
   id: number;
   numero: string;
   data: string;
+  total?: number; // Valor total do pedido fornecido pela API
   situacao: {
     id: number;
-    valor: string;
+    valor: string | number;
   };
-  itens: Array<{
+  contato?: {
+    id: number;
+    nome: string;
+    tipoPessoa: string;
+    numeroDocumento: string;
+  };
+  itens?: Array<{
     produto: {
       id: number;
     };
@@ -656,23 +663,45 @@ export async function syncSales(
             //   continue;
             // }
             
-            // Calcular total do pedido (soma dos itens)
-            const totalAmount = pedido.itens.reduce((sum, item) => {
-              return sum + (item.valor * item.quantidade);
-            }, 0);
+            // Calcular total do pedido
+            // Usar campo 'total' da API se disponível, senão calcular dos itens
+            let totalAmount = 0;
+            
+            if (pedido.total !== undefined && pedido.total !== null) {
+              // Usar total fornecido pela API
+              totalAmount = pedido.total;
+              console.log(`[Bling] Pedido ${pedido.numero} - Total da API: ${totalAmount}`);
+            } else if (pedido.itens && Array.isArray(pedido.itens) && pedido.itens.length > 0) {
+              // Calcular dos itens
+              totalAmount = pedido.itens.reduce((sum, item) => {
+                return sum + (item.valor * item.quantidade);
+              }, 0);
+              console.log(`[Bling] Pedido ${pedido.numero} - Total calculado dos itens: ${totalAmount}`);
+            } else {
+              console.warn(`[Bling] Pedido ${pedido.numero} - SEM TOTAL E SEM ITENS! Usando 0.`);
+            }
+            
+            const itemsCount = pedido.itens && Array.isArray(pedido.itens) ? pedido.itens.length : 0;
             
             // Salvar pedido completo na tabela orders
-            await db.upsertOrder({
+            try {
+              await db.upsertOrder({
               blingId: String(pedido.id),
               orderNumber: pedido.numero,
               orderDate: new Date(pedido.data),
-              customerName: (pedido as any).contato?.nome || null,
-              customerDocument: (pedido as any).contato?.numeroDocumento || null,
-              status: pedido.situacao?.valor || 'Desconhecido',
+              customerName: pedido.contato?.nome || null,
+              customerDocument: pedido.contato?.numeroDocumento || null,
+              status: String(pedido.situacao?.valor || 'Desconhecido'),
               statusId: pedido.situacao?.id || 0,
               totalAmount: Math.round(totalAmount * 100), // converter para centavos
-              itemsCount: pedido.itens.length,
-            });
+              itemsCount: itemsCount,
+              });
+            } catch (error) {
+              console.error(`[Bling] Erro ao salvar pedido ${pedido.numero}:`, error);
+              console.error(`[Bling] Dados do pedido:`, JSON.stringify(pedido, null, 2));
+              errors++;
+              continue;
+            }
             
             synced++;
             

@@ -174,6 +174,28 @@ export default function Settings() {
     },
   });
   
+  const debugSaveOrder = trpc.bling.debugSaveOrder.useMutation({
+    onSuccess: (data) => {
+      console.log('[Debug] Resultado:', data);
+      if (data.success) {
+        toast.success('✅ Pedido salvo com sucesso! Verifique o console (F12) para detalhes.');
+      } else {
+        toast.error(
+          <div className="space-y-2">
+            <p className="font-semibold">❌ Erro ao salvar pedido:</p>
+            <pre className="text-xs whitespace-pre-wrap max-h-60 overflow-y-auto">
+              {data.error}
+            </pre>
+          </div>,
+          { duration: 15000 }
+        );
+      }
+    },
+    onError: (error) => {
+      toast.error(`Erro ao executar debug: ${error.message}`);
+    },
+  });
+  
   const handleListSituations = async () => {
     try {
       const result = await listOrderSituations.refetch();
@@ -531,6 +553,19 @@ export default function Settings() {
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       ) : null}
                       Testar Busca de Pedidos (5 últimos)
+                    </Button>
+                    
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => debugSaveOrder.mutate()}
+                      disabled={!config?.isActive || debugSaveOrder.isPending}
+                      title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
+                    >
+                      {debugSaveOrder.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
+                      🐛 Debug: Salvar 1 Pedido
                     </Button>
                   </div>
                   </div>

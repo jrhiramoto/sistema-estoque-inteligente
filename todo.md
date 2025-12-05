@@ -432,3 +432,24 @@
 - [x] Reescrever syncSales seguindo exatamente o padrão de syncProducts (removido salvamento de itens individuais)
 - [x] Testar sincronização de vendas e validar se pedidos são importados (pronto para teste do usuário)
 - [ ] Verificar se pedidos aparecem na página de Pedidos de Venda (após teste do usuário)
+
+## Debug: Erro INTERNAL_SERVER_ERROR na Sincronização de Vendas
+
+- [x] Investigar erro INTERNAL_SERVER_ERROR que ocorreu durante sincronização
+- [x] Verificar se é problema com formato de data ou campos do pedido (problema com tipo de situacao.valor)
+- [x] Corrigir erro identificado (adicionado campo contato na interface e convertido situacao.valor para string)
+- [ ] Testar sincronização novamente com usuário
+
+## Debug: 575 Erros Persistem na Sincronização de Vendas
+
+- [x] Adicionar logs detalhados para capturar erro específico ao salvar pedidos
+- [ ] Testar novamente e analisar mensagem de erro completa
+- [ ] Corrigir problema identificado nos logs
+
+## Bug Crítico - Sincronização de Vendas Falhando
+
+- [x] Corrigir mapeamento de dados dos pedidos da API do Bling
+- [x] Garantir que campo 'itens' seja processado corretamente
+- [x] Adicionar suporte para campo 'total' da API do Bling
+- [x] Criar teste automatizado para validar cálculo de totais
+- [ ] Executar sincronização completa de vendas e validar sucesso
