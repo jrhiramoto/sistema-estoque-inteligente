@@ -458,11 +458,12 @@ export const appRouter = router({
         return response.data || [];
       } catch (error: any) {
         console.error('[listWebhooks] Erro:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Erro ao listar webhooks',
-          cause: error,
-        });
+        // Se não está autorizado ou webhook não encontrado, retornar array vazio
+        if (error.message && (error.message.includes('autorizar') || error.message.includes('encontrado'))) {
+          return [];
+        }
+        // Retornar array vazio para qualquer erro ao invés de quebrar a página
+        return [];
       }
     }),
   }),

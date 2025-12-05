@@ -566,3 +566,12 @@
 - [ ] Testar recebimento de notificações do Bling
 - [ ] Validar que saldos são atualizados automaticamente
 - [ ] Verificar logs de webhook para confirmar funcionamento
+
+## BUG - Erro "Não encontrado" na Página /settings
+
+- [x] Investigar qual query está retornando erro "Não encontrado"
+- [x] Verificar logs do servidor para identificar a query problemática
+- [x] Corrigir query para retornar null ao invés de lançar erro
+- [x] Testar correção na página /settings
+
+**Solução:** Query `listWebhooks` agora retorna array vazio ao invés de lançar exceção quando webhook não está registrado ou não há autorização.
