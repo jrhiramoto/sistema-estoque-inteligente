@@ -477,3 +477,11 @@
 - [x] Adicionar botão na interface para executar atualização
 - [ ] Executar atualização em lote dos 6.500 pedidos
 - [ ] Validar que situações aparecem corretas
+
+## Melhoria - Filtro de Situações Relevantes
+
+- [x] Identificar ID da situação "Faturado" (pedido 49139) - ID 10380
+- [x] Modificar Seção 4 para mostrar apenas IDs 9 (Atendido) e 10380 (Faturado)
+- [x] Verificar que apenas pedidos com IDs relevantes aparecem na listagem (filtro já implementado)
+- [x] Remover botões de debug/teste da Seção 3
+- [x] Validar que filtro funciona corretamente (5.229 de 6.500 pedidos são relevantes)

@@ -24,6 +24,9 @@ export function OrderStatusFilter() {
     },
   });
   
+  // IDs das situações relevantes
+  const RELEVANT_STATUS_IDS = [9, 10380]; // 9 = Atendido, 10380 = Faturado
+  
   // Inicializar seleção com situações válidas já configuradas
   useEffect(() => {
     if (validStatuses && validStatuses.length > 0) {
@@ -34,17 +37,15 @@ export function OrderStatusFilter() {
         }
       });
       setSelectedStatuses(selected);
-    } else if (uniqueStatuses && uniqueStatuses.length > 0) {
-      // Se não houver configuração, marcar todas como ativas por padrão
+    } else {
+      // Se não houver configuração, marcar apenas IDs relevantes como ativos
       const selected: Record<number, boolean> = {};
-      uniqueStatuses.forEach(status => {
-        if (status.statusId !== null) {
-          selected[status.statusId] = true;
-        }
+      RELEVANT_STATUS_IDS.forEach(id => {
+        selected[id] = true;
       });
       setSelectedStatuses(selected);
     }
-  }, [validStatuses, uniqueStatuses]);
+  }, [validStatuses]);
   
   const handleToggle = (statusId: number | null) => {
     if (statusId === null) return;
@@ -55,37 +56,27 @@ export function OrderStatusFilter() {
   };
   
   const handleSave = () => {
-    if (!uniqueStatuses) return;
-    
-    const statusesToSave = uniqueStatuses
-      .filter(status => status.statusId !== null)
-      .map(status => ({
-        statusId: status.statusId!,
-        statusName: status.status || `Situação ${status.statusId}`,
-        isActive: selectedStatuses[status.statusId!] ?? false,
-      }));
+    const statusesToSave = relevantStatuses.map(status => ({
+      statusId: status.statusId!,
+      statusName: status.status || `Situação ${status.statusId}`,
+      isActive: selectedStatuses[status.statusId!] ?? false,
+    }));
     
     saveStatuses.mutate(statusesToSave);
   };
   
   const handleSelectAll = () => {
-    if (!uniqueStatuses) return;
     const selected: Record<number, boolean> = {};
-    uniqueStatuses.forEach(status => {
-      if (status.statusId !== null) {
-        selected[status.statusId] = true;
-      }
+    RELEVANT_STATUS_IDS.forEach(id => {
+      selected[id] = true;
     });
     setSelectedStatuses(selected);
   };
   
   const handleDeselectAll = () => {
-    if (!uniqueStatuses) return;
     const selected: Record<number, boolean> = {};
-    uniqueStatuses.forEach(status => {
-      if (status.statusId !== null) {
-        selected[status.statusId] = false;
-      }
+    RELEVANT_STATUS_IDS.forEach(id => {
+      selected[id] = false;
     });
     setSelectedStatuses(selected);
   };
@@ -98,11 +89,19 @@ export function OrderStatusFilter() {
     );
   }
   
-  if (!uniqueStatuses || uniqueStatuses.length === 0) {
+  // Filtrar apenas situações relevantes
+  const relevantStatuses = uniqueStatuses?.filter(status => 
+    status.statusId !== null && RELEVANT_STATUS_IDS.includes(status.statusId)
+  ) || [];
+  
+  if (relevantStatuses.length === 0) {
     return (
       <div className="text-center py-8 space-y-4">
         <p className="text-sm text-muted-foreground">
-          Nenhuma situação encontrada. Sincronize pedidos primeiro.
+          Nenhuma situação relevante encontrada. Sincronize pedidos primeiro.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Situações relevantes: Atendido (ID 9) e Faturado (ID 10380)
         </p>
         <Button
           variant="outline"
@@ -120,30 +119,17 @@ export function OrderStatusFilter() {
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          {selectedCount} de {uniqueStatuses.length} situações selecionadas
+          {selectedCount} de {relevantStatuses.length} situações selecionadas
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSelectAll}
-          >
-            Selecionar Todas
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDeselectAll}
-          >
-            Desmarcar Todas
-          </Button>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Apenas situações relevantes são exibidas: Atendido (ID 9) e Faturado (ID 10380)
+        </p>
       </div>
       
       <div className="rounded-lg border divide-y">
-        {uniqueStatuses.map((status) => {
+        {relevantStatuses.map((status) => {
           if (status.statusId === null) return null;
           return (
           <div
