@@ -33,6 +33,7 @@ export default function AbcAnalysis() {
 
   const { data: config, isLoading: configLoading } = trpc.abc.getConfig.useQuery();
   const { data: distribution } = trpc.abc.getDistribution.useQuery();
+  const { data: stockMetrics, isLoading: stockMetricsLoading, refetch: refetchStockMetrics } = trpc.abc.getStockMetrics.useQuery();
   const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = trpc.abc.getProducts.useQuery({
     limit: 1000,
     sortBy: sortBy,
@@ -49,6 +50,7 @@ export default function AbcAnalysis() {
           description: `${result.stats?.totalProducts} produtos classificados`,
         });
         refetchProducts();
+        refetchStockMetrics();
       } else {
         toast.error("Erro ao calcular análise ABC", {
           description: result.message,
@@ -86,59 +88,47 @@ export default function AbcAnalysis() {
     return filtered;
   }, [products, searchTerm, classFilter, sortBy]);
 
-  // Calcular métricas
+  // Calcular métricas usando dados de estoque do backend
   const metrics = useMemo(() => {
-    if (!products) return null;
+    if (!stockMetrics) return null;
 
-    const totalRevenue = products.reduce((sum: number, p: any) => sum + (p.abcRevenue || 0), 0);
-    const productsWithSales = products.filter((p: any) => (p.abcRevenue || 0) > 0);
-    const avgRevenue = productsWithSales.length > 0 
-      ? totalRevenue / productsWithSales.length 
-      : 0;
-
-    const classA = products.filter((p: any) => p.abcClass === "A");
-    const classB = products.filter((p: any) => p.abcClass === "B");
-    const classC = products.filter((p: any) => p.abcClass === "C");
-    const classD = products.filter((p: any) => p.abcClass === "D");
-
-    const revenueA = classA.reduce((sum: number, p: any) => sum + (p.abcRevenue || 0), 0);
-    const revenueB = classB.reduce((sum: number, p: any) => sum + (p.abcRevenue || 0), 0);
-    const revenueC = classC.reduce((sum: number, p: any) => sum + (p.abcRevenue || 0), 0);
-
-    // Total de produtos classificados (A+B+C+D)
-    const totalClassified = classA.length + classB.length + classC.length + classD.length;
+    const totalStockValue = stockMetrics.total.stockValue;
+    const totalStockQuantity = stockMetrics.total.stockQuantity;
 
     return {
-      totalRevenue,
-      avgRevenue,
-      productsWithSales: productsWithSales.length,
-      totalClassified,
+      totalStockValue,
+      totalStockQuantity,
+      totalProducts: stockMetrics.total.productCount,
       classA: {
-        count: classA.length,
-        revenue: revenueA,
-        revenuePercentage: totalRevenue > 0 ? (revenueA / totalRevenue) * 100 : 0,
-        countPercentage: totalClassified > 0 ? (classA.length / totalClassified) * 100 : 0,
+        count: stockMetrics.classA.productCount,
+        stockValue: stockMetrics.classA.stockValue,
+        stockQuantity: stockMetrics.classA.stockQuantity,
+        valuePercentage: totalStockValue > 0 ? (stockMetrics.classA.stockValue / totalStockValue) * 100 : 0,
+        quantityPercentage: totalStockQuantity > 0 ? (stockMetrics.classA.stockQuantity / totalStockQuantity) * 100 : 0,
       },
       classB: {
-        count: classB.length,
-        revenue: revenueB,
-        revenuePercentage: totalRevenue > 0 ? (revenueB / totalRevenue) * 100 : 0,
-        countPercentage: totalClassified > 0 ? (classB.length / totalClassified) * 100 : 0,
+        count: stockMetrics.classB.productCount,
+        stockValue: stockMetrics.classB.stockValue,
+        stockQuantity: stockMetrics.classB.stockQuantity,
+        valuePercentage: totalStockValue > 0 ? (stockMetrics.classB.stockValue / totalStockValue) * 100 : 0,
+        quantityPercentage: totalStockQuantity > 0 ? (stockMetrics.classB.stockQuantity / totalStockQuantity) * 100 : 0,
       },
       classC: {
-        count: classC.length,
-        revenue: revenueC,
-        revenuePercentage: totalRevenue > 0 ? (revenueC / totalRevenue) * 100 : 0,
-        countPercentage: totalClassified > 0 ? (classC.length / totalClassified) * 100 : 0,
+        count: stockMetrics.classC.productCount,
+        stockValue: stockMetrics.classC.stockValue,
+        stockQuantity: stockMetrics.classC.stockQuantity,
+        valuePercentage: totalStockValue > 0 ? (stockMetrics.classC.stockValue / totalStockValue) * 100 : 0,
+        quantityPercentage: totalStockQuantity > 0 ? (stockMetrics.classC.stockQuantity / totalStockQuantity) * 100 : 0,
       },
       classD: {
-        count: classD.length,
-        revenue: 0,
-        revenuePercentage: 0,
-        countPercentage: totalClassified > 0 ? (classD.length / totalClassified) * 100 : 0,
+        count: stockMetrics.classD.productCount,
+        stockValue: stockMetrics.classD.stockValue,
+        stockQuantity: stockMetrics.classD.stockQuantity,
+        valuePercentage: totalStockValue > 0 ? (stockMetrics.classD.stockValue / totalStockValue) * 100 : 0,
+        quantityPercentage: totalStockQuantity > 0 ? (stockMetrics.classD.stockQuantity / totalStockQuantity) * 100 : 0,
       },
     };
-  }, [products]);
+  }, [stockMetrics]);
 
   // Dados para gráfico de Pareto
   const paretoData = useMemo(() => {
@@ -263,30 +253,30 @@ export default function AbcAnalysis() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor Total em Estoque</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics ? formatCurrency(metrics.totalRevenue) : "R$ 0,00"}
+              {metrics ? formatCurrency(metrics.totalStockValue) : "R$ 0,00"}
             </div>
             <p className="text-xs text-muted-foreground">
-              {metrics?.productsWithSales || 0} produtos com vendas
+              {metrics?.totalProducts || 0} produtos
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+            <CardTitle className="text-sm font-medium">Quantidade Total em Estoque</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics ? formatCurrency(metrics.avgRevenue) : "R$ 0,00"}
+              {metrics?.totalStockQuantity.toLocaleString('pt-BR') || "0"}
             </div>
             <p className="text-xs text-muted-foreground">
-              Por produto
+              Unidades
             </p>
           </CardContent>
         </Card>
@@ -336,19 +326,19 @@ export default function AbcAnalysis() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-700">
-              {metrics ? formatCurrency(metrics.classA.revenue) : "R$ 0,00"}
+              {metrics ? formatCurrency(metrics.classA.stockValue) : "R$ 0,00"}
             </div>
             
             {/* Barra 1: Faturamento */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-green-600 mb-1">
-                <span>Faturamento</span>
-                <span className="font-semibold">{metrics?.classA.revenuePercentage.toFixed(1)}%</span>
+                <span>Valor em Estoque</span>
+                <span className="font-semibold">{metrics?.classA.valuePercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-green-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-green-500 transition-all"
-                  style={{ width: `${metrics?.classA.revenuePercentage || 0}%` }}
+                  style={{ width: `${metrics?.classA.valuePercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -356,13 +346,13 @@ export default function AbcAnalysis() {
             {/* Barra 2: Quantidade de Produtos */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-green-600 mb-1">
-                <span>Quantidade</span>
-                <span className="font-semibold">{metrics?.classA.countPercentage.toFixed(1)}%</span>
+                <span>Quantidade em Estoque</span>
+                <span className="font-semibold">{metrics?.classA.quantityPercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-green-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-green-600 transition-all"
-                  style={{ width: `${metrics?.classA.countPercentage || 0}%` }}
+                  style={{ width: `${metrics?.classA.quantityPercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -381,19 +371,19 @@ export default function AbcAnalysis() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-700">
-              {metrics ? formatCurrency(metrics.classB.revenue) : "R$ 0,00"}
+              {metrics ? formatCurrency(metrics.classB.stockValue) : "R$ 0,00"}
             </div>
             
             {/* Barra 1: Faturamento */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-blue-600 mb-1">
-                <span>Faturamento</span>
-                <span className="font-semibold">{metrics?.classB.revenuePercentage.toFixed(1)}%</span>
+                <span>Valor em Estoque</span>
+                <span className="font-semibold">{metrics?.classB.valuePercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-500 transition-all"
-                  style={{ width: `${metrics?.classB.revenuePercentage || 0}%` }}
+                  style={{ width: `${metrics?.classB.valuePercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -401,13 +391,13 @@ export default function AbcAnalysis() {
             {/* Barra 2: Quantidade de Produtos */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-blue-600 mb-1">
-                <span>Quantidade</span>
-                <span className="font-semibold">{metrics?.classB.countPercentage.toFixed(1)}%</span>
+                <span>Quantidade em Estoque</span>
+                <span className="font-semibold">{metrics?.classB.quantityPercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-600 transition-all"
-                  style={{ width: `${metrics?.classB.countPercentage || 0}%` }}
+                  style={{ width: `${metrics?.classB.quantityPercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -426,19 +416,19 @@ export default function AbcAnalysis() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-700">
-              {metrics ? formatCurrency(metrics.classC.revenue) : "R$ 0,00"}
+              {metrics ? formatCurrency(metrics.classC.stockValue) : "R$ 0,00"}
             </div>
             
             {/* Barra 1: Faturamento */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-yellow-600 mb-1">
-                <span>Faturamento</span>
-                <span className="font-semibold">{metrics?.classC.revenuePercentage.toFixed(1)}%</span>
+                <span>Valor em Estoque</span>
+                <span className="font-semibold">{metrics?.classC.valuePercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-yellow-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-yellow-500 transition-all"
-                  style={{ width: `${metrics?.classC.revenuePercentage || 0}%` }}
+                  style={{ width: `${metrics?.classC.valuePercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -446,13 +436,13 @@ export default function AbcAnalysis() {
             {/* Barra 2: Quantidade de Produtos */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-yellow-600 mb-1">
-                <span>Quantidade</span>
-                <span className="font-semibold">{metrics?.classC.countPercentage.toFixed(1)}%</span>
+                <span>Quantidade em Estoque</span>
+                <span className="font-semibold">{metrics?.classC.quantityPercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-yellow-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-yellow-600 transition-all"
-                  style={{ width: `${metrics?.classC.countPercentage || 0}%` }}
+                  style={{ width: `${metrics?.classC.quantityPercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -471,7 +461,7 @@ export default function AbcAnalysis() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-700">
-              R$ 0,00
+              {metrics ? formatCurrency(metrics.classD.stockValue) : "R$ 0,00"}
             </div>
             
             {/* Barra 1: Faturamento */}
@@ -488,13 +478,13 @@ export default function AbcAnalysis() {
             {/* Barra 2: Quantidade de Produtos */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                <span>Quantidade</span>
-                <span className="font-semibold">{metrics?.classD.countPercentage.toFixed(1)}%</span>
+                <span>Quantidade em Estoque</span>
+                <span className="font-semibold">{metrics?.classD.quantityPercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gray-600 transition-all"
-                  style={{ width: `${metrics?.classD.countPercentage || 0}%` }}
+                  style={{ width: `${metrics?.classD.quantityPercentage || 0}%` }}
                 />
               </div>
             </div>
@@ -636,9 +626,7 @@ export default function AbcAnalysis() {
                           {formatCurrency(product.abcRevenue || 0)}
                         </td>
                         <td className="px-4 py-3 text-sm text-right text-muted-foreground">
-                          {metrics && metrics.totalRevenue > 0
-                            ? ((product.abcRevenue || 0) / metrics.totalRevenue * 100).toFixed(2)
-                            : "0.00"}%
+                          {product.abcPercentage ? (product.abcPercentage / 100).toFixed(2) : "0.00"}%
                         </td>
                       </tr>
                     ))

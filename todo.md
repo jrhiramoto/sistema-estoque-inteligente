@@ -538,3 +538,13 @@
 - [x] Atualizar backend para retornar métricas de valor e quantidade por classe
 - [x] Atualizar frontend dos cards ABCD com layout de duas barras
 - [x] Testar visualização com dados reais
+
+## Correção - Metodologia Cards ABCD (Estoque ao invés de Faturamento)
+
+- [x] Corrigir cálculo das barras dos cards ABCD:
+  * Barra 1: Valor em ESTOQUE (quantidade × preço de venda) ao invés de faturamento
+  * Barra 2: Quantidade total em ESTOQUE ao invés de quantidade de produtos
+- [x] Implementar cálculo completo para Classe D (produtos sem vendas mas com estoque)
+- [x] Atualizar backend para retornar métricas de estoque por classe
+- [x] Atualizar frontend para exibir "Valor em Estoque" e "Quantidade em Estoque"
+- [x] Testar com dados reais incluindo produtos Classe D

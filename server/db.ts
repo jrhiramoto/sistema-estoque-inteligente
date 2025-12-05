@@ -1257,3 +1257,97 @@ export async function calculateAbcClassification(userId: number) {
     };
   }
 }
+
+/**
+ * Obtém métricas de estoque por classe ABC+D
+ * Calcula valor em estoque (quantidade × preço) e quantidade total em estoque
+ */
+export async function getAbcStockMetrics() {
+  const db = await getDb();
+  if (!db) {
+    return {
+      classA: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classB: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classC: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classD: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      total: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+    };
+  }
+
+  try {
+    // Buscar todos os produtos com seus estoques
+    const productsWithStock = await db
+      .select({
+        productId: products.id,
+        abcClass: products.abcClass,
+        price: products.price,
+        physicalStock: inventory.physicalStock,
+      })
+      .from(products)
+      .leftJoin(inventory, eq(products.id, inventory.productId));
+
+    // Agrupar estoque por produto (somar todos os depósitos)
+    const stockByProduct = new Map<number, { abcClass: string | null, price: number, totalStock: number }>();
+    
+    for (const row of productsWithStock) {
+      const existing = stockByProduct.get(row.productId);
+      const stock = row.physicalStock || 0;
+      
+      if (existing) {
+        existing.totalStock += stock;
+      } else {
+        stockByProduct.set(row.productId, {
+          abcClass: row.abcClass,
+          price: row.price,
+          totalStock: stock,
+        });
+      }
+    }
+
+    // Calcular métricas por classe
+    const metrics = {
+      classA: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classB: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classC: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classD: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      total: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+    };
+
+    stockByProduct.forEach((data) => {
+      const stockValue = (data.totalStock * data.price) / 100; // converter centavos para reais
+      const stockQuantity = data.totalStock;
+      
+      // Classificar produto
+      let className: 'classA' | 'classB' | 'classC' | 'classD';
+      if (data.abcClass === 'A') {
+        className = 'classA';
+      } else if (data.abcClass === 'B') {
+        className = 'classB';
+      } else if (data.abcClass === 'C') {
+        className = 'classC';
+      } else {
+        // Produtos sem classificação ou classe D
+        className = 'classD';
+      }
+      
+      metrics[className].stockValue += stockValue;
+      metrics[className].stockQuantity += stockQuantity;
+      metrics[className].productCount += 1;
+      
+      metrics.total.stockValue += stockValue;
+      metrics.total.stockQuantity += stockQuantity;
+      metrics.total.productCount += 1;
+    });
+
+    return metrics;
+  } catch (error) {
+    console.error('[ABC] Erro ao obter métricas de estoque:', error);
+    return {
+      classA: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classB: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classC: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      classD: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+      total: { stockValue: 0, stockQuantity: 0, productCount: 0 },
+    };
+  }
+}

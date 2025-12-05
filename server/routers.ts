@@ -722,6 +722,10 @@ export const appRouter = router({
       };
     }),
     
+    getStockMetrics: protectedProcedure.query(async () => {
+      return await db.getAbcStockMetrics();
+    }),
+    
     getProducts: protectedProcedure
       .input(z.object({
         limit: z.number().optional(),
