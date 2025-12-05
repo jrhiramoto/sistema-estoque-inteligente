@@ -915,15 +915,25 @@ export async function getUniqueOrderStatuses(userId: number) {
   const db = await getDb();
   if (!db) return [];
   
+  // Agrupar por statusId e pegar o status mais recente (não "Desconhecido")
   const result = await db
     .selectDistinct({
       statusId: orders.statusId,
       status: orders.status,
     })
     .from(orders)
+    .where(sql`${orders.status} != 'Desconhecido'`)
     .orderBy(orders.statusId);
   
-  return result;
+  // Remover duplicatas baseado apenas em statusId
+  const uniqueMap = new Map<number, typeof result[0]>();
+  result.forEach(item => {
+    if (item.statusId !== null && !uniqueMap.has(item.statusId)) {
+      uniqueMap.set(item.statusId, item);
+    }
+  });
+  
+  return Array.from(uniqueMap.values());
 }
 
 /**

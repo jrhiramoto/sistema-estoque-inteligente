@@ -485,3 +485,9 @@
 - [x] Verificar que apenas pedidos com IDs relevantes aparecem na listagem (filtro já implementado)
 - [x] Remover botões de debug/teste da Seção 3
 - [x] Validar que filtro funciona corretamente (5.229 de 6.500 pedidos são relevantes)
+
+## Bug - Chaves Duplicadas no OrderStatusFilter
+
+- [x] Identificar causa das chaves duplicadas (selectDistinct em 2 campos)
+- [x] Corrigir query getUniqueOrderStatuses para remover duplicatas
+- [x] Validar que não há mais erros de chaves duplicadas (13 situações únicas)
