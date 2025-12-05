@@ -327,3 +327,20 @@ export const productSuppliers = mysqlTable("product_suppliers", {
 
 export type ProductSupplier = typeof productSuppliers.$inferSelect;
 export type InsertProductSupplier = typeof productSuppliers.$inferInsert;
+
+/**
+ * Situações de pedidos consideradas válidas pelo usuário
+ * Armazena quais situações devem ser consideradas nos relatórios e listagens
+ */
+export const validOrderStatuses = mysqlTable("valid_order_statuses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  statusId: int("statusId").notNull(), // ID da situação no Bling
+  statusName: varchar("statusName", { length: 100 }).notNull(), // Nome da situação
+  isActive: boolean("isActive").default(true).notNull(), // Se está ativa para filtro
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ValidOrderStatus = typeof validOrderStatuses.$inferSelect;
+export type InsertValidOrderStatus = typeof validOrderStatuses.$inferInsert;

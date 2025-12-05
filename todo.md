@@ -405,3 +405,12 @@
 - [x] Verificar logs do servidor para identificar qual query está falhando (listOrderSituations)
 - [x] Verificar se é problema com token expirado ou configuração ausente (token expirado)
 - [x] Corrigir query ou criar registro padrão conforme necessário (melhorado tratamento de erro)
+
+## Sistema de Filtro de Situações de Pedidos Configurável
+
+- [x] Criar tabela para armazenar situações válidas selecionadas pelo usuário
+- [x] Criar endpoint para listar todas as situações encontradas nos pedidos importados
+- [x] Criar endpoint para salvar situações válidas selecionadas
+- [x] Criar interface em Configurações para visualizar e selecionar situações
+- [x] Aplicar filtro de situações na query de listagem de pedidos
+- [x] Testar fluxo completo: sincronizar → configurar situações → ver pedidos filtrados

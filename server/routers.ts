@@ -230,6 +230,45 @@ export const appRouter = router({
         return await testFetchOrders(ctx.user.id, input);
       }),
     
+    // Listar situações únicas encontradas nos pedidos importados
+    getUniqueOrderStatuses: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getUniqueOrderStatuses(ctx.user.id);
+      }),
+    
+    // Listar situações válidas configuradas
+    getValidOrderStatuses: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getValidOrderStatuses(ctx.user.id);
+      }),
+    
+    // Salvar situações válidas selecionadas
+    saveValidOrderStatuses: protectedProcedure
+      .input(z.array(z.object({
+        statusId: z.number(),
+        statusName: z.string(),
+        isActive: z.boolean(),
+      })))
+      .mutation(async ({ ctx, input }) => {
+        // Remover todas as situações existentes do usuário
+        const existing = await db.getValidOrderStatuses(ctx.user.id);
+        for (const status of existing) {
+          await db.deleteValidOrderStatus(status.id);
+        }
+        
+        // Inserir novas situações
+        for (const status of input) {
+          await db.upsertValidOrderStatus({
+            userId: ctx.user.id,
+            statusId: status.statusId,
+            statusName: status.statusName,
+            isActive: status.isActive,
+          });
+        }
+        
+        return { success: true };
+      }),
+    
     // Listar situações de pedidos disponíveis no Bling
     listOrderSituations: protectedProcedure.query(async ({ ctx }) => {
       try {
@@ -480,9 +519,14 @@ export const appRouter = router({
         offset: z.number().optional(),
         search: z.string().optional(),
         status: z.string().optional(),
+        filterByValidStatuses: z.boolean().optional(),
       }).optional())
-      .query(async ({ input }) => {
-        return await db.listOrders(input);
+      .query(async ({ ctx, input }) => {
+        return await db.listOrders({
+          ...input,
+          userId: ctx.user.id,
+          filterByValidStatuses: input?.filterByValidStatuses ?? true, // Filtrar por padrão
+        });
       }),
 
     getById: protectedProcedure

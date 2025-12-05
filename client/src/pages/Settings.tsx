@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Loader2, Clock } from "lucide-react";
+import { ArrowLeft, Save, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Loader2, Clock, Filter } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { OrderStatusFilter } from "@/components/OrderStatusFilter";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -618,13 +619,31 @@ export default function Settings() {
             </Card>
           )}
 
+          {/* Configuração de Situações Válidas */}
+          {hasConfig && config?.isActive && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="w-5 h-5" />
+                  4. Situações de Pedidos Válidas
+                </CardTitle>
+                <CardDescription>
+                  Selecione quais situações de pedidos devem ser consideradas nos relatórios
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <OrderStatusFilter />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Configuração de Sincronização Automática */}
           {hasConfig && config?.isActive && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="w-5 h-5" />
-                  4. Sincronização Automática
+                  5. Sincronização Automática
                 </CardTitle>
                 <CardDescription>
                   Sincronização periódica como fallback dos webhooks (recomendado: semanal)

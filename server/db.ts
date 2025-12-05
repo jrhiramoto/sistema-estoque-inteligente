@@ -4,11 +4,11 @@ import {
   InsertUser, users, products, inventory, sales, orders,
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
-  productSuppliers,
+  productSuppliers, validOrderStatuses,
   Product, Inventory, Sale, Order, InsertOrder, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
   ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
-  ProductSupplier, InsertProductSupplier
+  ProductSupplier, InsertProductSupplier, ValidOrderStatus, InsertValidOrderStatus
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -800,11 +800,13 @@ export async function listOrders(params?: {
   offset?: number;
   search?: string;
   status?: string;
+  userId?: number;
+  filterByValidStatuses?: boolean;
 }) {
   const db = await getDb();
   if (!db) return { orders: [], total: 0 };
 
-  const { limit = 50, offset = 0, search, status } = params || {};
+  const { limit = 50, offset = 0, search, status, userId, filterByValidStatuses = false } = params || {};
 
   let conditions = [];
   
@@ -820,6 +822,14 @@ export async function listOrders(params?: {
   
   if (status) {
     conditions.push(eq(orders.status, status));
+  }
+  
+  // Filtrar por situações válidas se solicitado
+  if (filterByValidStatuses && userId) {
+    const activeStatusIds = await getActiveStatusIds(userId);
+    if (activeStatusIds.length > 0) {
+      conditions.push(sql`${orders.statusId} IN (${sql.join(activeStatusIds.map(id => sql`${id}`), sql`, `)})`);
+    }
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -893,4 +903,93 @@ export async function getOrdersStats() {
     total: Number(result[0]?.total || 0),
     totalAmount: Number(result[0]?.totalAmount || 0),
   };
+}
+
+
+// ===== Valid Order Statuses Management =====
+
+/**
+ * Lista todas as situações únicas encontradas nos pedidos importados
+ */
+export async function getUniqueOrderStatuses(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .selectDistinct({
+      statusId: orders.statusId,
+      status: orders.status,
+    })
+    .from(orders)
+    .orderBy(orders.statusId);
+  
+  return result;
+}
+
+/**
+ * Lista situações válidas configuradas pelo usuário
+ */
+export async function getValidOrderStatuses(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(validOrderStatuses)
+    .where(eq(validOrderStatuses.userId, userId))
+    .orderBy(validOrderStatuses.statusId);
+}
+
+/**
+ * Salva ou atualiza situações válidas
+ */
+export async function upsertValidOrderStatus(status: InsertValidOrderStatus) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.insert(validOrderStatuses).values(status).onDuplicateKeyUpdate({
+      set: {
+        statusName: status.statusName,
+        isActive: status.isActive,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('[Database] Error upserting valid order status:', error);
+  }
+}
+
+/**
+ * Remove uma situação válida
+ */
+export async function deleteValidOrderStatus(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.delete(validOrderStatuses).where(eq(validOrderStatuses.id, id));
+  } catch (error) {
+    console.error('[Database] Error deleting valid order status:', error);
+  }
+}
+
+/**
+ * Retorna IDs das situações ativas
+ */
+export async function getActiveStatusIds(userId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select({ statusId: validOrderStatuses.statusId })
+    .from(validOrderStatuses)
+    .where(
+      and(
+        eq(validOrderStatuses.userId, userId),
+        eq(validOrderStatuses.isActive, true)
+      )
+    );
+  
+  return result.map(r => r.statusId);
 }

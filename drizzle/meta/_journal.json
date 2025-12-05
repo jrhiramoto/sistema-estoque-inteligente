@@ -71,6 +71,13 @@
       "when": 1764535117808,
       "tag": "0009_solid_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1764906802725,
+      "tag": "0010_green_maestro",
+      "breakpoints": true
     }
   ]
 }
