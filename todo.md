@@ -391,3 +391,11 @@
 - [x] Criar modal para exibir pedidos de teste de forma visual
 - [x] Mostrar dados dos pedidos em formato tabular/card
 - [x] Facilitar validação sem precisar abrir console do navegador
+
+## Debug: Pedidos Não Aparecem Após Sincronização
+
+- [x] Verificar logs do servidor para ver se sincronização foi executada
+- [x] Verificar se houve erros durante sincronização de vendas (0 pedidos retornados)
+- [x] Consultar banco de dados para verificar se pedidos foram salvos (não há pedidos porque API retornou 0)
+- [x] Verificar se query da página Orders está funcionando corretamente (query está OK)
+- [x] Corrigir problema: remover filtro de situações para buscar TODOS os pedidos

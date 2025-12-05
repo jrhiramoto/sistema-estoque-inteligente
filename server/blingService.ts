@@ -593,10 +593,10 @@ export async function syncSales(
     
     const dataFinal = new Date();
 
-    // Filtrar apenas pedidos com situação "atendido" (id: 15) e "faturado" (id: 24)
-    // Nota: Esses IDs podem variar por conta. Ajuste conforme necessário.
-    const situacoesValidas = [15, 24]; // atendido e faturado
-    const idsSituacoesParam = situacoesValidas.map(id => `idsSituacoes[]=${id}`).join('&');
+    // TEMPORÁRIO: Removendo filtro de situações para buscar TODOS os pedidos
+    // Depois de validar, adicionar filtro conforme necessário
+    // const situacoesValidas = [15, 24]; // atendido e faturado
+    // const idsSituacoesParam = situacoesValidas.map(id => `idsSituacoes[]=${id}`).join('&');
     
     let synced = 0;
     let errors = 0;
@@ -616,9 +616,12 @@ export async function syncSales(
           onProgress(synced, null, `Sincronizando vendas - Página ${page}`);
         }
         
+        const url = `/pedidos/vendas?pagina=${page}&limite=${limit}&dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}`;
+        console.log(`[Bling] URL da requisição: ${url}`);
+        
         const response = await blingRequest<{ data: BlingPedido[] }>(
           userId,
-          `/pedidos/vendas?pagina=${page}&limite=${limit}&dataInicial=${dataInicial.toISOString().split('T')[0]}&dataFinal=${dataFinal.toISOString().split('T')[0]}&${idsSituacoesParam}`
+          url
         );
         
         const pedidos = response.data || [];
@@ -647,11 +650,11 @@ export async function syncSales(
             // Log da situação para debug
             console.log(`[Bling] Pedido ${pedido.numero} - Situação ID: ${pedido.situacao.id}, Valor: ${pedido.situacao.valor}`);
             
-            // Validar situação (redundante, mas garante segurança)
-            if (!situacoesValidas.includes(pedido.situacao.id)) {
-              console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
-              continue;
-            }
+            // TEMPORÁRIO: Removendo validação de situações para buscar TODOS os pedidos
+            // if (!situacoesValidas.includes(pedido.situacao.id)) {
+            //   console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
+            //   continue;
+            // }
             
             // Calcular total do pedido (soma dos itens)
             const totalAmount = pedido.itens.reduce((sum, item) => {
