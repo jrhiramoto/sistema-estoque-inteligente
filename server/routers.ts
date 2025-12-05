@@ -230,6 +230,42 @@ export const appRouter = router({
         return await testFetchOrders(ctx.user.id, input);
       }),
     
+    // Endpoint para buscar pedido específico por número
+    fetchOrderByNumber: protectedProcedure
+      .input(z.object({ orderNumber: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const { blingRequest } = await import('./blingService');
+          
+          // Buscar pedido por número
+          const response = await blingRequest<{ data: any[] }>(
+            ctx.user.id,
+            `/pedidos/vendas?numero=${input.orderNumber}`
+          );
+          
+          if (!response.data || response.data.length === 0) {
+            return { success: false, error: 'Pedido não encontrado' };
+          }
+          
+          const pedido = response.data[0];
+          
+          console.log('===== ESTRUTURA COMPLETA DO PEDIDO =====');
+          console.log(JSON.stringify(pedido, null, 2));
+          console.log('===== FIM DA ESTRUTURA =====');
+          
+          return {
+            success: true,
+            pedido: pedido,
+          };
+        } catch (error: any) {
+          console.error('[fetchOrderByNumber] Erro:', error);
+          return {
+            success: false,
+            error: error.message || 'Erro ao buscar pedido',
+          };
+        }
+      }),
+    
     // Endpoint de debug para testar salvamento de 1 pedido
     debugSaveOrder: protectedProcedure.mutation(async ({ ctx }) => {
       try {

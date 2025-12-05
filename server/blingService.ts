@@ -77,6 +77,50 @@ let consecutiveRateLimitErrors = 0;
 let circuitBreakerActive = false;
 let circuitBreakerUntil: Date | null = null;
 
+// Cache de situações de pedidos (atualizado quando necessário)
+let situacoesCache: Map<number, { id: number; nome: string; cor: string }> = new Map();
+let situacoesCacheExpiry: Date | null = null;
+const SITUACOES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+
+/**
+ * Busca o nome da situação pelo ID, usando cache
+ */
+async function getSituacaoNome(userId: number, situacaoId: number): Promise<string> {
+  // Verificar se cache está válido
+  const now = new Date();
+  if (!situacoesCacheExpiry || now > situacoesCacheExpiry || situacoesCache.size === 0) {
+    try {
+      // Buscar situações da API
+      const response = await blingRequest<{
+        data: Array<{
+          id: number;
+          nome: string;
+          cor: string;
+        }>;
+      }>(userId, '/situacoes/modulos/Vendas');
+      
+      // Atualizar cache
+      situacoesCache.clear();
+      response.data.forEach(sit => {
+        situacoesCache.set(sit.id, sit);
+      });
+      
+      // Definir expiração do cache
+      situacoesCacheExpiry = new Date(now.getTime() + SITUACOES_CACHE_TTL);
+      
+      console.log(`[Bling] Cache de situações atualizado: ${situacoesCache.size} situações`);
+    } catch (error) {
+      console.error('[Bling] Erro ao buscar situações:', error);
+      // Se falhar, retornar 'Desconhecido'
+      return 'Desconhecido';
+    }
+  }
+  
+  // Buscar no cache
+  const situacao = situacoesCache.get(situacaoId);
+  return situacao ? situacao.nome : 'Desconhecido';
+}
+
 // Helper para aguardar
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -683,6 +727,12 @@ export async function syncSales(
             
             const itemsCount = pedido.itens && Array.isArray(pedido.itens) ? pedido.itens.length : 0;
             
+            // Buscar nome correto da situação usando o ID
+            const statusId = pedido.situacao?.id || 0;
+            const statusNome = statusId > 0 ? await getSituacaoNome(userId, statusId) : 'Desconhecido';
+            
+            console.log(`[Bling] Pedido ${pedido.numero} - Situação: ID=${statusId}, Nome=${statusNome}`);
+            
             // Salvar pedido completo na tabela orders
             try {
               await db.upsertOrder({
@@ -691,8 +741,8 @@ export async function syncSales(
               orderDate: new Date(pedido.data),
               customerName: pedido.contato?.nome || null,
               customerDocument: pedido.contato?.numeroDocumento || null,
-              status: String(pedido.situacao?.valor || 'Desconhecido'),
-              statusId: pedido.situacao?.id || 0,
+              status: statusNome,
+              statusId: statusId,
               totalAmount: Math.round(totalAmount * 100), // converter para centavos
               itemsCount: itemsCount,
               });

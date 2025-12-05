@@ -453,3 +453,12 @@
 - [x] Adicionar suporte para campo 'total' da API do Bling
 - [x] Criar teste automatizado para validar cálculo de totais
 - [ ] Executar sincronização completa de vendas e validar sucesso
+
+## Bug - Situação dos Pedidos Incorreta
+
+- [x] Investigar estrutura completa do pedido 49170 na API do Bling
+- [x] Identificar campo correto que contém "atendido" (situacao.id = 9)
+- [x] Corrigir mapeamento do campo status em syncSales (buscar nome por ID)
+- [x] Implementar cache de situações para evitar requisições desnecessárias
+- [x] Atualizar Seção 4 (filtro de situações) para usar campo correto (já estava correto)
+- [ ] Testar sincronização e validar situações corretas

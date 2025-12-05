@@ -48,6 +48,7 @@ export default function Settings() {
 
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
+  const [orderNumber, setOrderNumber] = useState("49170");
   const [authCode, setAuthCode] = useState("");
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [syncFrequencyHours, setSyncFrequencyHours] = useState("168");
@@ -193,6 +194,33 @@ export default function Settings() {
     },
     onError: (error) => {
       toast.error(`Erro ao executar debug: ${error.message}`);
+    },
+  });
+  
+  const fetchOrderByNumber = trpc.bling.fetchOrderByNumber.useMutation({
+    onSuccess: (data) => {
+      console.log('[fetchOrderByNumber] Resultado completo:', data);
+      if (data.success) {
+        console.log('[fetchOrderByNumber] ===== PEDIDO COMPLETO =====');
+        console.log(JSON.stringify(data.pedido, null, 2));
+        console.log('[fetchOrderByNumber] ===== FIM =====');
+        
+        toast.success(
+          <div className="space-y-2">
+            <p className="font-semibold">✅ Pedido encontrado!</p>
+            <p className="text-xs">Estrutura completa no console (F12)</p>
+            <pre className="text-xs whitespace-pre-wrap max-h-40 overflow-y-auto bg-muted p-2 rounded">
+              {JSON.stringify(data.pedido, null, 2)}
+            </pre>
+          </div>,
+          { duration: 20000 }
+        );
+      } else {
+        toast.error(data.error || 'Pedido não encontrado');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Erro ao buscar pedido: ${error.message}`);
     },
   });
   
@@ -567,6 +595,31 @@ export default function Settings() {
                       ) : null}
                       🐛 Debug: Salvar 1 Pedido
                     </Button>
+                    
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <Label htmlFor="orderNumber" className="text-xs">Número do Pedido</Label>
+                        <Input
+                          id="orderNumber"
+                          value={orderNumber}
+                          onChange={(e) => setOrderNumber(e.target.value)}
+                          placeholder="Ex: 49170"
+                          className="h-8"
+                        />
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => fetchOrderByNumber.mutate({ orderNumber })}
+                        disabled={!config?.isActive || fetchOrderByNumber.isPending || !orderNumber}
+                        title={!config?.isActive ? "Autorize o aplicativo primeiro (Passo 2)" : ""}
+                      >
+                        {fetchOrderByNumber.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        🔍 Buscar Pedido
+                      </Button>
+                    </div>
                   </div>
                   </div>
                   
