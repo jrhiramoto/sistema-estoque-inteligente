@@ -134,7 +134,21 @@ export async function getAllProducts() {
   const db = await getDb();
   if (!db) return [];
   
-  return await db.select().from(products);
+  // Filtrar produtos por código (ocultar 50000-51000 e < 2000)
+  return await db.select().from(products).where(
+    and(
+      or(
+        isNull(products.code),
+        and(
+          sql`CAST(${products.code} AS SIGNED) >= 2000`,
+          or(
+            sql`CAST(${products.code} AS SIGNED) < 50000`,
+            sql`CAST(${products.code} AS SIGNED) > 51000`
+          )
+        )
+      )
+    )
+  );
 }
 
 export async function getProductsPaginated(params: {
@@ -150,6 +164,20 @@ export async function getProductsPaginated(params: {
   
   // Construir condições
   const conditions = [];
+  
+  // Filtro de códigos (ocultar 50000-51000 e < 2000)
+  conditions.push(
+    or(
+      isNull(products.code),
+      and(
+        sql`CAST(${products.code} AS SIGNED) >= 2000`,
+        or(
+          sql`CAST(${products.code} AS SIGNED) < 50000`,
+          sql`CAST(${products.code} AS SIGNED) > 51000`
+        )
+      )
+    )
+  );
   
   if (abcClass) {
     conditions.push(eq(products.abcClass, abcClass));
@@ -1112,7 +1140,7 @@ export async function calculateProductRevenue(userId: number, months: number) {
     return [];
   }
   
-  // Calcular faturamento por produto
+  // Calcular faturamento por produto (excluindo códigos 50000-51000 e < 2000)
   const result = await db
     .select({
       productId: sales.productId,
@@ -1121,10 +1149,22 @@ export async function calculateProductRevenue(userId: number, months: number) {
     })
     .from(sales)
     .innerJoin(orders, eq(sales.blingOrderId, orders.blingId))
+    .innerJoin(products, eq(sales.productId, products.id))
     .where(
       and(
         gte(orders.orderDate, startDate),
-        inArray(orders.statusId, validStatusIds)
+        inArray(orders.statusId, validStatusIds),
+        // Filtro de códigos (excluir 50000-51000 e < 2000)
+        or(
+          isNull(products.code),
+          and(
+            sql`CAST(${products.code} AS SIGNED) >= 2000`,
+            or(
+              sql`CAST(${products.code} AS SIGNED) < 50000`,
+              sql`CAST(${products.code} AS SIGNED) > 51000`
+            )
+          )
+        )
       )
     )
     .groupBy(sales.productId)
@@ -1196,8 +1236,21 @@ export async function calculateAbcClassification(userId: number) {
       });
     }
     
-    // Buscar todos os produtos
-    const allProducts = await db.select({ id: products.id }).from(products);
+    // Buscar todos os produtos (excluindo códigos 50000-51000 e < 2000)
+    const allProducts = await db.select({ id: products.id })
+      .from(products)
+      .where(
+        or(
+          isNull(products.code),
+          and(
+            sql`CAST(${products.code} AS SIGNED) >= 2000`,
+            or(
+              sql`CAST(${products.code} AS SIGNED) < 50000`,
+              sql`CAST(${products.code} AS SIGNED) > 51000`
+            )
+          )
+        )
+      );
     const productsWithSales = new Set(classifications.map(c => c.productId));
     
     // Produtos sem vendas = classe D

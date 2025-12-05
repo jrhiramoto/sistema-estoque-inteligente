@@ -95,6 +95,27 @@ const SITUACOES_MANUAIS: Record<number, string> = {
 };
 
 /**
+ * Valida se um código de produto deve ser considerado no sistema
+ * Exclui:
+ * - Códigos entre 50000 e 51000 (inclusive)
+ * - Códigos abaixo de 2000
+ */
+export function isValidProductCode(code: string | null | undefined): boolean {
+  if (!code) return false;
+  
+  const numericCode = parseInt(code, 10);
+  if (isNaN(numericCode)) return true; // Códigos não numéricos são aceitos
+  
+  // Excluir códigos abaixo de 2000
+  if (numericCode < 2000) return false;
+  
+  // Excluir códigos entre 50000 e 51000 (inclusive)
+  if (numericCode >= 50000 && numericCode <= 51000) return false;
+  
+  return true;
+}
+
+/**
  * Busca o nome da situação pelo ID, usando mapeamento manual como fallback
  */
 function getSituacaoNome(situacaoId: number): string {

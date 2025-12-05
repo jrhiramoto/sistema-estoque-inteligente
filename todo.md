@@ -588,3 +588,23 @@
 - [ ] Executar nova sincronização de estoque completa
 
 **Solução:** API do Bling retorna array `depositos` ao invés de objeto `deposito`. Código corrigido para processar corretamente os saldos por depósito. Valores validados com relatório CSV (28007=2, 70905=13, 27999=3).
+
+
+## Filtro de Visualização de Produtos por Código
+
+- [x] Criar função helper isValidProductCode() para validar códigos
+- [x] Remover filtros de sincronização (produtos devem ser salvos normalmente)
+- [x] Adicionar filtro WHERE em db.getAllProducts()
+- [x] Adicionar filtro WHERE em db.getProductsPaginated() (listagem paginada)
+- [x] Adicionar filtro na análise ABC (calculateProductRevenue)
+- [x] Adicionar filtro em atribuição de classe D (produtos sem vendas)
+- [x] Validar que produtos ocultos continuam sincronizando normalmente
+
+**Estratégia:**
+- ✅ Sincronizar TODOS os produtos (incluindo códigos 50000-51000 e < 2000)
+- ✅ Salvar no banco para uso futuro
+- ❌ Ocultar nas visualizações (WHERE code < 2000 OR code BETWEEN 50000 AND 51000)
+
+**Produtos ocultos:**
+- Códigos entre 50000 e 51000 (inclusive)
+- Códigos abaixo de 2000
