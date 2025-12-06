@@ -1155,3 +1155,41 @@ Sistema agora notifica APENAS quando:
 - Qtd. Vendida: subquery calculando SUM(quantity) da tabela sales
 - Fornecedor: LEFT JOIN mantido, mostra "-" quando NULL
 
+
+## Melhorias no Relatório ABC - Métricas em Tempo Real
+
+### Backend
+- [ ] Substituir totalSold por averageMonthlySales (vendas ÷ meses)
+- [ ] Adicionar cálculo de giro de estoque (vendas período ÷ estoque médio)
+- [ ] Garantir todos os cálculos são feitos em tempo real (sem cache)
+- [ ] Obter período de análise da configuração ABC
+
+### Frontend
+- [ ] Substituir coluna "Qtd. Vendida" por "Média Mensal"
+- [ ] Adicionar coluna "Giro de Estoque"
+- [ ] Atualizar formatação das métricas
+
+**Fórmulas:**
+- Média de Vendas = Total Vendido ÷ Número de Meses
+- Giro de Estoque = Vendas no Período ÷ Estoque Médio
+
+
+## Melhorias no Relatório ABC - CONCLUÍDO ✅
+
+### Backend
+- [x] Substituir totalSold por averageMonthlySales (vendas ÷ meses)
+- [x] Adicionar cálculo de giro de estoque (vendas período ÷ estoque médio)
+- [x] Garantir todos os cálculos são feitos em tempo real (sem cache)
+- [x] Obter período de análise da configuração ABC
+
+### Frontend
+- [x] Substituir coluna "Qtd. Vendida" por "Média Mensal"
+- [x] Adicionar coluna "Giro de Estoque"
+- [x] Atualizar formatação das métricas (1 decimal para média, 2 para giro)
+
+**Implementação:**
+- Média Mensal: SUM(vendas) / meses do período (em tempo real)
+- Giro de Estoque: Vendas período / Estoque físico (em tempo real)
+- Período obtido de abc_auto_calculation_config.analysisMonths
+- Todas queries recalculam a cada consulta (sem cache)
+

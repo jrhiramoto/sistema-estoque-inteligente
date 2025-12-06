@@ -175,7 +175,8 @@ export default function AbcClassReport() {
                 <TableHead>Descrição</TableHead>
                 <TableHead className="text-right">Estoque Físico</TableHead>
                 <TableHead className="text-right">Estoque Virtual</TableHead>
-                <TableHead className="text-right">Qtd. Vendida</TableHead>
+                <TableHead className="text-right">Média Mensal</TableHead>
+                <TableHead className="text-right">Giro</TableHead>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead className="text-right">Faturamento</TableHead>
               </TableRow>
@@ -183,7 +184,7 @@ export default function AbcClassReport() {
             <TableBody>
               {data?.products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Nenhum produto encontrado nesta classe
                   </TableCell>
                 </TableRow>
@@ -240,7 +241,10 @@ function ProductRow({
           {Number(product.virtualStock || 0).toLocaleString('pt-BR')}
         </TableCell>
         <TableCell className="text-right font-medium text-blue-600">
-          {Number(product.totalSold || 0).toLocaleString('pt-BR')}
+          {Number(product.averageMonthlySales || 0).toFixed(1)}
+        </TableCell>
+        <TableCell className="text-right font-medium text-purple-600">
+          {Number(product.stockTurnover || 0).toFixed(2)}x
         </TableCell>
         <TableCell>
           <div className="truncate max-w-xs">
@@ -259,7 +263,7 @@ function ProductRow({
       
       {isExpanded && (
         <TableRow>
-          <TableCell colSpan={8} className="bg-muted/30">
+          <TableCell colSpan={9} className="bg-muted/30">
             <div className="py-4 px-2">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />

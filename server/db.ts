@@ -2061,7 +2061,17 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
   const db = await getDb();
   if (!db) return { products: [], total: 0 };
   
-  // Query produtos com estoque, fornecedor e quantidade vendida
+  // Obter configuração ABC para período de análise (em tempo real)
+  const [configRow] = await db
+    .select({ analysisMonths: abcConfig.analysisMonths })
+    .from(abcConfig)
+    .limit(1);
+  
+  const months = configRow?.analysisMonths || 12;
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - months);
+  
+  // Query produtos com métricas calculadas em tempo real
   const productsList = await db
     .select({
       id: products.id,
@@ -2069,10 +2079,25 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
       name: products.name,
       abcClass: products.abcClass,
       abcRevenue: products.abcRevenue,
-      totalSold: sql<number>`(
-        SELECT COALESCE(SUM(s.quantity), 0)
+      // Média de vendas mensais (em tempo real)
+      averageMonthlySales: sql<number>`(
+        SELECT COALESCE(SUM(s.quantity), 0) / ${months}
         FROM sales s
         WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      )`,
+      // Giro de estoque = Vendas no período ÷ Estoque médio (em tempo real)
+      stockTurnover: sql<number>`(
+        CASE 
+          WHEN COALESCE(SUM(${inventory.physicalStock}), 0) > 0 THEN
+            (
+              SELECT COALESCE(SUM(s.quantity), 0)
+              FROM sales s
+              WHERE s.productId = ${products.id}
+                AND s.saleDate >= ${startDate}
+            ) / COALESCE(SUM(${inventory.physicalStock}), 1)
+          ELSE 0
+        END
       )`,
       physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
       virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
