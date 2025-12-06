@@ -464,14 +464,17 @@ export default function AbcAnalysis() {
               {metrics ? formatCurrency(metrics.classD.stockValue) : "R$ 0,00"}
             </div>
             
-            {/* Barra 1: Faturamento */}
+            {/* Barra 1: Valor em Estoque */}
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                <span>Faturamento</span>
-                <span className="font-semibold">0.0%</span>
+                <span>Valor em Estoque</span>
+                <span className="font-semibold">{metrics?.classD.valuePercentage.toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gray-500" style={{ width: "0%" }} />
+                <div 
+                  className="h-full bg-gray-500 transition-all" 
+                  style={{ width: `${metrics?.classD.valuePercentage || 0}%` }} 
+                />
               </div>
             </div>
             

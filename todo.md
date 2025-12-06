@@ -749,3 +749,30 @@
 - Produtos com muitos clientes ganham relevância
 - Configurável para diferentes estratégias
 
+
+## Melhorias na Análise ABC
+
+- [ ] Investigar erro HTML na página /analise-abc
+- [ ] Corrigir query ou endpoint que está retornando HTML
+- [ ] Adicionar loading de progresso no recálculo ABC
+- [ ] Corrigir primeira barra da Classe D para "Valor em Estoque" com %
+- [ ] Testar todas as funcionalidades da página
+
+**Problemas:**
+- Erro: "Unexpected token '<', "<html><h"... is not valid JSON"
+- Classe D: primeira barra sem % (deveria ser "Valor em Estoque")
+- Recálculo ABC: sem feedback visual de progresso
+
+
+## Melhorias na Análise ABC - CONCLUÍDO
+
+- [x] Investigar erro HTML na página /analise-abc (não reproduzido)
+- [x] Loading de progresso já estava implementado (botão "Calculando...")
+- [x] Corrigir primeira barra da Classe D para "Valor em Estoque" com %
+- [x] Verificar contagem de Classe D (37.835 produtos - correto!)
+
+**Correções:**
+- ✅ Classe D: primeira barra agora mostra "Valor em Estoque" com percentual
+- ✅ Loading: botão já tinha "Calculando..." com ícone girando
+- ✅ Contagem: A=332, B=222, C=118, D=37.835 (total=38.507)
+
