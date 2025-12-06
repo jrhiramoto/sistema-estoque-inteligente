@@ -2061,7 +2061,7 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
   const db = await getDb();
   if (!db) return { products: [], total: 0 };
   
-  // Query produtos com estoque e fornecedor
+  // Query produtos com estoque, fornecedor e quantidade vendida
   const productsList = await db
     .select({
       id: products.id,
@@ -2069,6 +2069,11 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
       name: products.name,
       abcClass: products.abcClass,
       abcRevenue: products.abcRevenue,
+      totalSold: sql<number>`(
+        SELECT COALESCE(SUM(s.quantity), 0)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+      )`,
       physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
       virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
       supplierName: productSuppliers.supplierName,
@@ -2106,9 +2111,9 @@ export async function getMonthlySalesByProduct(productId: number, months: number
   
   const monthlySales = await db
     .select({
-      month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`,
-      quantity: sql<number>`SUM(${sales.quantity})`,
-      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice})`,
+      month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m') as month`,
+      quantity: sql<number>`SUM(${sales.quantity}) as quantity`,
+      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice}) as revenue`,
     })
     .from(sales)
     .where(
@@ -2117,8 +2122,8 @@ export async function getMonthlySalesByProduct(productId: number, months: number
         sql`${sales.saleDate} >= ${startDate}`
       )
     )
-    .groupBy(sql`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`)
-    .orderBy(sql`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`);
+    .groupBy(sql`month`)
+    .orderBy(sql`month`);
   
   return monthlySales;
 }

@@ -134,7 +134,7 @@ export default function AbcClassReport() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {data?.products.reduce((sum, p) => sum + (p.physicalStock || 0), 0).toLocaleString('pt-BR')}
+              {data?.products.reduce((sum, p) => sum + Number(p.physicalStock || 0), 0).toLocaleString('pt-BR')}
             </div>
           </CardContent>
         </Card>
@@ -175,6 +175,7 @@ export default function AbcClassReport() {
                 <TableHead>Descrição</TableHead>
                 <TableHead className="text-right">Estoque Físico</TableHead>
                 <TableHead className="text-right">Estoque Virtual</TableHead>
+                <TableHead className="text-right">Qtd. Vendida</TableHead>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead className="text-right">Faturamento</TableHead>
               </TableRow>
@@ -182,7 +183,7 @@ export default function AbcClassReport() {
             <TableBody>
               {data?.products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     Nenhum produto encontrado nesta classe
                   </TableCell>
                 </TableRow>
@@ -236,7 +237,10 @@ function ProductRow({
           {product.physicalStock?.toLocaleString('pt-BR') || 0}
         </TableCell>
         <TableCell className="text-right">
-          {product.virtualStock?.toLocaleString('pt-BR') || 0}
+          {Number(product.virtualStock || 0).toLocaleString('pt-BR')}
+        </TableCell>
+        <TableCell className="text-right font-medium text-blue-600">
+          {Number(product.totalSold || 0).toLocaleString('pt-BR')}
         </TableCell>
         <TableCell>
           <div className="truncate max-w-xs">
@@ -255,7 +259,7 @@ function ProductRow({
       
       {isExpanded && (
         <TableRow>
-          <TableCell colSpan={7} className="bg-muted/30">
+          <TableCell colSpan={8} className="bg-muted/30">
             <div className="py-4 px-2">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />

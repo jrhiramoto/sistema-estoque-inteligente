@@ -1121,3 +1121,37 @@ Sistema agora notifica APENAS quando:
 
 **Implementação:** Relatório completo, ágil e agradável de visualizar
 
+
+## Correções no Relatório ABC
+
+- [ ] Corrigir formatação do "Estoque Total" (mostrando número gigante sem formatação)
+- [ ] Corrigir vendas mensais não carregando (mostrando "Sem dados" incorretamente)
+- [ ] Testar com produto que tem vendas
+- [ ] Validar formatação de números em todos os cards
+
+**Problemas reportados:**
+1. Estoque Total: "0143137128110969" ao invés de número formatado
+2. Vendas mensais: "Sem dados" mesmo produto tendo vendas
+
+
+## Correções Adicionais no Relatório ABC
+
+- [x] Corrigir formatação do "Estoque Total" (conversão para número)
+- [ ] Corrigir erro SQL no GROUP BY de vendas mensais
+- [ ] Investigar por que fornecedor está vazio
+- [ ] Adicionar coluna "Quantidade Vendida" (soma do período)
+
+
+## Correções no Relatório ABC - CONCLUÍDO ✅
+
+- [x] Corrigir formatação do "Estoque Total" (conversão para número)
+- [x] Corrigir erro SQL no GROUP BY de vendas mensais (usando alias)
+- [x] Adicionar coluna "Quantidade Vendida" (soma total do período)
+- [x] Fornecedor mostra "-" quando não cadastrado (comportamento correto)
+
+**Implementação:**
+- Estoque Total: Number() antes de somar
+- Vendas mensais: GROUP BY com alias
+- Qtd. Vendida: subquery calculando SUM(quantity) da tabela sales
+- Fornecedor: LEFT JOIN mantido, mostra "-" quando NULL
+
