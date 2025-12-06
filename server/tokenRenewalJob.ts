@@ -40,7 +40,26 @@ async function renewBlingToken(userId: number, retryCount: number = 0): Promise<
       const errorText = await response.text();
       console.error(`[Token Renewal] Erro ao renovar token (tentativa ${retryCount + 1}/3):`, errorText);
       
-      // Retry com backoff exponencial (máximo 3 tentativas)
+      // Verificar se é erro de refresh_token inválido
+      let errorData: any = {};
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        // Se não for JSON, manter vazio
+      }
+      
+      // Se refresh_token inválido, não adianta tentar novamente
+      const isInvalidGrant = errorData?.error?.type === 'invalid_grant' || 
+                             errorData?.error?.message === 'invalid_grant' ||
+                             errorText.includes('invalid_grant');
+      
+      if (isInvalidGrant) {
+        console.error('[Token Renewal] ❌ REFRESH_TOKEN INVÁLIDO - Reautorização necessária');
+        // Retornar com flag especial para notificação imediata
+        throw new Error('INVALID_REFRESH_TOKEN');
+      }
+      
+      // Retry com backoff exponencial (máximo 3 tentativas) apenas para outros erros
       if (retryCount < 2) {
         const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
         console.log(`[Token Renewal] Aguardando ${delay}ms antes de tentar novamente...`);
@@ -108,32 +127,70 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
     // Renovar se expira em menos de 48 horas (mais preventivo)
     if (hoursRemaining < 48) {
       console.log(`[Token Renewal] ⚠️ Token expira em ${hoursRemaining}h, renovando preventivamente...`);
-      const success = await renewBlingToken(userId);
       
-      if (!success) {
-        console.error("[Token Renewal] ❌ Falha ao renovar token após 3 tentativas");
+      try {
+        const success = await renewBlingToken(userId);
         
-        // NOTIFICAR APENAS SE:
-        // 1. Token já expirou (hoursRemaining <= 0) OU
-        // 2. Token expira em menos de 6h (urgente, próxima verificação pode ser tarde demais)
-        const shouldNotify = hoursRemaining <= 6;
-        
-        if (shouldNotify) {
-          console.log(`[Token Renewal] 📧 Enviando notificação (token expira em ${hoursRemaining}h)`);
+        if (!success) {
+          console.error("[Token Renewal] ❌ Falha ao renovar token após 3 tentativas");
+          
+          // NOTIFICAR APENAS SE:
+          // 1. Token já expirou (hoursRemaining <= 0) OU
+          // 2. Token expira em menos de 6h (urgente, próxima verificação pode ser tarde demais)
+          const shouldNotify = hoursRemaining <= 6;
+          
+          if (shouldNotify) {
+            console.log(`[Token Renewal] 📧 Enviando notificação (token expira em ${hoursRemaining}h)`);
+            try {
+              await notifyOwner({
+                title: "⚠️ Token do Bling Expirado",
+                content: `O token de acesso ao Bling ${hoursRemaining <= 0 ? 'expirou' : 'expira em breve'} e não foi possível renová-lo automaticamente.\n\n` +
+                         `Expira em: ${hoursRemaining}h (${expiresAt.toLocaleString('pt-BR')})\n\n` +
+                         `Ação necessária: Acesse Configurações > Integração Bling e reautorize o acesso.\n\n` +
+                         `Enquanto isso, as sincronizações automáticas estarão pausadas.`
+              });
+              console.log("[Token Renewal] 📧 Notificação enviada ao administrador");
+            } catch (notifyError) {
+              console.error("[Token Renewal] Erro ao enviar notificação:", notifyError);
+            }
+          } else {
+            console.log(`[Token Renewal] ⏳ Não enviando notificação ainda (token expira em ${hoursRemaining}h, próxima tentativa em 2h)`);
+          }
+        }
+      } catch (error: any) {
+        // Erro INVALID_REFRESH_TOKEN - notificar IMEDIATAMENTE
+        if (error.message === 'INVALID_REFRESH_TOKEN') {
+          console.error('[Token Renewal] ❌ REFRESH_TOKEN INVÁLIDO - Notificando administrador IMEDIATAMENTE');
           try {
             await notifyOwner({
-              title: "⚠️ Token do Bling Expirado",
-              content: `O token de acesso ao Bling ${hoursRemaining <= 0 ? 'expirou' : 'expira em breve'} e não foi possível renová-lo automaticamente.\n\n` +
-                       `Expira em: ${hoursRemaining}h (${expiresAt.toLocaleString('pt-BR')})\n\n` +
-                       `Ação necessária: Acesse Configurações > Integração Bling e reautorize o acesso.\n\n` +
-                       `Enquanto isso, as sincronizações automáticas estarão pausadas.`
+              title: "🔴 Reautorização do Bling Necessária",
+              content: `O refresh token do Bling está inválido e não pode ser renovado automaticamente.\n\n` +
+                       `Isso geralmente acontece quando:\n` +
+                       `• O acesso foi revogado manualmente no painel do Bling\n` +
+                       `• O refresh token expirou (validade máxima do Bling)\n` +
+                       `• As credenciais foram alteradas\n\n` +
+                       `Ação URGENTE: Acesse Configurações > Integração Bling e reautorize o acesso.\n\n` +
+                       `IMPORTANTE: O sistema parou de tentar renovar automaticamente para evitar spam de notificações. ` +
+                       `Após reautorizar, a renovação automática voltará a funcionar.`
             });
-            console.log("[Token Renewal] 📧 Notificação enviada ao administrador");
+            console.log('[Token Renewal] 📧 Notificação de reautorização enviada');
+            
+            // Desativar configuração para parar tentativas até reautorização
+            await db.upsertBlingConfig({
+              userId,
+              clientId: config.clientId,
+              clientSecret: config.clientSecret,
+              accessToken: config.accessToken,
+              refreshToken: config.refreshToken,
+              tokenExpiresAt: config.tokenExpiresAt,
+              isActive: false, // Desativar para parar tentativas
+            });
+            console.log('[Token Renewal] ⚠️ Integração desativada até reautorização');
           } catch (notifyError) {
-            console.error("[Token Renewal] Erro ao enviar notificação:", notifyError);
+            console.error('[Token Renewal] Erro ao enviar notificação:', notifyError);
           }
         } else {
-          console.log(`[Token Renewal] ⏳ Não enviando notificação ainda (token expira em ${hoursRemaining}h, próxima tentativa em 2h)`);
+          throw error; // Re-throw outros erros
         }
       }
     } else {

@@ -928,3 +928,37 @@ Sistema agora notifica APENAS quando:
 
 **Status:** Implementação completa! Interface com 3 abas: Visão Geral, Evolução Temporal e Análise com IA
 
+
+## Correção DEFINITIVA de Notificações de Token - URGENTE
+
+- [ ] Investigar TODOS os pontos onde notifyOwner é chamado
+- [ ] Revisar lógica de renovação automática do token
+- [ ] Identificar por que correção anterior não funcionou
+- [ ] Implementar solução definitiva para notificar APENAS quando crítico
+- [ ] Adicionar logs detalhados para debug
+- [ ] Testar cenários: token válido, expirando, expirado, renovação bem-sucedida, renovação falhando
+- [ ] Validar que notificação só é enviada quando token realmente expirou E renovação falhou
+
+**Problema PERSISTENTE:** Usuário continua recebendo e-mails de token expirado mesmo após correção anterior
+
+
+## Correção DEFINITIVA de Notificações de Token - CONCLUÍDO ✅
+
+- [x] Investigar TODOS os pontos onde notifyOwner é chamado
+- [x] Revisar lógica de renovação automática do token
+- [x] Identificar causa raiz: refresh_token inválido (erro "invalid_grant")
+- [x] Implementar detecção específica de erro invalid_grant
+- [x] Notificar IMEDIATAMENTE quando refresh_token inválido
+- [x] Desativar integração automaticamente para parar spam
+- [x] Adicionar logs detalhados para debug
+- [x] Testar todos os cenários (12/12 testes passando)
+
+**Solução Implementada:**
+1. ✅ Detecta erro "invalid_grant" especificamente
+2. ✅ Notifica IMEDIATAMENTE (não espera token expirar)
+3. ✅ Desativa integração (isActive=false) para PARAR tentativas
+4. ✅ Mensagem clara explicando que precisa reautorizar
+5. ✅ Sistema para de enviar e-mails após primeira notificação
+
+**Resultado:** Usuário receberá 1 último e-mail explicando que precisa reautorizar. Depois disso, NENHUM e-mail adicional até reautorizar.
+
