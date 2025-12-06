@@ -117,6 +117,56 @@ export async function processWebhook(
 }
 
 /**
+ * Busca e salva fornecedor de um produto
+ */
+async function fetchAndSaveProductSupplier(productBlingId: string | number) {
+  try {
+    // Buscar usuário owner via ENV
+    const { ENV } = await import('./_core/env');
+    const owner = await db.getUserByOpenId(ENV.ownerOpenId);
+    if (!owner) {
+      console.warn('[Webhook] Usuário owner não encontrado para buscar fornecedor');
+      return;
+    }
+    
+    // Buscar dados completos do produto via API do Bling
+    const { blingRequest } = await import('./blingService');
+    const detailData = await blingRequest<{ data: any }>(
+      owner.id,
+      `/produtos/${productBlingId}`
+    );
+    
+    if (detailData && detailData.data) {
+      const produtoCompleto = detailData.data;
+      
+      // Salvar fornecedor se existir
+      if (produtoCompleto.fornecedor?.contato?.nome) {
+        const productDb = await db.getProductByBlingId(String(productBlingId));
+        if (productDb) {
+          // blingId = combinação de produto + fornecedor para unicidade
+          const supplierBlingId = `${productBlingId}-${produtoCompleto.fornecedor.id}`;
+          await db.upsertProductSupplier({
+            blingId: supplierBlingId,
+            productId: productDb.id,
+            blingProductId: String(productBlingId),
+            supplierId: String(produtoCompleto.fornecedor.id),
+            supplierName: produtoCompleto.fornecedor.contato.nome,
+            code: produtoCompleto.fornecedor.codigo || undefined,
+            costPrice: produtoCompleto.fornecedor.precoCusto ? Math.round(produtoCompleto.fornecedor.precoCusto * 100) : undefined,
+            purchasePrice: produtoCompleto.fornecedor.precoCompra ? Math.round(produtoCompleto.fornecedor.precoCompra * 100) : 0,
+            isDefault: true,
+          });
+          console.log(`[Webhook] ✅ Fornecedor salvo para produto ${productBlingId}: ${produtoCompleto.fornecedor.contato.nome}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Webhook] Erro ao buscar fornecedor do produto ${productBlingId}:`, error);
+    // Não lançar erro para não interromper processamento do webhook
+  }
+}
+
+/**
  * Handler para webhooks de produtos
  */
 async function handleProductWebhook(action: string, data: any) {
@@ -135,6 +185,9 @@ async function handleProductWebhook(action: string, data: any) {
         isActive: data.situacao === 'A',
       });
       console.log(`[Webhook] ✅ Product created: ${data.id} - ${data.nome}`);
+      
+      // Buscar fornecedor do produto
+      await fetchAndSaveProductSupplier(data.id);
       break;
     
     case 'updated':
@@ -149,6 +202,9 @@ async function handleProductWebhook(action: string, data: any) {
         isActive: data.situacao === 'A',
       });
       console.log(`[Webhook] ✅ Product updated: ${data.id} - ${data.nome}`);
+      
+      // Buscar fornecedor do produto
+      await fetchAndSaveProductSupplier(data.id);
       break;
     
     case 'deleted':

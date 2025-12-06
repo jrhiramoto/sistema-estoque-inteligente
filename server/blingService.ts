@@ -504,31 +504,47 @@ export async function syncProducts(
               cost: produto.precoCusto ? Math.round(produto.precoCusto * 100) : undefined, // converter para centavos
             });
             
-            // Salvar fornecedor se existir
-            if (produto.fornecedor?.contato?.nome) {
-              const productDb = await db.getProductByBlingId(String(produto.id));
-              if (productDb) {
-                // blingId = combinação de produto + fornecedor para unicidade
-                const supplierBlingId = `${produto.id}-${produto.fornecedor.id}`;
-                await db.upsertProductSupplier({
-                  blingId: supplierBlingId,
-                  productId: productDb.id,
-                  blingProductId: String(produto.id),
-                  supplierId: String(produto.fornecedor.id),
-                  supplierName: produto.fornecedor.contato.nome,
-                  code: produto.fornecedor.codigo || undefined,
-                  costPrice: produto.fornecedor.precoCusto ? Math.round(produto.fornecedor.precoCusto * 100) : undefined,
-                  purchasePrice: produto.fornecedor.precoCompra ? Math.round(produto.fornecedor.precoCompra * 100) : 0,
-                  isDefault: true, // Assumir como padrão se é o único
-                });
+            // Buscar dados completos do produto (incluindo fornecedor)
+            try {
+              await delay(REQUEST_DELAY_MS); // Rate limiting
+              const detailData = await blingRequest<{ data: BlingProduto }>(
+                userId,
+                `/produtos/${produto.id}`
+              );
+              
+              if (detailData && detailData.data) {
+                const produtoCompleto = detailData.data;
+                
+                // Salvar fornecedor se existir
+                if (produtoCompleto.fornecedor?.contato?.nome) {
+                  const productDb = await db.getProductByBlingId(String(produto.id));
+                  if (productDb) {
+                    // blingId = combinação de produto + fornecedor para unicidade
+                    const supplierBlingId = `${produto.id}-${produtoCompleto.fornecedor.id}`;
+                    await db.upsertProductSupplier({
+                      blingId: supplierBlingId,
+                      productId: productDb.id,
+                      blingProductId: String(produto.id),
+                      supplierId: String(produtoCompleto.fornecedor.id),
+                      supplierName: produtoCompleto.fornecedor.contato.nome,
+                      code: produtoCompleto.fornecedor.codigo || undefined,
+                      costPrice: produtoCompleto.fornecedor.precoCusto ? Math.round(produtoCompleto.fornecedor.precoCusto * 100) : undefined,
+                      purchasePrice: produtoCompleto.fornecedor.precoCompra ? Math.round(produtoCompleto.fornecedor.precoCompra * 100) : 0,
+                      isDefault: true, // Assumir como padrão se é o único
+                    });
+                  }
+                }
               }
+            } catch (detailError) {
+              console.error(`[Bling] Erro ao buscar fornecedor do produto ${produto.id}:`, detailError);
+              // Continuar mesmo se falhar para não interromper sincronização
             }
             
             synced++;
 
-            // Atualizar progresso a cada 1000 produtos
-            if (synced % 1000 === 0 && onProgress) {
-              onProgress(synced, null, `Sincronizando produtos - ${synced} produtos`);
+            // Atualizar progresso a cada 100 produtos
+            if (synced % 100 === 0 && onProgress) {
+              onProgress(synced, null, `Sincronizando produtos e fornecedores - ${synced} produtos processados`);
             }
           } catch (error) {
             console.error(`Erro ao inserir produto ${produto.id}:`, error);
