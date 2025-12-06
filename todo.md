@@ -1304,3 +1304,22 @@ Sistema agora notifica APENAS quando:
 ### Próximo Passo:
 **IMPORTANTE:** Clicar em "Recalcular Análise ABC" para atualizar todos os produtos!
 
+
+## NOVO PROBLEMA REPORTADO ❌
+
+- [ ] Corrigir campo abcRevenue no relatório por classe (ainda mostra R$ 2.010 ao invés de R$ 20,10)
+- [ ] Impacta faturamento total do relatório e de todas as classes
+- [ ] Investigar query getProductsByAbcClass
+
+## Correção Aplicada - abcRevenue ✅
+
+### Locais Corrigidos (dividindo por 100):
+1. Linha 213: getProductsPaginated (listagem geral)
+2. Linha 2069: getProductsByAbcClass (relatório por classe)
+3. Linha 2108: totalRevenue agregado (soma total da classe)
+
+### Validação Pendente:
+- [ ] Recarregar página do relatório Classe A
+- [ ] Verificar produto 30572 mostra R$ 20,10 (não R$ 2.010)
+- [ ] Verificar faturamento total da classe está correto
+

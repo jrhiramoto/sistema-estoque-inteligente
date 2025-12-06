@@ -210,7 +210,7 @@ export async function getProductsPaginated(params: {
       unit: products.unit,
       abcClass: products.abcClass,
       abcClassManual: products.abcClassManual,
-      abcRevenue: products.abcRevenue,
+      abcRevenue: sql<number>`${products.abcRevenue} / 100`,
       abcPercentage: products.abcPercentage,
       abcLastCalculated: products.abcLastCalculated,
       shouldStock: products.shouldStock,
@@ -2066,7 +2066,7 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
       code: products.code,
       name: products.name,
       abcClass: products.abcClass,
-      abcRevenue: products.abcRevenue,
+      abcRevenue: sql<number>`${products.abcRevenue} / 100`,
       // Média de vendas mensais (em tempo real)
       averageMonthlySales: sql<number>`(
         SELECT COALESCE(SUM(s.quantity), 0) / ${months}
@@ -2105,7 +2105,7 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
   const aggregates = await db
     .select({ 
       count: sql<number>`count(DISTINCT ${products.id})`,
-      totalRevenue: sql<number>`COALESCE(SUM(${products.abcRevenue}), 0)`,
+      totalRevenue: sql<number>`COALESCE(SUM(${products.abcRevenue}), 0) / 100`,
       totalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
     })
     .from(products)
