@@ -1234,3 +1234,36 @@ Sistema agora notifica APENAS quando:
 - Tooltips já implementados nas colunas relevantes
 - Padrão estabelecido para futuras métricas
 
+
+## 🚨 URGENTE: Divergência de Dados Classe A
+
+**Problema Reportado:**
+- Badge: 332 produtos, R$ 366.079,10
+- Relatório: 430 produtos, R$ 8.119.310,00
+
+**Investigação:**
+- [ ] Identificar query dos badges (getCounts)
+- [ ] Identificar query do relatório (getProductsByAbcClass)
+- [ ] Validar dados reais no banco (SELECT COUNT, SUM)
+- [ ] Identificar causa da divergência
+- [ ] Corrigir queries incorretas
+- [ ] Garantir consistência entre todas as visualizações
+
+
+## Correções Aplicadas ✅
+
+### Problema 1: Filtro de código em getAbcCounts
+- **Causa:** Query aplicava filtro `code >= 2000 AND (code < 50000 OR code > 51000)`
+- **Efeito:** Excluía 98 produtos (códigos 50000-51000)
+- **Correção:** Removido filtro - agora conta TODOS os produtos
+
+### Problema 2: Faturamento somando apenas primeira página
+- **Causa:** Frontend somava `data.products` (paginado, max 100 itens)
+- **Efeito:** Mostrava R$ 8M ao invés de R$ 56M
+- **Correção:** Backend agora retorna `totalRevenue` e `totalStock` agregados
+
+**Dados Corretos (Classe A):**
+- Total produtos: 430
+- Faturamento total: R$ 56.047.810,00
+- Estoque total: calculado via agregação
+

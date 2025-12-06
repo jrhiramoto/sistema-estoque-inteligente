@@ -1499,25 +1499,13 @@ export async function getAbcCounts() {
   }
 
   try {
-    // Contar produtos por classe (aplicando filtros de código)
+    // Contar produtos por classe (TODOS os produtos, sem filtros)
     const counts = await db
       .select({
         abcClass: products.abcClass,
         count: sql<number>`COUNT(*)`,
       })
       .from(products)
-      .where(
-        or(
-          isNull(products.code),
-          and(
-            sql`CAST(${products.code} AS SIGNED) >= 2000`,
-            or(
-              sql`CAST(${products.code} AS SIGNED) < 50000`,
-              sql`CAST(${products.code} AS SIGNED) > 51000`
-            )
-          )
-        )
-      )
       .groupBy(products.abcClass);
 
     // Organizar contagens por classe
@@ -2113,17 +2101,26 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
     .limit(limit)
     .offset(offset);
   
-  // Contar total
-  const countResult = await db
-    .select({ count: sql<number>`count(DISTINCT ${products.id})` })
+  // Contar total e calcular agregados
+  const aggregates = await db
+    .select({ 
+      count: sql<number>`count(DISTINCT ${products.id})`,
+      totalRevenue: sql<number>`COALESCE(SUM(${products.abcRevenue}), 0)`,
+      totalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
+    })
     .from(products)
+    .leftJoin(inventory, eq(products.id, inventory.productId))
     .where(sql`${products.abcClass} = ${abcClass}`);
   
-  const total = countResult[0]?.count || 0;
+  const total = aggregates[0]?.count || 0;
+  const totalRevenue = Number(aggregates[0]?.totalRevenue || 0);
+  const totalStock = Number(aggregates[0]?.totalStock || 0);
   
   return {
     products: productsList,
     total,
+    totalRevenue,
+    totalStock,
   };
 }
 

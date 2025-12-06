@@ -140,7 +140,7 @@ export default function AbcClassReport() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {data?.products.reduce((sum, p) => sum + Number(p.physicalStock || 0), 0).toLocaleString('pt-BR')}
+              {(data?.totalStock || 0).toLocaleString('pt-BR')}
             </div>
           </CardContent>
         </Card>
@@ -158,7 +158,7 @@ export default function AbcClassReport() {
                 currency: 'BRL',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              }).format(data?.products.reduce((sum, p) => sum + (p.abcRevenue || 0), 0) || 0)}
+              }).format(data?.totalRevenue || 0)}
             </div>
           </CardContent>
         </Card>
