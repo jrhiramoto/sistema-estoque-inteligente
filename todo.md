@@ -1193,3 +1193,44 @@ Sistema agora notifica APENAS quando:
 - Período obtido de abc_auto_calculation_config.analysisMonths
 - Todas queries recalculam a cada consulta (sem cache)
 
+
+## Tooltips Explicativos para Métricas Calculadas
+
+### Relatório ABC por Classe
+- [ ] Tooltip em "Média Mensal" explicando fórmula e período
+- [ ] Tooltip em "Giro de Estoque" explicando fórmula
+
+### Página de Análise ABC
+- [ ] Tooltip em cards de métricas (se houver cálculos)
+- [ ] Tooltip em gráficos com métricas calculadas
+
+### Outras Páginas
+- [ ] Revisar todas as páginas do sistema
+- [ ] Adicionar tooltips onde houver métricas calculadas
+
+**Padrão:**
+- Usar componente Tooltip do shadcn/ui
+- Ícone Info Circle ao lado do título
+- Texto: "Fórmula: [fórmula] | Período: [período]"
+
+
+## Tooltips Explicativos - Análise Completa ✅
+
+### Páginas Revisadas:
+- [x] AbcClassReport.tsx - Tooltips adicionados (Média Mensal e Giro)
+- [x] AbcAnalysis.tsx - Métricas diretas, sem cálculos complexos
+- [x] Home.tsx - Dashboard simples, sem métricas calculadas
+- [x] Products.tsx - Listagem de produtos, sem cálculos
+- [x] Orders.tsx - Pedidos, sem métricas calculadas
+- [x] Alerts.tsx - Alertas, sem cálculos
+- [x] Settings.tsx - Configurações, sem métricas
+- [x] ApiMonitoring.tsx - Logs de API, sem cálculos
+
+### Componentes Revisados:
+- [ ] AdvancedAnalytics.tsx - Verificar se há métricas calculadas
+
+**Conclusão:**
+- Única página com métricas calculadas complexas: AbcClassReport
+- Tooltips já implementados nas colunas relevantes
+- Padrão estabelecido para futuras métricas
+

@@ -11,7 +11,8 @@ import {
   Package,
   TrendingUp,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Info
 } from "lucide-react";
 import {
   Table,
@@ -21,6 +22,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type AbcClass = "A" | "B" | "C" | "D";
 
@@ -175,8 +181,36 @@ export default function AbcClassReport() {
                 <TableHead>Descrição</TableHead>
                 <TableHead className="text-right">Estoque Físico</TableHead>
                 <TableHead className="text-right">Estoque Virtual</TableHead>
-                <TableHead className="text-right">Média Mensal</TableHead>
-                <TableHead className="text-right">Giro</TableHead>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    Média Mensal
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-semibold mb-1">Média de Vendas Mensais</p>
+                        <p className="text-xs">Fórmula: Total Vendido ÷ Número de Meses</p>
+                        <p className="text-xs text-muted-foreground mt-1">Período: Últimos 12 meses (configurável)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    Giro
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-semibold mb-1">Giro de Estoque</p>
+                        <p className="text-xs">Fórmula: Vendas no Período ÷ Estoque Físico Atual</p>
+                        <p className="text-xs text-muted-foreground mt-1">Indica quantas vezes o estoque "girou" no período</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead className="text-right">Faturamento</TableHead>
               </TableRow>
