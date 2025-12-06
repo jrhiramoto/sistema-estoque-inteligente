@@ -136,15 +136,13 @@ export async function getAllProducts() {
   
   // Filtrar produtos por código (ocultar 50000-51000 e < 2000)
   return await db.select().from(products).where(
-    and(
-      or(
-        isNull(products.code),
-        and(
-          sql`CAST(${products.code} AS SIGNED) >= 2000`,
-          or(
-            sql`CAST(${products.code} AS SIGNED) < 50000`,
-            sql`CAST(${products.code} AS SIGNED) > 51000`
-          )
+    or(
+      isNull(products.code),
+      and(
+        sql`CAST(${products.code} AS SIGNED) >= 2000`,
+        or(
+          sql`CAST(${products.code} AS SIGNED) < 50000`,
+          sql`CAST(${products.code} AS SIGNED) > 51000`
         )
       )
     )

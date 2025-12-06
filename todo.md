@@ -628,3 +628,18 @@
 - ✅ Preços estão corretos na API (campo `preco`)
 - ❌ Fornecedores estavam NULL no banco (não eram salvos)
 - ✅ Webhook `product_supplier` já implementado, só falta registrar no Bling
+
+
+## BUG - Erro na Página de Configurações
+
+- [x] Investigar qual mutation está retornando HTML ao invés de JSON
+- [x] Verificar logs do servidor para identificar endpoint problemático
+- [x] Corrigir handler ou rota que está retornando HTML
+- [x] Testar correção na página /settings
+- [x] Validar que todas as mutations funcionam corretamente
+
+**Erro:** `Unexpected token '<', "<html><h"... is not valid JSON`
+**Página:** /settings
+**Tipo:** API Mutation Error - tRPC retornando HTML ao invés de JSON
+
+**Solução:** Query SQL em `getAllProducts()` tinha sintaxe incorreta com `and(or(...))` desnecessário. Simplificado para `or(...)` e erro resolvido.
