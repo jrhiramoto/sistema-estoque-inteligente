@@ -332,10 +332,11 @@ export default function AbcAnalysis() {
 
       {/* Distribuição por Classe */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Classe A</span>
+        <Link href="/abc/report/A">
+          <Card className="border-green-200 bg-green-50 cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Classe A</span>
               {calculateMutation.isPending || countsLoading ? (
                 <Skeleton className="h-6 w-24" />
               ) : (
@@ -379,9 +380,11 @@ export default function AbcAnalysis() {
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card className="border-blue-200 bg-blue-50">
+        <Link href="/abc/report/B">
+          <Card className="border-blue-200 bg-blue-50 cursor-pointer hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe B</span>
@@ -428,9 +431,11 @@ export default function AbcAnalysis() {
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Link href="/abc/report/C">
+          <Card className="border-yellow-200 bg-yellow-50 cursor-pointer hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe C</span>
@@ -477,9 +482,11 @@ export default function AbcAnalysis() {
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card className="border-gray-200 bg-gray-50">
+        <Link href="/abc/report/D">
+          <Card className="border-gray-200 bg-gray-50 cursor-pointer hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe D</span>
@@ -527,6 +534,7 @@ export default function AbcAnalysis() {
             </div>
           </CardContent>
         </Card>
+        </Link>
       </div>
 
       {/* Curva de Pareto */}

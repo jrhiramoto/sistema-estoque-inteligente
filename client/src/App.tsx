@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import ApiMonitoring from "./pages/ApiMonitoring";
 import Debug from "./pages/Debug";
 import AbcAnalysis from "./pages/AbcAnalysis";
+import AbcClassReport from "./pages/AbcClassReport";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path={"/api-monitoring"} component={ApiMonitoring} />
       <Route path={"/debug"} component={Debug} />
       <Route path={"/analise-abc"} component={AbcAnalysis} />
+      <Route path={"/abc/report/:class"} component={AbcClassReport} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

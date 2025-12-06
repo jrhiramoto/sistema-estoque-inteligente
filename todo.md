@@ -1073,3 +1073,51 @@ Sistema agora notifica APENAS quando:
 
 **Implementado:** Botão com ícone Home no canto superior esquerdo do header, ao lado do título
 
+
+## Relatório Detalhado por Classe ABC
+
+### Backend
+- [ ] Criar query getProductsByAbcClass (código, descrição, estoque, fornecedor)
+- [ ] Criar query getMonthlySalesByProduct (vendas agrupadas por mês)
+- [ ] Adicionar procedures no router
+
+### Frontend
+- [ ] Criar página AbcClassReport.tsx
+- [ ] Tabela com código, descrição, estoque, fornecedor
+- [ ] Ordenar por estoque (maior para menor)
+- [ ] Gráfico de vendas mensais por produto (expandível)
+- [ ] Cores distintas por classe (A=verde, B=azul, C=amarelo, D=cinza)
+- [ ] Busca e filtros
+- [ ] Paginação para performance
+
+### Navegação
+- [ ] Adicionar links nos badges (A, B, C, D)
+- [ ] Adicionar rota /abc/report/:class no App.tsx
+- [ ] Botão de retorno para Análise ABC
+
+**Foco:** Agilidade, legibilidade e performance
+
+
+## Relatório Detalhado por Classe ABC - CONCLUÍDO ✅
+
+### Backend
+- [x] Criar query getProductsByAbcClass (código, descrição, estoque, fornecedor)
+- [x] Criar query getMonthlySalesByProduct (vendas agrupadas por mês)
+- [x] Adicionar procedures no router
+
+### Frontend
+- [x] Criar página AbcClassReport.tsx
+- [x] Tabela com código, descrição, estoque, fornecedor
+- [x] Ordenar por estoque (maior para menor)
+- [x] Gráfico de vendas mensais por produto (expandível)
+- [x] Cores distintas por classe (A=verde, B=azul, C=amarelo, D=cinza)
+- [x] Cards resumo (total produtos, estoque total, faturamento total)
+- [x] Linha expandível para ver vendas mensais
+
+### Navegação
+- [x] Adicionar links nos badges (A, B, C, D) - clicáveis com hover
+- [x] Adicionar rota /abc/report/:class no App.tsx
+- [x] Botões de retorno (Home + Análise ABC)
+
+**Implementação:** Relatório completo, ágil e agradável de visualizar
+

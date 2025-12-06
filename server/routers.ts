@@ -828,6 +828,32 @@ export const appRouter = router({
         return { success: true };
       }),
     
+    getProductsByClass: protectedProcedure
+      .input(z.object({
+        abcClass: z.enum(["A", "B", "C", "D"]),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getProductsByAbcClass(
+          input.abcClass,
+          input.limit || 100,
+          input.offset || 0
+        );
+      }),
+    
+    getMonthlySales: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        months: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getMonthlySalesByProduct(
+          input.productId,
+          input.months || 12
+        );
+      }),
+    
     getProducts: protectedProcedure
       .input(z.object({
         limit: z.number().optional(),

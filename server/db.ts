@@ -2053,3 +2053,72 @@ export async function getAbcCalculationStats(userId: number) {
     lastExecution,
   };
 }
+
+
+// ===== ABC Class Report =====
+
+export async function getProductsByAbcClass(abcClass: string, limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return { products: [], total: 0 };
+  
+  // Query produtos com estoque e fornecedor
+  const productsList = await db
+    .select({
+      id: products.id,
+      code: products.code,
+      name: products.name,
+      abcClass: products.abcClass,
+      abcRevenue: products.abcRevenue,
+      physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
+      virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
+      supplierName: productSuppliers.supplierName,
+      supplierId: productSuppliers.supplierId,
+    })
+    .from(products)
+    .leftJoin(inventory, eq(products.id, inventory.productId))
+    .leftJoin(productSuppliers, eq(products.id, productSuppliers.productId))
+    .where(sql`${products.abcClass} = ${abcClass}`)
+    .groupBy(products.id, productSuppliers.supplierName, productSuppliers.supplierId)
+    .orderBy(desc(sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`))
+    .limit(limit)
+    .offset(offset);
+  
+  // Contar total
+  const countResult = await db
+    .select({ count: sql<number>`count(DISTINCT ${products.id})` })
+    .from(products)
+    .where(sql`${products.abcClass} = ${abcClass}`);
+  
+  const total = countResult[0]?.count || 0;
+  
+  return {
+    products: productsList,
+    total,
+  };
+}
+
+export async function getMonthlySalesByProduct(productId: number, months: number = 12) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - months);
+  
+  const monthlySales = await db
+    .select({
+      month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`,
+      quantity: sql<number>`SUM(${sales.quantity})`,
+      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice})`,
+    })
+    .from(sales)
+    .where(
+      and(
+        eq(sales.productId, productId),
+        sql`${sales.saleDate} >= ${startDate}`
+      )
+    )
+    .groupBy(sql`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`)
+    .orderBy(sql`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`);
+  
+  return monthlySales;
+}
