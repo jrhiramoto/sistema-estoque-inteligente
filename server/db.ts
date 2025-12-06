@@ -197,7 +197,7 @@ export async function getProductsPaginated(params: {
   );
   
   if (abcClass) {
-    conditions.push(eq(products.abcClass, abcClass));
+    conditions.push(sql`${products.abcClass} = ${abcClass}`);
   }
   
   if (search && search.trim()) {
@@ -2083,7 +2083,12 @@ export async function getProductsByAbcClass(
   limit: number = 100,
   offset: number = 0,
   orderBy: string = 'physicalStock',
-  orderDirection: 'asc' | 'desc' = 'desc'
+  orderDirection: 'asc' | 'desc' = 'desc',
+  filters?: {
+    lowStock?: boolean;
+    noSupplier?: boolean;
+    highTurnover?: boolean;
+  }
 ) {
   const db = await getDb();
   if (!db) return { products: [], total: 0 };
@@ -2099,7 +2104,7 @@ export async function getProductsByAbcClass(
   startDate.setMonth(startDate.getMonth() - months);
   
   // Query produtos com métricas calculadas em tempo real
-  const productsList = await db
+  let allProducts = await db
     .select({
       id: products.id,
       code: products.code,
@@ -2140,24 +2145,28 @@ export async function getProductsByAbcClass(
       orderDirection === 'desc'
         ? desc(getOrderByColumn(orderBy))
         : asc(getOrderByColumn(orderBy))
-    )
-    .limit(limit)
-    .offset(offset);
+    );
   
-  // Contar total e calcular agregados
-  const aggregates = await db
-    .select({ 
-      count: sql<number>`count(DISTINCT ${products.id})`,
-      totalRevenue: sql<number>`COALESCE(SUM(${products.abcRevenue}), 0) / 100`,
-      totalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
-    })
-    .from(products)
-    .leftJoin(inventory, eq(products.id, inventory.productId))
-    .where(sql`${products.abcClass} = ${abcClass}`);
+  // Aplicar filtros em JavaScript
+  if (filters?.lowStock) {
+    allProducts = allProducts.filter(p => Number(p.physicalStock) < 10);
+  }
   
-  const total = aggregates[0]?.count || 0;
-  const totalRevenue = Number(aggregates[0]?.totalRevenue || 0);
-  const totalStock = Number(aggregates[0]?.totalStock || 0);
+  if (filters?.noSupplier) {
+    allProducts = allProducts.filter(p => !p.supplierName);
+  }
+  
+  if (filters?.highTurnover) {
+    allProducts = allProducts.filter(p => Number(p.stockTurnover) > 5);
+  }
+  
+  // Calcular totais ANTES da paginação
+  const total = allProducts.length;
+  const totalRevenue = allProducts.reduce((sum, p) => sum + Number(p.abcRevenue || 0), 0);
+  const totalStock = allProducts.reduce((sum, p) => sum + Number(p.physicalStock || 0), 0);
+  
+  // Aplicar paginação
+  const productsList = allProducts.slice(offset, offset + limit);
   
   return {
     products: productsList,

@@ -1362,3 +1362,43 @@ Sistema agora notifica APENAS quando:
 - [ ] Aplicar em listagem de Produtos
 - [ ] Aplicar em listagem de Pedidos de Venda
 
+
+## MELHORIAS RELATÓRIO ABC
+
+### 1. Corrigir Erro TypeScript
+- [ ] Corrigir erro de tipo do enum abcClass no helper de ordenação
+- [ ] Validar que não afeta outras queries
+
+### 2. Filtros Rápidos
+- [ ] Botão "Estoque Baixo" (< 10 unidades)
+- [ ] Botão "Sem Fornecedor" (supplierName null)
+- [ ] Botão "Alto Giro" (stockTurnover > 5x)
+- [ ] Indicador visual de filtro ativo
+- [ ] Limpar filtros
+
+### 3. Paginação
+- [ ] Controles Anterior/Próximo
+- [ ] Seletor de itens por página (50/100/200)
+- [ ] Indicador "Mostrando X-Y de Z produtos"
+- [ ] Manter paginação ao ordenar/filtrar
+
+### 4. Aplicar em Outros Relatórios
+- [ ] Ordenação em Produtos
+- [ ] Exportação em Produtos
+- [ ] Ordenação em Pedidos
+- [ ] Exportação em Pedidos
+
+
+## ✅ CONCLUÍDO - Melhorias Relatório ABC
+
+- [x] Erro TypeScript corrigido (enum abcClass)
+- [x] Filtro "Estoque Baixo" (< 10 unidades)
+- [x] Filtro "Sem Fornecedor"
+- [x] Filtro "Alto Giro" (> 5x)
+- [x] Indicador visual de filtros ativos
+- [x] Botão "Limpar filtros"
+- [x] Controles de paginação (Primeira/Anterior/Próximo/Última)
+- [x] Seletor de itens por página (50/100/200)
+- [x] Indicador "Mostrando X-Y de Z produtos"
+- [x] Paginação mantida ao ordenar/filtrar
+

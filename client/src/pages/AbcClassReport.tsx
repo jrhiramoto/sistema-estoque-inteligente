@@ -16,7 +16,12 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Download
+  Download,
+  Filter,
+  X,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 import {
   Table,
@@ -31,6 +36,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type AbcClass = "A" | "B" | "C" | "D";
 
@@ -63,17 +75,30 @@ export default function AbcClassReport() {
   const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
   const [orderBy, setOrderBy] = useState<string>('physicalStock');
   const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('desc');
+  const [filters, setFilters] = useState<{
+    lowStock?: boolean;
+    noSupplier?: boolean;
+    highTurnover?: boolean;
+  }>({});
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   
   const config = CLASS_CONFIG[abcClass];
   
   // Query produtos da classe
   const { data, isLoading } = trpc.abc.getProductsByClass.useQuery({
     abcClass,
-    limit: 100,
-    offset: 0,
+    limit: itemsPerPage,
+    offset: (page - 1) * itemsPerPage,
     orderBy,
     orderDirection,
+    filters,
   });
+  
+  // Calcular informações de paginação
+  const totalPages = Math.ceil((data?.total || 0) / itemsPerPage);
+  const startItem = (page - 1) * itemsPerPage + 1;
+  const endItem = Math.min(page * itemsPerPage, data?.total || 0);
   
   // Mutation de exportação
   const exportMutation = trpc.abc.exportToExcel.useMutation({
@@ -223,12 +248,64 @@ export default function AbcClassReport() {
         </Card>
       </div>
 
+      {/* Filtros Rápidos */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          Filtros rápidos:
+        </div>
+        <Button
+          variant={filters.lowStock ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilters(prev => ({ ...prev, lowStock: !prev.lowStock }))}
+          className="gap-2"
+        >
+          {filters.lowStock && <X className="h-3 w-3" />}
+          Estoque Baixo (&lt; 10)
+        </Button>
+        <Button
+          variant={filters.noSupplier ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilters(prev => ({ ...prev, noSupplier: !prev.noSupplier }))}
+          className="gap-2"
+        >
+          {filters.noSupplier && <X className="h-3 w-3" />}
+          Sem Fornecedor
+        </Button>
+        <Button
+          variant={filters.highTurnover ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilters(prev => ({ ...prev, highTurnover: !prev.highTurnover }))}
+          className="gap-2"
+        >
+          {filters.highTurnover && <X className="h-3 w-3" />}
+          Alto Giro (&gt; 5x)
+        </Button>
+        {(filters.lowStock || filters.noSupplier || filters.highTurnover) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setFilters({})}
+            className="gap-2 text-muted-foreground"
+          >
+            <X className="h-3 w-3" />
+            Limpar filtros
+          </Button>
+        )}
+      </div>
+
       {/* Tabela de Produtos */}
       <Card>
         <CardHeader>
           <CardTitle>Produtos da {config.label}</CardTitle>
           <CardDescription>
-            Ordenados por quantidade em estoque (maior para menor)
+            {Object.values(filters).some(v => v) ? (
+              <span className="text-primary font-medium">
+                Filtros ativos • Mostrando {data?.total || 0} produtos
+              </span>
+            ) : (
+              'Ordenados por quantidade em estoque (maior para menor)'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -365,6 +442,74 @@ export default function AbcClassReport() {
               )}
             </TableBody>
           </Table>
+          
+          {/* Controles de Paginação */}
+          {data && data.total > 0 && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando {startItem}-{endItem} de {data.total} produtos
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Itens por página:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(Number(value));
+                      setPage(1); // Resetar para primeira página
+                    }}
+                  >
+                    <SelectTrigger className="w-[70px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="200">200</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="text-sm">
+                  Página {page} de {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

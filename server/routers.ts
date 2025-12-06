@@ -835,6 +835,11 @@ export const appRouter = router({
         offset: z.number().optional(),
         orderBy: z.string().optional(),
         orderDirection: z.enum(["asc", "desc"]).optional(),
+        filters: z.object({
+          lowStock: z.boolean().optional(),
+          noSupplier: z.boolean().optional(),
+          highTurnover: z.boolean().optional(),
+        }).optional(),
       }))
       .query(async ({ input }) => {
         return await db.getProductsByAbcClass(
@@ -842,7 +847,8 @@ export const appRouter = router({
           input.limit || 100,
           input.offset || 0,
           input.orderBy || 'physicalStock',
-          input.orderDirection || 'desc'
+          input.orderDirection || 'desc',
+          input.filters
         );
       }),
     
