@@ -113,18 +113,27 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
       if (!success) {
         console.error("[Token Renewal] ❌ Falha ao renovar token após 3 tentativas");
         
-        // Notificar administrador
-        try {
-          await notifyOwner({
-            title: "⚠️ Token do Bling Expirado",
-            content: `O token de acesso ao Bling expirou e não foi possível renová-lo automaticamente.\n\n` +
-                     `Expira em: ${hoursRemaining}h (${expiresAt.toLocaleString('pt-BR')})\n\n` +
-                     `Ação necessária: Acesse Configurações > Integração Bling e reautorize o acesso.\n\n` +
-                     `Enquanto isso, as sincronizações automáticas estarão pausadas.`
-          });
-          console.log("[Token Renewal] 📧 Notificação enviada ao administrador");
-        } catch (notifyError) {
-          console.error("[Token Renewal] Erro ao enviar notificação:", notifyError);
+        // NOTIFICAR APENAS SE:
+        // 1. Token já expirou (hoursRemaining <= 0) OU
+        // 2. Token expira em menos de 6h (urgente, próxima verificação pode ser tarde demais)
+        const shouldNotify = hoursRemaining <= 6;
+        
+        if (shouldNotify) {
+          console.log(`[Token Renewal] 📧 Enviando notificação (token expira em ${hoursRemaining}h)`);
+          try {
+            await notifyOwner({
+              title: "⚠️ Token do Bling Expirado",
+              content: `O token de acesso ao Bling ${hoursRemaining <= 0 ? 'expirou' : 'expira em breve'} e não foi possível renová-lo automaticamente.\n\n` +
+                       `Expira em: ${hoursRemaining}h (${expiresAt.toLocaleString('pt-BR')})\n\n` +
+                       `Ação necessária: Acesse Configurações > Integração Bling e reautorize o acesso.\n\n` +
+                       `Enquanto isso, as sincronizações automáticas estarão pausadas.`
+            });
+            console.log("[Token Renewal] 📧 Notificação enviada ao administrador");
+          } catch (notifyError) {
+            console.error("[Token Renewal] Erro ao enviar notificação:", notifyError);
+          }
+        } else {
+          console.log(`[Token Renewal] ⏳ Não enviando notificação ainda (token expira em ${hoursRemaining}h, próxima tentativa em 2h)`);
         }
       }
     } else {

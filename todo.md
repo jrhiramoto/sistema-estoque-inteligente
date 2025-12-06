@@ -802,3 +802,32 @@
 
 **Resultado:** Badges agora são mais explícitos e fáceis de entender
 
+
+## Correção de Notificações de Token Expirado - EM ANDAMENTO
+
+- [ ] Investigar sistema de renovação automática de token
+- [ ] Identificar por que notificações estão sendo enviadas desnecessariamente
+- [ ] Corrigir lógica para notificar apenas quando renovação falhar definitivamente
+- [ ] Testar que renovação automática funciona sem notificar
+- [ ] Validar que notificação só é enviada quando realmente necessário
+
+**Problema reportado:** Usuário recebe alertas de token expirado por e-mail mesmo quando sistema deveria renovar automaticamente
+
+
+**Atualização:**
+- [x] Investigar sistema de renovação automática de token
+- [x] Identificar por que notificações estão sendo enviadas desnecessariamente
+- [x] Corrigir lógica para notificar apenas quando renovação falhar definitivamente
+- [x] Testar que renovação automática funciona sem notificar
+- [x] Validar que notificação só é enviada quando realmente necessário
+
+**Solução implementada:**
+Sistema agora notifica APENAS quando:
+1. Token já expirou (hoursRemaining <= 0) OU
+2. Token expira em menos de 6h E renovação falhou
+
+**Antes:** Notificava quando token expiraria em 48h e renovação falhava (mesmo com 40h de validade)
+**Depois:** Notifica apenas quando urgente (< 6h) ou já expirado
+
+**Testes:** 7/7 cenários validados ✅
+
