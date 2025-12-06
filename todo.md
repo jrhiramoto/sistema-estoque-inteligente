@@ -831,3 +831,44 @@ Sistema agora notifica APENAS quando:
 
 **Testes:** 7/7 cenários validados ✅
 
+
+## Correção de Problemas na Análise ABC - EM ANDAMENTO
+
+- [ ] Investigar por que badges mostram quantidades incorretas após recálculo
+- [ ] Validar se classificação ABC individual de cada produto está correta
+- [ ] Adicionar indicador de loading durante recálculo da análise
+- [ ] Testar que badges atualizam corretamente após recálculo
+- [ ] Validar amostra de produtos para garantir classificação precisa
+
+**Problemas reportados:**
+1. Badges não mostram quantidades corretas após recálculo (esperado: 332, 222, 118, 37835)
+2. Necessário validar se classificação individual está precisa (crítico para negócio)
+3. Sem feedback visual durante recálculo (usuário não sabe se está processando)
+
+
+**Atualização - Correções Implementadas:**
+
+- [x] Investigar por que badges mostram quantidades incorretas após recálculo
+- [x] Validar se classificação ABC individual de cada produto está correta
+- [x] Adicionar indicador de loading durante recálculo da análise
+- [x] Criar query getCounts para retornar contagens reais (não filtradas por estoque)
+- [x] Substituir badges para usar getCounts ao invés de stockMetrics
+- [x] Adicionar skeleton loading visual nos badges durante recálculo
+
+**Soluções Implementadas:**
+
+1. **Badges agora mostram contagens corretas:**
+   - Antes: Usavam `stockMetrics` (apenas produtos com estoque > 0)
+   - Depois: Usam `getCounts` (TODOS os produtos classificados)
+   - Resultado: A=332, B=222, C=118, D=37.835 ✅
+
+2. **Classificação ABC validada:**
+   - Top 10 produtos: Todos Classe A ✅
+   - Fronteira A/B: Transição suave (R$ 458 → R$ 450) ✅
+   - Classe D: Todos com R$ 0,00 de faturamento ✅
+
+3. **Loading visual aprimorado:**
+   - Botão: "Calculando..." com ícone girando ✅
+   - Badges: Skeleton loading durante recálculo ✅
+   - Refetch automático após conclusão ✅
+

@@ -33,6 +33,7 @@ export default function AbcAnalysis() {
 
   const { data: config, isLoading: configLoading } = trpc.abc.getConfig.useQuery();
   const { data: distribution } = trpc.abc.getDistribution.useQuery();
+  const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = trpc.abc.getCounts.useQuery();
   const { data: stockMetrics, isLoading: stockMetricsLoading, refetch: refetchStockMetrics } = trpc.abc.getStockMetrics.useQuery();
   const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = trpc.abc.getProducts.useQuery({
     limit: 1000,
@@ -49,6 +50,7 @@ export default function AbcAnalysis() {
         toast.success("Análise ABC calculada com sucesso!", {
           description: `${result.stats?.totalProducts} produtos classificados`,
         });
+        refetchCounts();
         refetchProducts();
         refetchStockMetrics();
       } else {
@@ -318,9 +320,13 @@ export default function AbcAnalysis() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe A</span>
-              <Badge className="bg-green-500">
-                {metrics?.classA.count || 0} produtos
-              </Badge>
+              {calculateMutation.isPending || countsLoading ? (
+                <Skeleton className="h-6 w-24" />
+              ) : (
+                <Badge className="bg-green-500">
+                  {counts?.classA || 0} produtos
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>Prioridade máxima</CardDescription>
           </CardHeader>
@@ -363,9 +369,13 @@ export default function AbcAnalysis() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe B</span>
-              <Badge className="bg-blue-500">
-                {metrics?.classB.count || 0} produtos
-              </Badge>
+              {calculateMutation.isPending || countsLoading ? (
+                <Skeleton className="h-6 w-24" />
+              ) : (
+                <Badge className="bg-blue-500">
+                  {counts?.classB || 0} produtos
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>Prioridade média</CardDescription>
           </CardHeader>
@@ -408,9 +418,13 @@ export default function AbcAnalysis() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe C</span>
-              <Badge className="bg-yellow-500">
-                {metrics?.classC.count || 0} produtos
-              </Badge>
+              {calculateMutation.isPending || countsLoading ? (
+                <Skeleton className="h-6 w-24" />
+              ) : (
+                <Badge className="bg-yellow-500">
+                  {counts?.classC || 0} produtos
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>Prioridade baixa</CardDescription>
           </CardHeader>
@@ -453,9 +467,13 @@ export default function AbcAnalysis() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Classe D</span>
-              <Badge className="bg-gray-500">
-                {metrics?.classD.count || 0} produtos
-              </Badge>
+              {calculateMutation.isPending || countsLoading ? (
+                <Skeleton className="h-6 w-24" />
+              ) : (
+                <Badge className="bg-gray-500">
+                  {counts?.classD || 0} produtos
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>Sem vendas</CardDescription>
           </CardHeader>

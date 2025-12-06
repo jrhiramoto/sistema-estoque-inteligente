@@ -1464,3 +1464,78 @@ export async function getAbcStockMetrics() {
     };
   }
 }
+
+/**
+ * Obtém contagens de produtos por classe ABC+D
+ * Retorna TODOS os produtos classificados (não filtra por estoque)
+ */
+export async function getAbcCounts() {
+  const db = await getDb();
+  if (!db) {
+    return {
+      classA: 0,
+      classB: 0,
+      classC: 0,
+      classD: 0,
+      total: 0,
+    };
+  }
+
+  try {
+    // Contar produtos por classe (aplicando filtros de código)
+    const counts = await db
+      .select({
+        abcClass: products.abcClass,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(products)
+      .where(
+        or(
+          isNull(products.code),
+          and(
+            sql`CAST(${products.code} AS SIGNED) >= 2000`,
+            or(
+              sql`CAST(${products.code} AS SIGNED) < 50000`,
+              sql`CAST(${products.code} AS SIGNED) > 51000`
+            )
+          )
+        )
+      )
+      .groupBy(products.abcClass);
+
+    // Organizar contagens por classe
+    const result = {
+      classA: 0,
+      classB: 0,
+      classC: 0,
+      classD: 0,
+      total: 0,
+    };
+
+    counts.forEach((row) => {
+      const count = Number(row.count);
+      result.total += count;
+
+      if (row.abcClass === 'A') {
+        result.classA = count;
+      } else if (row.abcClass === 'B') {
+        result.classB = count;
+      } else if (row.abcClass === 'C') {
+        result.classC = count;
+      } else if (row.abcClass === 'D') {
+        result.classD = count;
+      }
+    });
+
+    return result;
+  } catch (error) {
+    console.error('[ABC] Erro ao obter contagens:', error);
+    return {
+      classA: 0,
+      classB: 0,
+      classC: 0,
+      classD: 0,
+      total: 0,
+    };
+  }
+}

@@ -778,6 +778,10 @@ export const appRouter = router({
       return await db.getAbcStockMetrics();
     }),
     
+    getCounts: protectedProcedure.query(async () => {
+      return await db.getAbcCounts();
+    }),
+    
     getProducts: protectedProcedure
       .input(z.object({
         limit: z.number().optional(),
