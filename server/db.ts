@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, gte, lte, sql, isNull, or, like, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, sql, isNull, isNotNull, or, like, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, orders,
@@ -2211,4 +2211,170 @@ export async function getMonthlySalesByProduct(productId: number, months: number
     .orderBy(sql`month`);
   
   return monthlySales;
+}
+
+
+// ===== Replenishment Management =====
+
+/**
+ * Busca produtos que precisam de reposição, agrupados por fornecedor
+ */
+export async function getProductsForReplenishment(filters?: {
+  supplierId?: string;
+  abcClass?: 'A' | 'B' | 'C' | 'D';
+  priority?: 'urgent' | 'high' | 'medium' | 'low';
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Buscar produtos com fornecedor e estoque
+    const query = db
+      .select({
+        // Produto
+        productId: products.id,
+        productCode: products.code,
+        productName: products.name,
+        abcClass: products.abcClass,
+        isNew: products.isNew,
+        createdAt: products.createdAt,
+        
+        // Estoque
+        physicalStock: inventory.physicalStock,
+        virtualStock: inventory.virtualStock,
+        
+        // Parâmetros
+        maxStock: products.maxStock,
+        safetyStock: products.safetyStock,
+        
+        // Fornecedor
+        supplierId: productSuppliers.supplierId,
+        supplierName: productSuppliers.supplierName,
+        leadTimeDays: productSuppliers.leadTimeDays,
+        isDefaultSupplier: productSuppliers.isDefault,
+      })
+      .from(products)
+      .leftJoin(inventory, eq(products.id, inventory.productId))
+      .leftJoin(productSuppliers, eq(products.id, productSuppliers.productId))
+      .where(
+        and(
+          eq(products.isActive, true),
+          // Filtros opcionais
+          filters?.supplierId ? eq(productSuppliers.supplierId, filters.supplierId) : undefined,
+          filters?.abcClass ? eq(products.abcClass, filters.abcClass) : undefined,
+          filters?.search
+            ? or(
+                like(products.name, `%${filters.search}%`),
+                like(products.code, `%${filters.search}%`)
+              )
+            : undefined
+        )
+      );
+
+    const results = await query;
+    return results;
+  } catch (error) {
+    console.error('[Database] Error getting products for replenishment:', error);
+    return [];
+  }
+}
+
+/**
+ * Busca vendas de um produto para cálculo de métricas
+ */
+export async function getSalesForProduct(productId: number, months: number = 12) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - months);
+
+    const results = await db
+      .select({
+        quantity: sales.quantity,
+        saleDate: sales.saleDate,
+      })
+      .from(sales)
+      .where(
+        and(
+          eq(sales.productId, productId),
+          gte(sales.saleDate, cutoffDate)
+        )
+      )
+      .orderBy(desc(sales.saleDate));
+
+    return results;
+  } catch (error) {
+    console.error('[Database] Error getting sales for product:', error);
+    return [];
+  }
+}
+
+/**
+ * Busca fornecedores únicos
+ */
+export async function getUniqueSuppliers() {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const results = await db
+      .selectDistinct({
+        supplierId: productSuppliers.supplierId,
+        supplierName: productSuppliers.supplierName,
+      })
+      .from(productSuppliers)
+      .where(isNotNull(productSuppliers.supplierName))
+      .orderBy(productSuppliers.supplierName);
+
+    return results;
+  } catch (error) {
+    console.error('[Database] Error getting unique suppliers:', error);
+    return [];
+  }
+}
+
+/**
+ * Atualiza lead time de um fornecedor para um produto
+ */
+export async function updateSupplierLeadTime(
+  productId: number,
+  supplierId: string,
+  leadTimeDays: number
+) {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    await db
+      .update(productSuppliers)
+      .set({ leadTimeDays })
+      .where(
+        and(
+          eq(productSuppliers.productId, productId),
+          eq(productSuppliers.supplierId, supplierId)
+        )
+      );
+  } catch (error) {
+    console.error('[Database] Error updating supplier lead time:', error);
+  }
+}
+
+/**
+ * Atualiza estoque máximo de um produto
+ */
+export async function updateProductMaxStock(productId: number, maxStock: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    await db
+      .update(products)
+      .set({ maxStock })
+      .where(eq(products.id, productId));
+  } catch (error) {
+    console.error('[Database] Error updating product max stock:', error);
+  }
 }

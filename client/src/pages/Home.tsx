@@ -231,7 +231,23 @@ export default function Home() {
                 </Card>
               </Link>
 
-              <Link href="/settings">
+              <Link href="/replenishment">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <ShoppingCart className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Reposição</h3>
+                  <p className="text-sm text-muted-foreground">Sugestões de compra</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/settings">
                 <Card className="hover:bg-accent cursor-pointer transition-colors">
                   <CardHeader>
                     <BarChart3 className="w-8 h-8 text-purple-600 mb-2" />

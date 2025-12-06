@@ -998,6 +998,70 @@ export const appRouter = router({
       return await db.getOrdersStats();
     }),
   }),
+  replenishment: router({
+    getProducts: protectedProcedure
+      .input(z.object({
+        supplierId: z.string().optional(),
+        abcClass: z.enum(["A", "B", "C", "D"]).optional(),
+        priority: z.enum(["urgent", "high", "medium", "low"]).optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const { getProductsForReplenishment, getSalesForProduct } = await import("./db");
+        const { calculateReplenishmentMetrics } = await import("./replenishmentFormulas");
+        const products = await getProductsForReplenishment(input);
+        const productsWithMetrics = await Promise.all(
+          products.map(async (product) => {
+            const sales = await getSalesForProduct(product.productId, 12);
+            const metrics = calculateReplenishmentMetrics(
+              sales, product.physicalStock || 0, product.abcClass as "A" | "B" | "C" | "D",
+              product.leadTimeDays || 7, product.maxStock, product.safetyStock || 0
+            );
+            return { ...product, metrics };
+          })
+        );
+        let filtered = productsWithMetrics;
+        if (input?.priority) filtered = filtered.filter(p => p.metrics.priority === input.priority);
+        const grouped = filtered.reduce((acc, product) => {
+          const supplierId = product.supplierId || "sem-fornecedor";
+          const supplierName = product.supplierName || "Sem Fornecedor";
+          if (!acc[supplierId]) acc[supplierId] = { supplierId, supplierName, products: [] };
+          acc[supplierId].products.push(product);
+          return acc;
+        }, {} as Record<string, any>);
+        const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3, none: 4 };
+        const abcOrder = { A: 0, B: 1, C: 2, D: 3 };
+        Object.values(grouped).forEach((supplier: any) => {
+          supplier.products.sort((a: any, b: any) => {
+            const diff = priorityOrder[a.metrics.priority as keyof typeof priorityOrder] - priorityOrder[b.metrics.priority as keyof typeof priorityOrder];
+            return diff !== 0 ? diff : abcOrder[a.abcClass as keyof typeof abcOrder] - abcOrder[b.abcClass as keyof typeof abcOrder];
+          });
+        });
+        return Object.values(grouped).sort((a: any, b: any) => {
+          const maxA = Math.min(...a.products.map((p: any) => priorityOrder[p.metrics.priority as keyof typeof priorityOrder]));
+          const maxB = Math.min(...b.products.map((p: any) => priorityOrder[p.metrics.priority as keyof typeof priorityOrder]));
+          return maxA - maxB;
+        });
+      }),
+    getSuppliers: protectedProcedure.query(async () => {
+      const { getUniqueSuppliers } = await import("./db");
+      return await getUniqueSuppliers();
+    }),
+    updateLeadTime: protectedProcedure
+      .input(z.object({ productId: z.number(), supplierId: z.string(), leadTimeDays: z.number().min(0) }))
+      .mutation(async ({ input }) => {
+        const { updateSupplierLeadTime } = await import("./db");
+        await updateSupplierLeadTime(input.productId, input.supplierId, input.leadTimeDays);
+        return { success: true };
+      }),
+    updateMaxStock: protectedProcedure
+      .input(z.object({ productId: z.number(), maxStock: z.number().min(0) }))
+      .mutation(async ({ input }) => {
+        const { updateProductMaxStock } = await import("./db");
+        await updateProductMaxStock(input.productId, input.maxStock);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
