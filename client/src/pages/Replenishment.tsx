@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Package, TrendingUp, Clock, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Package, TrendingUp, Clock, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Home } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "wouter";
 
 const priorityConfig = {
   urgent: { label: "Urgente", color: "bg-red-500", icon: AlertTriangle },
@@ -54,16 +55,24 @@ export default function Replenishment() {
 
   const totalProducts = suppliers?.reduce((sum, s) => sum + s.products.length, 0) || 0;
   const urgentProducts = suppliers?.reduce(
-    (sum, s) => sum + s.products.filter((p) => p.metrics.priority === "urgent").length,
+    (sum, s) => sum + s.products.filter((p: any) => p.metrics.priority === "urgent").length,
     0
   ) || 0;
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Reposição de Estoque</h1>
-        <p className="text-muted-foreground">Sugestões inteligentes de compra baseadas em análise ABC e giro de estoque</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Reposição de Estoque</h1>
+          <p className="text-muted-foreground">Sugestões inteligentes de compra baseadas em análise ABC e giro de estoque</p>
+        </div>
+        <Link href="/">
+          <Button variant="outline" size="sm">
+            <Home className="h-4 w-4 mr-2" />
+            Voltar ao Dashboard
+          </Button>
+        </Link>
       </div>
 
       {/* Stats */}

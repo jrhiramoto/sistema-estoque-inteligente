@@ -1467,3 +1467,4 @@ Sistema agora notifica APENAS quando:
 - [ ] Classe C: Estoque mínimo, reposição sob demanda
 - [ ] Classe D: Não estocar (exceto produtos novos)
 - [ ] Produtos novos (< 90 dias): Tratamento especial, não classificar como D automaticamente
+- [x] Adicionar botão de retorno ao dashboard em todas as páginas
