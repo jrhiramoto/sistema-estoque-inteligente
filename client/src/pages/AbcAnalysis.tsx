@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,8 @@ import {
   RefreshCw,
   Search,
   ArrowUpDown,
-  AlertCircle
+  AlertCircle,
+  Home
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -211,11 +213,18 @@ export default function AbcAnalysis() {
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Análise ABC+D</h1>
-          <p className="text-muted-foreground">
-            Classificação de produtos por importância no faturamento
-          </p>
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <Button variant="outline" size="icon">
+              <Home className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Análise ABC+D</h1>
+            <p className="text-muted-foreground">
+              Classificação de produtos por importância no faturamento
+            </p>
+          </div>
         </div>
         <Button
           onClick={() => calculateMutation.mutate()}

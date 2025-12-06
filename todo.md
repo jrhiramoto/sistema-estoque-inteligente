@@ -1057,3 +1057,19 @@ Sistema agora notifica APENAS quando:
 
 **Resultado:** Job agora PARA completamente quando isActive=false. Nenhuma notificação será enviada até reautorização.
 
+
+## Link de Retorno ao Dashboard na Análise ABC
+
+- [ ] Adicionar link/botão no header da página AbcAnalysis.tsx
+- [ ] Usar ícone Home ou ArrowLeft para navegação
+- [ ] Link deve apontar para "/"
+
+
+## Link de Retorno ao Dashboard na Análise ABC - CONCLUÍDO ✅
+
+- [x] Adicionar link/botão no header da página AbcAnalysis.tsx
+- [x] Usar ícone Home para navegação
+- [x] Link aponta para "/"
+
+**Implementado:** Botão com ícone Home no canto superior esquerdo do header, ao lado do título
+
