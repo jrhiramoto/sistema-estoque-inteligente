@@ -192,7 +192,7 @@ export async function getProductsPaginated(params: {
   }
   
   // Query com filtros
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  const whereClause = conditions.length > 1 ? and(...conditions) : (conditions.length === 1 ? conditions[0] : undefined);
   
   // Buscar produtos paginados com estoque
   console.log('[DEBUG] Executando query getProductsPaginated...');

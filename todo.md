@@ -669,3 +669,19 @@
 - ✅ Token persiste no banco (não perde em atualizações)
 
 **Importante:** Se refresh_token expirar, é necessário reautorizar manualmente uma vez. Depois disso, o sistema manterá o token renovado automaticamente.
+
+
+## BUG - Erro HTML Recorrente na Página de Configurações
+
+- [x] Verificar logs do servidor no momento do erro
+- [x] Identificar qual endpoint está retornando HTML
+- [x] Verificar se há outros filtros SQL problemáticos
+- [x] Corrigir query ou handler problemático
+- [x] Testar todas as mutations da página de configurações
+- [x] Validar que erro não volta a ocorrer
+
+**Erro:** `Unexpected token '<', "<html><h"... is not valid JSON`
+**Página:** /settings
+**Hora:** 2025-12-06T13:37:11.873Z
+
+**Solução:** Problema em `getProductsPaginated` - estava usando `and(...conditions)` mesmo quando tinha apenas 1 condição. Corrigido para usar `conditions[0]` diretamente quando length === 1.
