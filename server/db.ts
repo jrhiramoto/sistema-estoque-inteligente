@@ -1157,7 +1157,7 @@ export async function calculateProductRevenue(userId: number, months: number) {
   const result = await db
     .select({
       productId: sales.productId,
-      totalRevenue: sql<number>`SUM(${sales.totalPrice})`.as('totalRevenue'),
+      totalRevenue: sql<number>`SUM(${sales.totalPrice}) / 100`.as('totalRevenue'),
       totalQuantity: sql<number>`SUM(${sales.quantity})`.as('totalQuantity'),
       totalOrders: sql<number>`COUNT(DISTINCT ${sales.blingOrderId})`.as('totalOrders'),
     })
@@ -2135,7 +2135,7 @@ export async function getMonthlySalesByProduct(productId: number, months: number
     .select({
       month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m') as month`,
       quantity: sql<number>`SUM(${sales.quantity}) as quantity`,
-      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice}) as revenue`,
+      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice}) / 100 as revenue`,
     })
     .from(sales)
     .where(

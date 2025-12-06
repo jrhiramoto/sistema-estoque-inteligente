@@ -1267,3 +1267,40 @@ Sistema agora notifica APENAS quando:
 - Faturamento total: R$ 56.047.810,00
 - Estoque total: calculado via agregação
 
+
+## 🚨 URGENTE: Erro de Escala Decimal no Faturamento ABC
+
+**Problema Reportado (Produto 30572):**
+- Preço unitário: R$ 20,10
+- Quantidade vendida: 1 un
+- Faturamento mostrado: R$ 2.010,00 ❌
+- Faturamento correto: R$ 20,10 ✅
+- **Erro: 100x maior!**
+
+**Investigação:**
+- [ ] Verificar abcRevenue no banco para produto 30572
+- [ ] Rastrear cálculo em calculateAbcClassification
+- [ ] Identificar se problema é em centavos vs reais
+- [ ] Verificar se afeta todos os produtos
+- [ ] Corrigir cálculo e recalcular ABC
+- [ ] Validar com múltiplos produtos
+
+
+## Correção Aplicada ✅
+
+### Causa Raiz:
+- Schema usa `INT` para armazenar valores em **centavos**
+- Sincronização multiplica por 100 corretamente
+- **MAS** queries de cálculo não dividiam por 100 ao somar
+
+### Correções:
+1. `calculateProductRevenue`: `SUM(totalPrice) / 100`
+2. `getMonthlySalesByProduct`: `SUM(quantity * unitPrice) / 100`
+
+### Validação (Produto 30572):
+- ❌ Antes: R$ 2.010,00 (100x maior)
+- ✅ Depois: R$ 20,10 (correto!)
+
+### Próximo Passo:
+**IMPORTANTE:** Clicar em "Recalcular Análise ABC" para atualizar todos os produtos!
+
