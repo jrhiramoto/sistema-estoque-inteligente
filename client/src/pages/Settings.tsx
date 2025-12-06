@@ -251,6 +251,16 @@ export default function Settings() {
     },
   });
   
+  const renewToken = trpc.bling.renewToken.useMutation({
+    onSuccess: (data) => {
+      utils.bling.getConfig.invalidate();
+      toast.success(data.message || "Token renovado com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao renovar token. Reautorize o acesso.");
+    },
+  });
+  
   const handleListSituations = async () => {
     try {
       const result = await listOrderSituations.refetch();
@@ -373,14 +383,56 @@ export default function Settings() {
             </CardHeader>
             {config?.isActive && (
               <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Última sincronização:</span>
-                    <span className="font-medium">{formatDate(config.lastSync)}</span>
+                <div className="space-y-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Última sincronização:</span>
+                      <span className="font-medium">{formatDate(config.lastSync)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Token expira em:</span>
+                      <span className="font-medium">
+                        {config.tokenExpiresAt ? (
+                          (() => {
+                            const now = new Date();
+                            const expiresAt = new Date(config.tokenExpiresAt);
+                            const hoursRemaining = Math.floor((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+                            const isExpired = hoursRemaining < 0;
+                            const isExpiringSoon = hoursRemaining < 48 && hoursRemaining >= 0;
+                            
+                            return (
+                              <span className={isExpired ? "text-destructive" : isExpiringSoon ? "text-orange-500" : ""}>
+                                {formatDate(config.tokenExpiresAt)}
+                                {isExpired && " (⚠️ Expirado)"}
+                                {isExpiringSoon && ` (⚠️ ${hoursRemaining}h restantes)`}
+                              </span>
+                            );
+                          })()
+                        ) : "N/A"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Token expira em:</span>
-                    <span className="font-medium">{formatDate(config.tokenExpiresAt)}</span>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => renewToken.mutate()}
+                      disabled={renewToken.isPending}
+                      className="flex-1"
+                    >
+                      {renewToken.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Renovando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Renovar Token
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </CardContent>

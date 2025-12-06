@@ -643,3 +643,29 @@
 **Tipo:** API Mutation Error - tRPC retornando HTML ao invés de JSON
 
 **Solução:** Query SQL em `getAllProducts()` tinha sintaxe incorreta com `and(or(...))` desnecessário. Simplificado para `or(...)` e erro resolvido.
+
+
+## Sistema Robusto de Renovação Automática de Token
+
+- [x] Analisar código atual de renovação de token do Bling
+- [x] Identificar por que token expira após atualizações
+- [x] Implementar renovação preventiva (48h antes ao invés de 24h)
+- [x] Reduzir intervalo de verificação (2h ao invés de 6h)
+- [x] Adicionar retry automático com backoff exponencial (3 tentativas)
+- [x] Implementar notificação ao administrador via sistema
+- [x] Garantir que token persiste no banco durante atualizações
+- [x] Job em background já existia, melhorado com retry e notificação
+- [x] Adicionar endpoint de renovação manual (renewToken)
+- [x] Adicionar botão "Renovar Token" na interface
+- [x] Adicionar indicador visual de status do token (expirado/expirando)
+- [x] Validar que sistema continua funcionando após restart
+
+**Solução implementada:**
+- ✅ Renovação automática a cada 2h (antes 6h)
+- ✅ Preventivo: renova 48h antes (antes 24h)
+- ✅ Retry: 3 tentativas com backoff (1s, 2s, 4s)
+- ✅ Notificação: alerta administrador se falhar
+- ✅ Interface: botão manual + indicador visual
+- ✅ Token persiste no banco (não perde em atualizações)
+
+**Importante:** Se refresh_token expirar, é necessário reautorizar manualmente uma vez. Depois disso, o sistema manterá o token renovado automaticamente.

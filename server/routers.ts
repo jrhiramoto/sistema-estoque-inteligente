@@ -94,6 +94,38 @@ export const appRouter = router({
         }
       }),
     
+    // Forçar renovação manual do token
+    renewToken: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const { checkAndRenewToken } = await import('./tokenRenewalJob');
+        await checkAndRenewToken(ctx.user.id);
+        
+        // Verificar se foi renovado com sucesso
+        const config = await db.getBlingConfig(ctx.user.id);
+        const now = new Date();
+        const expiresAt = config?.tokenExpiresAt ? new Date(config.tokenExpiresAt) : new Date(0);
+        const hoursRemaining = Math.floor((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+        
+        if (hoursRemaining > 0) {
+          return { 
+            success: true, 
+            message: `Token renovado com sucesso! Válido por mais ${hoursRemaining}h.`,
+            expiresAt: expiresAt.toISOString(),
+            hoursRemaining 
+          };
+        } else {
+          throw new Error("Token expirado. Por favor, reautorize o acesso.");
+        }
+      } catch (error: any) {
+        console.error("[renewToken] Erro:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || "Erro ao renovar token",
+          cause: error,
+        });
+      }
+    }),
+    
     syncProducts: protectedProcedure.mutation(async ({ ctx }) => {
       try {
         const result = await syncManager.executeSync(ctx.user.id, "products", "manual");
