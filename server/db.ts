@@ -1088,12 +1088,18 @@ export async function getAbcConfig(userId: number) {
     await db.insert(abcConfig).values({
       userId,
       analysisMonths: 12,
+      revenueWeight: 50,
+      quantityWeight: 30,
+      ordersWeight: 20,
       autoRecalculate: true,
     });
     
     return {
       userId,
       analysisMonths: 12,
+      revenueWeight: 50,
+      quantityWeight: 30,
+      ordersWeight: 20,
       autoRecalculate: true,
       lastCalculation: null,
       createdAt: new Date(),
@@ -1107,7 +1113,13 @@ export async function getAbcConfig(userId: number) {
 /**
  * Atualiza configuração de análise ABC
  */
-export async function updateAbcConfig(userId: number, config: { analysisMonths?: number; autoRecalculate?: boolean }) {
+export async function updateAbcConfig(userId: number, config: { 
+  analysisMonths?: number; 
+  autoRecalculate?: boolean;
+  revenueWeight?: number;
+  quantityWeight?: number;
+  ordersWeight?: number;
+}) {
   const db = await getDb();
   if (!db) return;
   
@@ -1138,12 +1150,13 @@ export async function calculateProductRevenue(userId: number, months: number) {
     return [];
   }
   
-  // Calcular faturamento por produto (excluindo códigos 50000-51000 e < 2000)
+  // Calcular faturamento, quantidade e pedidos por produto (excluindo códigos 50000-51000 e < 2000)
   const result = await db
     .select({
       productId: sales.productId,
       totalRevenue: sql<number>`SUM(${sales.totalPrice})`.as('totalRevenue'),
       totalQuantity: sql<number>`SUM(${sales.quantity})`.as('totalQuantity'),
+      totalOrders: sql<number>`COUNT(DISTINCT ${sales.blingOrderId})`.as('totalOrders'),
     })
     .from(sales)
     .innerJoin(orders, eq(sales.blingOrderId, orders.blingId))
@@ -1172,15 +1185,20 @@ export async function calculateProductRevenue(userId: number, months: number) {
     productId: r.productId,
     totalRevenue: Number(r.totalRevenue || 0),
     totalQuantity: Number(r.totalQuantity || 0),
+    totalOrders: Number(r.totalOrders || 0),
   }));
 }
 
 /**
- * Classifica produtos em ABC+D
- * A = 80% do faturamento
- * B = 15% do faturamento  
- * C = 5% do faturamento
- * D = 0% do faturamento (sem vendas)
+ * Classifica produtos em ABC+D usando múltiplos critérios ponderados:
+ * - Faturamento (receita total)
+ * - Quantidade vendida (volume)
+ * - Número de pedidos (frequência/popularidade)
+ * 
+ * A = Top 20% do score ponderado (80% do valor total)
+ * B = Próximos 30% (15% do valor)
+ * C = Próximos 30% (4% do valor)
+ * D = Últimos 20% ou sem vendas (1% do valor)
  */
 export async function calculateAbcClassification(userId: number) {
   const db = await getDb();
@@ -1193,18 +1211,55 @@ export async function calculateAbcClassification(userId: number) {
       return { success: false, message: 'Configuração ABC não encontrada' };
     }
     
-    // Calcular faturamento por produto
-    const productRevenues = await calculateProductRevenue(userId, config.analysisMonths);
+    // Calcular métricas por produto
+    const productMetrics = await calculateProductRevenue(userId, config.analysisMonths);
     
-    // Calcular faturamento total
-    const totalRevenue = productRevenues.reduce((sum, p) => sum + p.totalRevenue, 0);
-    
-    if (totalRevenue === 0) {
+    if (productMetrics.length === 0) {
       return { success: false, message: 'Nenhuma venda encontrada no período' };
     }
     
-    // Calcular percentual acumulado e classificar
-    let accumulatedRevenue = 0;
+    // Encontrar valores máximos para normalização (0-1)
+    const maxRevenue = Math.max(...productMetrics.map(p => p.totalRevenue));
+    const maxQuantity = Math.max(...productMetrics.map(p => p.totalQuantity));
+    const maxOrders = Math.max(...productMetrics.map(p => p.totalOrders));
+    
+    // Calcular score ponderado para cada produto
+    const productsWithScore = productMetrics.map(product => {
+      // Normalizar métricas (0-1)
+      const normalizedRevenue = maxRevenue > 0 ? product.totalRevenue / maxRevenue : 0;
+      const normalizedQuantity = maxQuantity > 0 ? product.totalQuantity / maxQuantity : 0;
+      const normalizedOrders = maxOrders > 0 ? product.totalOrders / maxOrders : 0;
+      
+      // Aplicar pesos (convertendo de 0-100 para 0-1)
+      const revenueWeight = config.revenueWeight / 100;
+      const quantityWeight = config.quantityWeight / 100;
+      const ordersWeight = config.ordersWeight / 100;
+      
+      // Calcular score final ponderado
+      const score = (
+        normalizedRevenue * revenueWeight +
+        normalizedQuantity * quantityWeight +
+        normalizedOrders * ordersWeight
+      );
+      
+      return {
+        productId: product.productId,
+        totalRevenue: product.totalRevenue,
+        totalQuantity: product.totalQuantity,
+        totalOrders: product.totalOrders,
+        score,
+      };
+    });
+    
+    // Ordenar por score (maior para menor)
+    productsWithScore.sort((a, b) => b.score - a.score);
+    
+    // Calcular totais para percentuais
+    const totalRevenue = productsWithScore.reduce((sum, p) => sum + p.totalRevenue, 0);
+    const totalScore = productsWithScore.reduce((sum, p) => sum + p.score, 0);
+    
+    // Classificar usando curva ABC (80-15-4-1)
+    let accumulatedScore = 0;
     const classifications: Array<{
       productId: number;
       abcClass: 'A' | 'B' | 'C' | 'D';
@@ -1212,9 +1267,9 @@ export async function calculateAbcClassification(userId: number) {
       abcPercentage: number;
     }> = [];
     
-    for (const product of productRevenues) {
-      accumulatedRevenue += product.totalRevenue;
-      const accumulatedPercentage = (accumulatedRevenue / totalRevenue) * 100;
+    for (const product of productsWithScore) {
+      accumulatedScore += product.score;
+      const accumulatedPercentage = (accumulatedScore / totalScore) * 100;
       const productPercentage = (product.totalRevenue / totalRevenue) * 100;
       
       let abcClass: 'A' | 'B' | 'C' | 'D';
@@ -1230,7 +1285,7 @@ export async function calculateAbcClassification(userId: number) {
         productId: product.productId,
         abcClass,
         abcRevenue: product.totalRevenue,
-        abcPercentage: Math.round(productPercentage * 100), // Armazenar como 0-10000 (0-100.00%)
+        abcPercentage: Math.round(productPercentage * 100), // 0-10000 (0-100.00%)
       });
     }
     

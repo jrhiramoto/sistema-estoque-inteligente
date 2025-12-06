@@ -911,6 +911,22 @@ export default function Settings() {
           )}
 
           {/* Informações */}
+          {/* Seção de Configuração de Pesos ABC */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                6. Configuração de Análise ABC
+              </CardTitle>
+              <CardDescription>
+                Ajuste os pesos das métricas usadas na classificação ABC dos produtos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ABCWeightsConfig />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Sobre o Sistema</CardTitle>
@@ -1062,6 +1078,163 @@ export default function Settings() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+
+/**
+ * Componente para configurar pesos da análise ABC
+ */
+function ABCWeightsConfig() {
+  const { data: config, isLoading } = trpc.abc.getConfig.useQuery();
+  const updateConfig = trpc.abc.updateConfig.useMutation();
+  const utils = trpc.useUtils();
+  
+  const [revenueWeight, setRevenueWeight] = useState(50);
+  const [quantityWeight, setQuantityWeight] = useState(30);
+  const [ordersWeight, setOrdersWeight] = useState(20);
+  
+  // Atualizar valores quando config carregar
+  useEffect(() => {
+    if (config) {
+      setRevenueWeight(config.revenueWeight ?? 50);
+      setQuantityWeight(config.quantityWeight ?? 30);
+      setOrdersWeight(config.ordersWeight ?? 20);
+    }
+  }, [config]);
+  
+  const totalWeight = revenueWeight + quantityWeight + ordersWeight;
+  const isValid = totalWeight === 100;
+  
+  const handleSave = async () => {
+    if (!isValid) {
+      toast.error("A soma dos pesos deve ser 100%");
+      return;
+    }
+    
+    try {
+      await updateConfig.mutateAsync({
+        revenueWeight,
+        quantityWeight,
+        ordersWeight,
+      });
+      
+      toast.success("Pesos atualizados com sucesso!");
+      utils.abc.getConfig.invalidate();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao atualizar pesos");
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border bg-muted/50 p-4">
+        <p className="text-sm font-medium mb-2">Como funciona?</p>
+        <p className="text-xs text-muted-foreground">
+          A classificação ABC usa 3 métricas ponderadas: <strong>Faturamento</strong> (receita total), 
+          <strong>Quantidade</strong> (volume vendido) e <strong>Pedidos</strong> (frequência/popularidade). 
+          Ajuste os pesos para dar mais importância à métrica que faz mais sentido para seu negócio.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        {/* Faturamento */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="revenue-weight">Faturamento</Label>
+            <span className="text-sm font-medium">{revenueWeight}%</span>
+          </div>
+          <Input
+            id="revenue-weight"
+            type="number"
+            min="0"
+            max="100"
+            value={revenueWeight}
+            onChange={(e) => setRevenueWeight(Number(e.target.value))}
+          />
+          <p className="text-xs text-muted-foreground">
+            Peso da receita total gerada pelo produto
+          </p>
+        </div>
+        
+        {/* Quantidade */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="quantity-weight">Quantidade Vendida</Label>
+            <span className="text-sm font-medium">{quantityWeight}%</span>
+          </div>
+          <Input
+            id="quantity-weight"
+            type="number"
+            min="0"
+            max="100"
+            value={quantityWeight}
+            onChange={(e) => setQuantityWeight(Number(e.target.value))}
+          />
+          <p className="text-xs text-muted-foreground">
+            Peso do volume de unidades vendidas
+          </p>
+        </div>
+        
+        {/* Pedidos */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="orders-weight">Número de Pedidos</Label>
+            <span className="text-sm font-medium">{ordersWeight}%</span>
+          </div>
+          <Input
+            id="orders-weight"
+            type="number"
+            min="0"
+            max="100"
+            value={ordersWeight}
+            onChange={(e) => setOrdersWeight(Number(e.target.value))}
+          />
+          <p className="text-xs text-muted-foreground">
+            Peso da frequência de pedidos (popularidade)
+          </p>
+        </div>
+      </div>
+      
+      {/* Total */}
+      <div className="rounded-lg border p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium">Total</span>
+          <span className={`text-sm font-bold ${
+            isValid ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {totalWeight}%
+          </span>
+        </div>
+        {!isValid && (
+          <p className="text-xs text-red-600">
+            ⚠️ A soma dos pesos deve ser exatamente 100%
+          </p>
+        )}
+      </div>
+      
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSave}
+          disabled={!isValid || updateConfig.isPending}
+        >
+          {updateConfig.isPending ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          Salvar Pesos
+        </Button>
+      </div>
     </div>
   );
 }

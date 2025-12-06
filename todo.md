@@ -704,3 +704,48 @@
 ✅ Progresso: atualiza a cada 100 produtos
 
 **Resultado:** Sistema completo para sempre ter fornecedor associado ao produto!
+
+## Análise ABC Multi-Critério
+
+- [ ] Adicionar tabela abc_config no schema para salvar pesos
+- [ ] Modificar calculateProductRevenue para incluir quantidade e pedidos
+- [ ] Atualizar calculateABCAnalysis para usar 3 métricas ponderadas
+- [ ] Normalizar métricas (0-1) antes de aplicar pesos
+- [ ] Criar tRPC procedures para get/update ABC config
+- [ ] Adicionar interface de configuração de pesos em Settings
+- [ ] Validar que soma dos pesos = 100%
+- [ ] Atualizar tabela de produtos para mostrar 3 métricas
+- [ ] Testar classificação com diferentes pesos
+
+**Métricas:**
+1. Faturamento (R$) - Receita total
+2. Quantidade (unidades) - Volume vendido
+3. Pedidos (qtd) - Frequência/popularidade
+
+**Pesos Padrão:** Faturamento 50%, Quantidade 30%, Pedidos 20%
+
+## Análise ABC Multi-Critério - CONCLUÍDO
+
+- [x] Adicionar campos revenueWeight, quantityWeight, ordersWeight no schema abc_config
+- [x] Executar db:push para aplicar mudanças no banco
+- [x] Modificar calculateProductRevenue para retornar totalOrders (COUNT DISTINCT)
+- [x] Reescrever calculateAbcClassification com normalização e ponderação
+- [x] Atualizar updateAbcConfig para aceitar novos pesos
+- [x] Adicionar validação no tRPC (soma = 100%)
+- [x] Criar componente ABCWeightsConfig na página Settings
+- [x] Interface com 3 inputs numéricos + validação visual
+
+**Implementação:**
+- ✅ 3 métricas: Faturamento (50%), Quantidade (30%), Pedidos (20%)
+- ✅ Normalização 0-1 para cada métrica
+- ✅ Score ponderado = Σ(métrica_normalizada × peso)
+- ✅ Classificação por score acumulado (80-15-4-1)
+- ✅ Pesos configuráveis via Settings
+- ✅ Validação: soma = 100%
+
+**Benefícios:**
+- Produtos baratos mas populares sobem na classificação
+- Produtos caros mas pouco vendidos descem
+- Produtos com muitos clientes ganham relevância
+- Configurável para diferentes estratégias
+

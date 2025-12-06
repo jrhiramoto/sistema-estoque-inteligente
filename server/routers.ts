@@ -734,9 +734,26 @@ export const appRouter = router({
     
     updateConfig: protectedProcedure
       .input(z.object({
-        analysisMonths: z.number().min(1).max(24),
-        autoRecalculate: z.boolean(),
-      }))
+        analysisMonths: z.number().min(1).max(24).optional(),
+        autoRecalculate: z.boolean().optional(),
+        revenueWeight: z.number().min(0).max(100).optional(),
+        quantityWeight: z.number().min(0).max(100).optional(),
+        ordersWeight: z.number().min(0).max(100).optional(),
+      }).refine(
+        (data) => {
+          // Se algum peso foi fornecido, validar que a soma = 100
+          if (data.revenueWeight !== undefined || data.quantityWeight !== undefined || data.ordersWeight !== undefined) {
+            const revenue = data.revenueWeight ?? 0;
+            const quantity = data.quantityWeight ?? 0;
+            const orders = data.ordersWeight ?? 0;
+            return revenue + quantity + orders === 100;
+          }
+          return true;
+        },
+        {
+          message: "A soma dos pesos deve ser 100%",
+        }
+      ))
       .mutation(async ({ ctx, input }) => {
         await db.updateAbcConfig(ctx.user.id, input);
         return { success: true };

@@ -356,6 +356,10 @@ export const abcConfig = mysqlTable("abc_config", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique(),
   analysisMonths: int("analysisMonths").default(12).notNull(), // Período de análise em meses (3, 6, 9, 12)
+  // Pesos das métricas (soma deve ser 100)
+  revenueWeight: int("revenueWeight").default(50).notNull(), // Peso do faturamento (0-100)
+  quantityWeight: int("quantityWeight").default(30).notNull(), // Peso da quantidade vendida (0-100)
+  ordersWeight: int("ordersWeight").default(20).notNull(), // Peso do número de pedidos (0-100)
   lastCalculation: timestamp("lastCalculation"),
   autoRecalculate: boolean("autoRecalculate").default(true).notNull(), // Recalcular após sincronização
   createdAt: timestamp("createdAt").defaultNow().notNull(),
