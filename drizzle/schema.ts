@@ -403,3 +403,27 @@ export const abcAutoCalculationConfig = mysqlTable("abc_auto_calculation_config"
 
 export type AbcAutoCalculationConfig = typeof abcAutoCalculationConfig.$inferSelect;
 export type InsertAbcAutoCalculationConfig = typeof abcAutoCalculationConfig.$inferInsert;
+
+/**
+ * Log de execuções de cálculo ABC
+ * Registra histórico de recálculos para auditoria e análise
+ */
+export const abcCalculationLog = mysqlTable("abc_calculation_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["manual", "automatic"]).notNull(), // Tipo de execução
+  status: mysqlEnum("status", ["success", "failed"]).notNull(), // Resultado
+  duration: int("duration").notNull(), // Duração em milissegundos
+  totalProducts: int("totalProducts").notNull().default(0), // Total de produtos processados
+  classA: int("classA").notNull().default(0), // Produtos classe A
+  classB: int("classB").notNull().default(0), // Produtos classe B
+  classC: int("classC").notNull().default(0), // Produtos classe C
+  classD: int("classD").notNull().default(0), // Produtos classe D
+  changedProducts: int("changedProducts").notNull().default(0), // Produtos que mudaram de classe
+  errorMessage: text("errorMessage"), // Mensagem de erro se falhou
+  executedAt: timestamp("executedAt").notNull(), // Data/hora da execução
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AbcCalculationLog = typeof abcCalculationLog.$inferSelect;
+export type InsertAbcCalculationLog = typeof abcCalculationLog.$inferInsert;

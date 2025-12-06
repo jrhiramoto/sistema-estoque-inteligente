@@ -5,12 +5,13 @@ import {
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
   productSuppliers, validOrderStatuses, abcConfig, abcHistory,
-  abcAutoCalculationConfig,
+  abcAutoCalculationConfig, abcCalculationLog,
   Product, Inventory, Sale, Order, InsertOrder, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
   ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
   ProductSupplier, InsertProductSupplier, ValidOrderStatus, InsertValidOrderStatus,
-  AbcAutoCalculationConfig, InsertAbcAutoCalculationConfig
+  AbcAutoCalculationConfig, InsertAbcAutoCalculationConfig,
+  AbcCalculationLog, InsertAbcCalculationLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1994,4 +1995,61 @@ export async function updateAbcAutoCalculationConfig(
     .update(abcAutoCalculationConfig)
     .set({ ...updates, updatedAt: new Date() })
     .where(eq(abcAutoCalculationConfig.userId, userId));
+}
+
+
+// ===== ABC Calculation Log =====
+
+export async function createAbcCalculationLog(log: InsertAbcCalculationLog): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.insert(abcCalculationLog).values(log);
+}
+
+export async function getAbcCalculationHistory(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(abcCalculationLog)
+    .where(eq(abcCalculationLog.userId, userId))
+    .orderBy(desc(abcCalculationLog.executedAt))
+    .limit(limit);
+}
+
+export async function getAbcCalculationStats(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const logs = await db
+    .select()
+    .from(abcCalculationLog)
+    .where(eq(abcCalculationLog.userId, userId))
+    .orderBy(desc(abcCalculationLog.executedAt));
+  
+  if (logs.length === 0) return null;
+  
+  const totalExecutions = logs.length;
+  const successfulExecutions = logs.filter(l => l.status === 'success').length;
+  const failedExecutions = logs.filter(l => l.status === 'failed').length;
+  const automaticExecutions = logs.filter(l => l.type === 'automatic').length;
+  const manualExecutions = logs.filter(l => l.type === 'manual').length;
+  
+  const avgDuration = logs
+    .filter(l => l.status === 'success')
+    .reduce((sum, l) => sum + l.duration, 0) / (successfulExecutions || 1);
+  
+  const lastExecution = logs[0];
+  
+  return {
+    totalExecutions,
+    successfulExecutions,
+    failedExecutions,
+    automaticExecutions,
+    manualExecutions,
+    avgDuration: Math.round(avgDuration),
+    lastExecution,
+  };
 }

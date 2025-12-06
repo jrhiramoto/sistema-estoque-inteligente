@@ -1004,3 +1004,56 @@ Sistema agora notifica APENAS quando:
 
 **Próximos passos:** Interface para usuário ajustar frequência (Configurações)
 
+
+## Página de Configurações ABC + Dashboard de Histórico
+
+### Backend
+- [ ] Criar tabela abc_calculation_log (histórico de execuções)
+- [ ] Adicionar queries para histórico (getCalculationHistory)
+- [ ] Salvar log automaticamente após cada recálculo
+- [ ] Adicionar procedures para configurações (updateConfig)
+
+### Frontend
+- [ ] Criar página AbcSettings.tsx (configurações)
+- [ ] Criar página AbcHistory.tsx (dashboard de histórico)
+- [ ] Adicionar rotas no App.tsx
+- [ ] Adicionar links de navegação na página AbcAnalysis
+
+### Funcionalidades
+- [ ] Ajustar frequência de recálculo (diário/semanal/quinzenal/mensal)
+- [ ] Ativar/desativar recálculo automático
+- [ ] Configurar período de análise (3/6/9/12 meses)
+- [ ] Linha do tempo de execuções
+- [ ] Estatísticas de cada execução (duração, produtos afetados)
+- [ ] Filtros por tipo (manual/automático) e período
+
+
+## 🚨 URGENTE: Parar Notificações de Token DEFINITIVAMENTE
+
+- [ ] Analisar por que job continua rodando após detectar invalid_grant
+- [ ] Implementar flag global para parar job completamente
+- [ ] Garantir que notifica APENAS 1 vez
+- [ ] Testar que notificações param após primeira detecção
+- [ ] Validar que job não reinicia após restart do servidor
+
+**Problema:** Usuário continua recebendo notificações mesmo após correção anterior
+
+
+## 🚨 URGENTE: Parar Notificações de Token DEFINITIVAMENTE - RESOLVIDO ✅
+
+- [x] Analisar por que job continua rodando após detectar invalid_grant
+- [x] Implementar flag global para parar job completamente
+- [x] Garantir que notifica APENAS 1 vez
+- [x] Testar que notificações param após primeira detecção
+- [x] Validar que job não reinicia após restart do servidor
+
+**Problema Identificado:** Job continuava tentando renovar mesmo com isActive=false porque não verificava status antes
+
+**Solução Implementada:**
+1. ✅ Adicionar verificação de isActive no início do job
+2. ✅ Desativar integração manualmente no banco (isActive=0)
+3. ✅ Corrigir função de desativação para passar apenas isActive
+4. ✅ Testar que job para completamente quando isActive=false
+
+**Resultado:** Job agora PARA completamente quando isActive=false. Nenhuma notificação será enviada até reautorização.
+

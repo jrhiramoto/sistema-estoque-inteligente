@@ -117,6 +117,13 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
       console.log("[Token Renewal] Sem configuração do Bling, pulando verificação");
       return;
     }
+    
+    // VERIFICAR SE INTEGRAÇÃO ESTÁ ATIVA
+    if (config.isActive === false) {
+      console.log("[Token Renewal] ⏸️  Integração desativada (refresh_token inválido). Aguardando reautorização.");
+      console.log("[Token Renewal] 💡 Para reativar: acesse Configurações > Integração Bling e reautorize.");
+      return; // PARAR AQUI - não tentar renovar
+    }
 
     const now = new Date();
     const expiresAt = config.tokenExpiresAt ? new Date(config.tokenExpiresAt) : new Date(0);
@@ -175,14 +182,9 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
             });
             console.log('[Token Renewal] 📧 Notificação de reautorização enviada');
             
-            // Desativar configuração para parar tentativas até reautorização
+            // Desativar integração para parar tentativas até reautorização
             await db.upsertBlingConfig({
               userId,
-              clientId: config.clientId,
-              clientSecret: config.clientSecret,
-              accessToken: config.accessToken,
-              refreshToken: config.refreshToken,
-              tokenExpiresAt: config.tokenExpiresAt,
               isActive: false, // Desativar para parar tentativas
             });
             console.log('[Token Renewal] ⚠️ Integração desativada até reautorização');
