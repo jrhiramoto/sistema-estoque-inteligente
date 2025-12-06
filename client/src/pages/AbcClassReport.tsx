@@ -12,7 +12,11 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
-  Info
+  Info,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Download
 } from "lucide-react";
 import {
   Table,
@@ -57,6 +61,8 @@ export default function AbcClassReport() {
   const params = useParams();
   const abcClass = (params.class?.toUpperCase() || "A") as AbcClass;
   const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
+  const [orderBy, setOrderBy] = useState<string>('physicalStock');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('desc');
   
   const config = CLASS_CONFIG[abcClass];
   
@@ -65,7 +71,51 @@ export default function AbcClassReport() {
     abcClass,
     limit: 100,
     offset: 0,
+    orderBy,
+    orderDirection,
   });
+  
+  // Mutation de exportação
+  const exportMutation = trpc.abc.exportToExcel.useMutation({
+    onSuccess: (result) => {
+      // Converter base64 para blob e fazer download
+      const binaryString = atob(result.data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+  });
+  
+  // Função para alternar ordenação
+  const handleSort = (column: string) => {
+    if (orderBy === column) {
+      // Alternar direção se já está ordenando por esta coluna
+      setOrderDirection(orderDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Nova coluna, começar com desc
+      setOrderBy(column);
+      setOrderDirection('desc');
+    }
+  };
+  
+  // Função para exportar
+  const handleExport = () => {
+    exportMutation.mutate({
+      abcClass,
+      orderBy,
+      orderDirection,
+    });
+  };
   
   const toggleExpand = (productId: number) => {
     setExpandedProducts(prev => {
@@ -92,7 +142,7 @@ export default function AbcClassReport() {
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
           <Link href="/">
             <Button variant="outline" size="icon">
               <Home className="h-4 w-4" />
@@ -117,6 +167,15 @@ export default function AbcClassReport() {
             </p>
           </div>
         </div>
+        <Button
+          onClick={handleExport}
+          disabled={exportMutation.isPending}
+          variant="default"
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          {exportMutation.isPending ? 'Exportando...' : 'Exportar Excel'}
+        </Button>
       </div>
 
       {/* Estatísticas Resumidas */}
@@ -177,10 +236,58 @@ export default function AbcClassReport() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="text-right">Estoque Físico</TableHead>
-                <TableHead className="text-right">Estoque Virtual</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('code')}
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  >
+                    Código
+                    {orderBy === 'code' ? (
+                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  >
+                    Descrição
+                    {orderBy === 'name' ? (
+                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <button
+                    onClick={() => handleSort('physicalStock')}
+                    className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors"
+                  >
+                    Estoque Físico
+                    {orderBy === 'physicalStock' ? (
+                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <button
+                    onClick={() => handleSort('virtualStock')}
+                    className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors"
+                  >
+                    Estoque Virtual
+                    {orderBy === 'virtualStock' ? (
+                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     Média Mensal
@@ -211,8 +318,32 @@ export default function AbcClassReport() {
                     </Tooltip>
                   </div>
                 </TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead className="text-right">Faturamento</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('supplierName')}
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  >
+                    Fornecedor
+                    {orderBy === 'supplierName' ? (
+                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <button
+                    onClick={() => handleSort('abcRevenue')}
+                    className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors"
+                  >
+                    Faturamento
+                    {orderBy === 'abcRevenue' ? (
+                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

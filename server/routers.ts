@@ -833,12 +833,16 @@ export const appRouter = router({
         abcClass: z.enum(["A", "B", "C", "D"]),
         limit: z.number().optional(),
         offset: z.number().optional(),
+        orderBy: z.string().optional(),
+        orderDirection: z.enum(["asc", "desc"]).optional(),
       }))
       .query(async ({ input }) => {
         return await db.getProductsByAbcClass(
           input.abcClass,
           input.limit || 100,
-          input.offset || 0
+          input.offset || 0,
+          input.orderBy || 'physicalStock',
+          input.orderDirection || 'desc'
         );
       }),
     
@@ -852,6 +856,55 @@ export const appRouter = router({
           input.productId,
           input.months || 12
         );
+      }),
+    
+    exportToExcel: protectedProcedure
+      .input(z.object({
+        abcClass: z.enum(["A", "B", "C", "D"]),
+        orderBy: z.string().optional(),
+        orderDirection: z.enum(["asc", "desc"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const XLSX = await import('xlsx');
+        
+        // Buscar TODOS os produtos da classe (sem limit)
+        const data = await db.getProductsByAbcClass(
+          input.abcClass,
+          10000, // Limite alto para pegar todos
+          0,
+          input.orderBy || 'physicalStock',
+          input.orderDirection || 'desc'
+        );
+        
+        // Preparar dados para Excel
+        const excelData = data.products.map(p => ({
+          'Código': p.code,
+          'Descrição': p.name,
+          'Estoque Físico': p.physicalStock,
+          'Estoque Virtual': p.virtualStock,
+          'Média Mensal': Number(p.averageMonthlySales || 0).toFixed(1),
+          'Giro de Estoque': Number(p.stockTurnover || 0).toFixed(2) + 'x',
+          'Fornecedor': p.supplierName || '-',
+          'Faturamento': new Intl.NumberFormat('pt-BR', { 
+            style: 'currency', 
+            currency: 'BRL' 
+          }).format(p.abcRevenue || 0),
+        }));
+        
+        // Criar workbook
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `Classe ${input.abcClass}`);
+        
+        // Gerar buffer
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        
+        // Retornar base64 para download no frontend
+        return {
+          data: buffer.toString('base64'),
+          filename: `Classe_${input.abcClass}_${new Date().toISOString().split('T')[0]}.xlsx`,
+          totalProducts: data.products.length,
+        };
       }),
     
     getProducts: protectedProcedure

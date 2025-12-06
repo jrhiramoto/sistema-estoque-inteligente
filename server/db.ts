@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte, sql, isNull, or, like, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, sql, isNull, or, like, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, products, inventory, sales, orders,
@@ -152,16 +152,32 @@ export async function getAllProducts() {
   );
 }
 
+// Helper para mapear campo de ordenação para coluna SQL (Produtos)
+function getProductsOrderByColumn(orderBy: string) {
+  const columnMap: Record<string, any> = {
+    code: products.code,
+    name: products.name,
+    price: products.price,
+    cost: products.cost,
+    abcRevenue: products.abcRevenue,
+    physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
+    virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
+  };
+  return columnMap[orderBy] || columnMap.name;
+}
+
 export async function getProductsPaginated(params: {
-  abcClass?: "A" | "B" | "C" | "D";
+  abcClass?: string;
   search?: string;
   limit: number;
   offset: number;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
 }) {
   const db = await getDb();
   if (!db) return { products: [], total: 0 };
   
-  const { abcClass, search, limit, offset } = params;
+  const { abcClass, search, limit, offset, orderBy = 'name', orderDirection = 'asc' } = params;
   
   // Construir condições
   const conditions = [];
@@ -233,7 +249,11 @@ export async function getProductsPaginated(params: {
     .groupBy(products.id)
     .limit(limit)
     .offset(offset)
-    .orderBy(products.name);
+    .orderBy(
+      orderDirection === 'desc'
+        ? desc(getProductsOrderByColumn(orderBy))
+        : asc(getProductsOrderByColumn(orderBy))
+    );
   
   console.log('[DEBUG] Primeiros 3 produtos:', JSON.stringify(productsList.slice(0, 3), null, 2));
   
@@ -2045,7 +2065,26 @@ export async function getAbcCalculationStats(userId: number) {
 
 // ===== ABC Class Report =====
 
-export async function getProductsByAbcClass(abcClass: string, limit: number = 100, offset: number = 0) {
+// Helper para mapear campo de ordenação para coluna SQL
+function getOrderByColumn(orderBy: string) {
+  const columnMap: Record<string, any> = {
+    code: products.code,
+    name: products.name,
+    abcRevenue: products.abcRevenue,
+    physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
+    virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
+    supplierName: productSuppliers.supplierName,
+  };
+  return columnMap[orderBy] || columnMap.physicalStock;
+}
+
+export async function getProductsByAbcClass(
+  abcClass: string,
+  limit: number = 100,
+  offset: number = 0,
+  orderBy: string = 'physicalStock',
+  orderDirection: 'asc' | 'desc' = 'desc'
+) {
   const db = await getDb();
   if (!db) return { products: [], total: 0 };
   
@@ -2097,7 +2136,11 @@ export async function getProductsByAbcClass(abcClass: string, limit: number = 10
     .leftJoin(productSuppliers, eq(products.id, productSuppliers.productId))
     .where(sql`${products.abcClass} = ${abcClass}`)
     .groupBy(products.id, productSuppliers.supplierName, productSuppliers.supplierId)
-    .orderBy(desc(sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`))
+    .orderBy(
+      orderDirection === 'desc'
+        ? desc(getOrderByColumn(orderBy))
+        : asc(getOrderByColumn(orderBy))
+    )
     .limit(limit)
     .offset(offset);
   

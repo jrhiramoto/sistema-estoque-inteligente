@@ -1323,3 +1323,42 @@ Sistema agora notifica APENAS quando:
 - [ ] Verificar produto 30572 mostra R$ 20,10 (não R$ 2.010)
 - [ ] Verificar faturamento total da classe está correto
 
+
+## NOVA FUNCIONALIDADE: Ordenação Clicável em Relatórios
+
+- [ ] Implementar ordenação dinâmica no backend (getProductsByAbcClass)
+- [ ] Adicionar parâmetros orderBy e orderDirection às queries
+- [ ] Implementar UI clicável nos headers das tabelas
+- [ ] Adicionar ícones de seta (asc/desc) nos headers
+- [ ] Aplicar no relatório ABC por classe
+- [ ] Aplicar na listagem de Produtos
+- [ ] Aplicar na listagem de Pedidos de Venda
+- [ ] Testar ordenação por todas as colunas
+- [ ] Documentar padrão para futuros relatórios
+
+
+## EXPORTAÇÃO EXCEL
+
+- [ ] Instalar biblioteca xlsx (SheetJS)
+- [ ] Criar função de exportação no backend (relatório ABC)
+- [ ] Adicionar formatação condicional (cores por classe)
+- [ ] Incluir cabeçalhos e totalizadores
+- [ ] Adicionar botão "Exportar Excel" na UI
+- [ ] Aplicar na listagem de Produtos
+- [ ] Aplicar na listagem de Pedidos de Venda
+- [ ] Testar download e abertura no Excel
+
+
+## PROGRESSO - Ordenação e Exportação
+
+### Relatório ABC por Classe ✅
+- [x] Backend: ordenação dinâmica implementada (6 colunas)
+- [x] Frontend: headers clicáveis com ícones (↑↓⇅)
+- [x] Backend: exportação Excel com XLSX
+- [x] Frontend: botão "Exportar Excel" funcional
+- [x] Exporta TODOS os produtos mantendo ordenação
+
+### Próximos Relatórios
+- [ ] Aplicar em listagem de Produtos
+- [ ] Aplicar em listagem de Pedidos de Venda
+
