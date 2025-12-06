@@ -872,3 +872,59 @@ Sistema agora notifica APENAS quando:
    - Badges: Skeleton loading durante recálculo ✅
    - Refetch automático após conclusão ✅
 
+
+## Área de Análises Avançadas ABC - EM ANDAMENTO
+
+### Backend
+- [ ] Criar tabela abc_history para histórico de classificações
+- [ ] Modificar calculateAbcClassification para salvar histórico
+- [ ] Criar query getClassificationHistory para evolução temporal
+- [ ] Criar query getClassChanges para produtos que mudaram de classe
+- [ ] Implementar análise com IA usando invokeLLM
+- [ ] Criar procedure analyzeAbcWithAI
+
+### Frontend
+- [ ] Criar seção "Análises Avançadas" na página ABC
+- [ ] Implementar gráfico de Curva ABC (Pareto)
+- [ ] Implementar gráfico de evolução temporal
+- [ ] Implementar tabela de produtos que mudaram de classe
+- [ ] Criar card de análise com IA
+- [ ] Adicionar loading states e error handling
+
+### Funcionalidades
+- [ ] Gráfico Curva ABC mostrando 80-20
+- [ ] Relatório de evolução temporal (últimos 6 meses)
+- [ ] Identificar produtos em ascensão/queda
+- [ ] Análise com IA: pontos positivos e negativos
+- [ ] Recomendações estratégicas personalizadas
+
+**Objetivo:** Fornecer insights profundos sobre gestão de estoque usando IA
+
+
+## Área de Análises Avançadas ABC - IMPLEMENTADO
+
+### Backend ✅
+- [x] Criar tabela abc_history para histórico de classificações
+- [x] Modificar calculateAbcClassification para salvar histórico
+- [x] Criar query getClassificationHistory para evolução temporal
+- [x] Criar query getClassChanges para produtos que mudaram de classe
+- [x] Implementar análise com IA usando invokeLLM
+- [x] Criar procedure analyzeAbcWithAI
+
+### Frontend ✅
+- [x] Criar seção "Análises Avançadas" na página ABC
+- [x] Implementar gráfico de Curva ABC (Pareto)
+- [x] Implementar gráfico de evolução temporal
+- [x] Implementar tabela de produtos que mudaram de classe
+- [x] Criar card de análise com IA
+- [x] Adicionar loading states e error handling
+
+### Funcionalidades ✅
+- [x] Gráfico Curva ABC mostrando 80-20
+- [x] Relatório de evolução temporal (últimos 6 meses)
+- [x] Identificar produtos em ascensão/queda
+- [x] Análise com IA: pontos positivos e negativos
+- [x] Recomendações estratégicas personalizadas
+
+**Status:** Implementação completa! Interface com 3 abas: Visão Geral, Evolução Temporal e Análise com IA
+

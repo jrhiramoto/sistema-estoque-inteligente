@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -567,6 +568,9 @@ export default function AbcAnalysis() {
           )}
         </CardContent>
       </Card>
+
+      {/* Análises Avançadas */}
+      <AdvancedAnalytics />
 
       {/* Tabela de Produtos */}
       <Card>

@@ -4,7 +4,7 @@ import {
   InsertUser, users, products, inventory, sales, orders,
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
-  productSuppliers, validOrderStatuses, abcConfig,
+  productSuppliers, validOrderStatuses, abcConfig, abcHistory,
   Product, Inventory, Sale, Order, InsertOrder, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
   ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
@@ -1333,6 +1333,20 @@ export async function calculateAbcClassification(userId: number) {
         .where(eq(products.id, classification.productId));
     }
     
+    // Salvar histórico para análise de evolução temporal
+    console.log('[ABC] Salvando histórico de classificações...');
+    for (const classification of classifications) {
+      await db.insert(abcHistory).values({
+        productId: classification.productId,
+        abcClass: classification.abcClass,
+        abcRevenue: classification.abcRevenue,
+        abcPercentage: classification.abcPercentage,
+        calculatedAt: now,
+        analysisMonths: config.analysisMonths,
+      });
+    }
+    console.log(`[ABC] Histórico salvo: ${classifications.length} registros`);
+    
     // Atualizar data da última calculação
     await db
       .update(abcConfig)
@@ -1536,6 +1550,400 @@ export async function getAbcCounts() {
       classC: 0,
       classD: 0,
       total: 0,
+    };
+  }
+}
+
+/**
+ * Obtém histórico de classificações de um produto
+ * Retorna evolução temporal das classes ABC
+ */
+export async function getProductClassificationHistory(productId: number, months: number = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - months);
+
+    const history = await db
+      .select({
+        id: abcHistory.id,
+        abcClass: abcHistory.abcClass,
+        abcRevenue: abcHistory.abcRevenue,
+        abcPercentage: abcHistory.abcPercentage,
+        calculatedAt: abcHistory.calculatedAt,
+        analysisMonths: abcHistory.analysisMonths,
+      })
+      .from(abcHistory)
+      .where(
+        and(
+          eq(abcHistory.productId, productId),
+          gte(abcHistory.calculatedAt, cutoffDate)
+        )
+      )
+      .orderBy(desc(abcHistory.calculatedAt));
+
+    return history;
+  } catch (error) {
+    console.error('[ABC] Erro ao obter histórico de produto:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtém produtos que mudaram de classe ABC
+ * Compara classificação atual com a anterior
+ */
+export async function getClassChanges(months: number = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Buscar última e penúltima classificação de cada produto
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - months);
+
+    // Buscar todos os produtos com suas classificações atuais
+    const currentProducts = await db
+      .select({
+        productId: products.id,
+        productCode: products.code,
+        productName: products.name,
+        currentClass: products.abcClass,
+        currentRevenue: products.abcRevenue,
+        lastCalculated: products.abcLastCalculated,
+      })
+      .from(products)
+      .where(sql`${products.abcClass} IS NOT NULL`);
+
+    // Para cada produto, buscar classificação anterior
+    const changes = [];
+    for (const product of currentProducts) {
+      // Buscar penúltima classificação (ignorando a última que é a atual)
+      const previousHistory = await db
+        .select({
+          abcClass: abcHistory.abcClass,
+          abcRevenue: abcHistory.abcRevenue,
+          calculatedAt: abcHistory.calculatedAt,
+        })
+        .from(abcHistory)
+        .where(
+          and(
+            eq(abcHistory.productId, product.productId),
+            gte(abcHistory.calculatedAt, cutoffDate)
+          )
+        )
+        .orderBy(desc(abcHistory.calculatedAt))
+        .limit(2); // Pegar as 2 últimas
+
+      // Se tiver pelo menos 2 registros, comparar
+      if (previousHistory.length >= 2) {
+        const current = previousHistory[0];
+        const previous = previousHistory[1];
+
+        // Se mudou de classe
+        if (current.abcClass !== previous.abcClass) {
+          const revenueChange = current.abcRevenue - previous.abcRevenue;
+          const revenueChangePercent = previous.abcRevenue > 0
+            ? ((revenueChange / previous.abcRevenue) * 100)
+            : 0;
+
+          changes.push({
+            productId: product.productId,
+            productCode: product.productCode,
+            productName: product.productName,
+            previousClass: previous.abcClass,
+            currentClass: current.abcClass,
+            previousRevenue: previous.abcRevenue,
+            currentRevenue: current.abcRevenue,
+            revenueChange,
+            revenueChangePercent,
+            previousDate: previous.calculatedAt,
+            currentDate: current.calculatedAt,
+            trend: getClassTrend(previous.abcClass, current.abcClass),
+          });
+        }
+      }
+    }
+
+    // Ordenar por importância da mudança (A→D é mais importante que C→D)
+    changes.sort((a, b) => {
+      const scoreA = getTrendScore(a.trend);
+      const scoreB = getTrendScore(b.trend);
+      return scoreB - scoreA;
+    });
+
+    return changes;
+  } catch (error) {
+    console.error('[ABC] Erro ao obter mudanças de classe:', error);
+    return [];
+  }
+}
+
+/**
+ * Determina tendência da mudança de classe
+ */
+function getClassTrend(previousClass: string, currentClass: string): 'up' | 'down' | 'stable' {
+  const classOrder = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+  const prevScore = classOrder[previousClass as keyof typeof classOrder] || 0;
+  const currScore = classOrder[currentClass as keyof typeof classOrder] || 0;
+
+  if (currScore > prevScore) return 'up';
+  if (currScore < prevScore) return 'down';
+  return 'stable';
+}
+
+/**
+ * Calcula score de importância da mudança
+ */
+function getTrendScore(trend: 'up' | 'down' | 'stable'): number {
+  if (trend === 'up') return 100;
+  if (trend === 'down') return -100;
+  return 0;
+}
+
+/**
+ * Obtém estatísticas de evolução temporal
+ * Resumo de mudanças de classe no período
+ */
+export async function getEvolutionStats(months: number = 6) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      totalProducts: 0,
+      productsWithHistory: 0,
+      classChanges: 0,
+      trending: { up: 0, down: 0, stable: 0 },
+      byClass: {
+        A: { gained: 0, lost: 0 },
+        B: { gained: 0, lost: 0 },
+        C: { gained: 0, lost: 0 },
+        D: { gained: 0, lost: 0 },
+      },
+    };
+  }
+
+  try {
+    const changes = await getClassChanges(months);
+
+    const stats = {
+      totalProducts: 0,
+      productsWithHistory: changes.length,
+      classChanges: changes.filter(c => c.trend !== 'stable').length,
+      trending: {
+        up: changes.filter(c => c.trend === 'up').length,
+        down: changes.filter(c => c.trend === 'down').length,
+        stable: changes.filter(c => c.trend === 'stable').length,
+      },
+      byClass: {
+        A: {
+          gained: changes.filter(c => c.currentClass === 'A' && c.previousClass !== 'A').length,
+          lost: changes.filter(c => c.previousClass === 'A' && c.currentClass !== 'A').length,
+        },
+        B: {
+          gained: changes.filter(c => c.currentClass === 'B' && c.previousClass !== 'B').length,
+          lost: changes.filter(c => c.previousClass === 'B' && c.currentClass !== 'B').length,
+        },
+        C: {
+          gained: changes.filter(c => c.currentClass === 'C' && c.previousClass !== 'C').length,
+          lost: changes.filter(c => c.previousClass === 'C' && c.currentClass !== 'C').length,
+        },
+        D: {
+          gained: changes.filter(c => c.currentClass === 'D' && c.previousClass !== 'D').length,
+          lost: changes.filter(c => c.previousClass === 'D' && c.currentClass !== 'D').length,
+        },
+      },
+    };
+
+    // Contar total de produtos
+    const allProducts = await db.select({ count: sql<number>`COUNT(*)` }).from(products);
+    stats.totalProducts = Number(allProducts[0].count);
+
+    return stats;
+  } catch (error) {
+    console.error('[ABC] Erro ao obter estatísticas de evolução:', error);
+    return {
+      totalProducts: 0,
+      productsWithHistory: 0,
+      classChanges: 0,
+      trending: { up: 0, down: 0, stable: 0 },
+      byClass: {
+        A: { gained: 0, lost: 0 },
+        B: { gained: 0, lost: 0 },
+        C: { gained: 0, lost: 0 },
+        D: { gained: 0, lost: 0 },
+      },
+    };
+  }
+}
+
+/**
+ * Gera análise profissional com IA sobre a situação atual do estoque ABC
+ * Identifica pontos positivos, negativos e recomendações estratégicas
+ */
+export async function generateAbcAnalysisWithAI(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      success: false,
+      message: 'Database not available',
+      analysis: null,
+    };
+  }
+
+  try {
+    // Coletar dados para análise
+    const counts = await getAbcCounts();
+    const stockMetrics = await getAbcStockMetrics();
+    const evolutionStats = await getEvolutionStats(6);
+    const classChanges = await getClassChanges(6);
+    const config = await getAbcConfig(userId);
+
+    // Preparar contexto para IA
+    const context = {
+      distribuicao: {
+        total: counts.total,
+        classeA: counts.classA,
+        classeB: counts.classB,
+        classeC: counts.classC,
+        classeD: counts.classD,
+        percentuais: {
+          A: ((counts.classA / counts.total) * 100).toFixed(1),
+          B: ((counts.classB / counts.total) * 100).toFixed(1),
+          C: ((counts.classC / counts.total) * 100).toFixed(1),
+          D: ((counts.classD / counts.total) * 100).toFixed(1),
+        },
+      },
+      estoque: {
+        valorTotal: (stockMetrics.total.stockValue / 100).toFixed(2),
+        quantidadeTotal: stockMetrics.total.stockQuantity,
+        porClasse: {
+          A: {
+            valor: (stockMetrics.classA.stockValue / 100).toFixed(2),
+            quantidade: stockMetrics.classA.stockQuantity,
+            produtos: stockMetrics.classA.productCount,
+            percentualValor: stockMetrics.total.stockValue > 0
+              ? ((stockMetrics.classA.stockValue / stockMetrics.total.stockValue) * 100).toFixed(1)
+              : '0',
+          },
+          B: {
+            valor: (stockMetrics.classB.stockValue / 100).toFixed(2),
+            quantidade: stockMetrics.classB.stockQuantity,
+            produtos: stockMetrics.classB.productCount,
+            percentualValor: stockMetrics.total.stockValue > 0
+              ? ((stockMetrics.classB.stockValue / stockMetrics.total.stockValue) * 100).toFixed(1)
+              : '0',
+          },
+          C: {
+            valor: (stockMetrics.classC.stockValue / 100).toFixed(2),
+            quantidade: stockMetrics.classC.stockQuantity,
+            produtos: stockMetrics.classC.productCount,
+            percentualValor: stockMetrics.total.stockValue > 0
+              ? ((stockMetrics.classC.stockValue / stockMetrics.total.stockValue) * 100).toFixed(1)
+              : '0',
+          },
+          D: {
+            valor: (stockMetrics.classD.stockValue / 100).toFixed(2),
+            quantidade: stockMetrics.classD.stockQuantity,
+            produtos: stockMetrics.classD.productCount,
+            percentualValor: stockMetrics.total.stockValue > 0
+              ? ((stockMetrics.classD.stockValue / stockMetrics.total.stockValue) * 100).toFixed(1)
+              : '0',
+          },
+        },
+      },
+      evolucao: {
+        produtosComHistorico: evolutionStats.productsWithHistory,
+        mudancasDeClasse: evolutionStats.classChanges,
+        tendencias: evolutionStats.trending,
+        movimentacaoPorClasse: evolutionStats.byClass,
+      },
+      mudancasRecentes: classChanges.slice(0, 10).map(c => ({
+        produto: `${c.productCode} - ${c.productName?.substring(0, 50)}`,
+        de: c.previousClass,
+        para: c.currentClass,
+        tendencia: c.trend === 'up' ? 'Ascensão' : c.trend === 'down' ? 'Queda' : 'Estável',
+        variacaoFaturamento: c.revenueChangePercent.toFixed(1) + '%',
+      })),
+      configuracao: {
+        periodoAnalise: config?.analysisMonths || 12,
+        pesoFaturamento: config?.revenueWeight || 50,
+        pesoQuantidade: config?.quantityWeight || 30,
+        pesoPedidos: config?.ordersWeight || 20,
+      },
+    };
+
+    // Importar função de LLM
+    const { invokeLLM } = await import('./_core/llm');
+
+    // Chamar IA para análise
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: 'system',
+          content: `Você é um consultor especialista em gestão de estoque e análise ABC. 
+Sua tarefa é analisar dados de classificação ABC de produtos e fornecer insights profissionais, 
+identificando pontos positivos, negativos e recomendações estratégicas concretas.
+
+Seja objetivo, técnico e focado em ações práticas. Use dados numéricos para embasar suas conclusões.
+Estruture sua resposta em 3 seções claras: Pontos Positivos, Pontos de Atenção e Recomendações.`,
+        },
+        {
+          role: 'user',
+          content: `Analise a seguinte situação de estoque ABC e forneça uma avaliação profissional:
+
+**DISTRIBUIÇÃO DE PRODUTOS:**
+- Total: ${context.distribuicao.total} produtos
+- Classe A (alta prioridade): ${context.distribuicao.classeA} produtos (${context.distribuicao.percentuais.A}%)
+- Classe B (média prioridade): ${context.distribuicao.classeB} produtos (${context.distribuicao.percentuais.B}%)
+- Classe C (baixa prioridade): ${context.distribuicao.classeC} produtos (${context.distribuicao.percentuais.C}%)
+- Classe D (sem vendas): ${context.distribuicao.classeD} produtos (${context.distribuicao.percentuais.D}%)
+
+**VALOR EM ESTOQUE:**
+- Valor total: R$ ${context.estoque.valorTotal}
+- Classe A: R$ ${context.estoque.porClasse.A.valor} (${context.estoque.porClasse.A.percentualValor}% do valor total) - ${context.estoque.porClasse.A.produtos} produtos com estoque
+- Classe B: R$ ${context.estoque.porClasse.B.valor} (${context.estoque.porClasse.B.percentualValor}% do valor total) - ${context.estoque.porClasse.B.produtos} produtos com estoque
+- Classe C: R$ ${context.estoque.porClasse.C.valor} (${context.estoque.porClasse.C.percentualValor}% do valor total) - ${context.estoque.porClasse.C.produtos} produtos com estoque
+- Classe D: R$ ${context.estoque.porClasse.D.valor} (${context.estoque.porClasse.D.percentualValor}% do valor total) - ${context.estoque.porClasse.D.produtos} produtos com estoque
+
+**EVOLUÇÃO TEMPORAL (últimos 6 meses):**
+- Produtos com histórico: ${context.evolucao.produtosComHistorico}
+- Mudanças de classe: ${context.evolucao.mudancasDeClasse}
+- Tendências: ${context.evolucao.tendencias.up} em ascensão, ${context.evolucao.tendencias.down} em queda
+- Classe A: ganhou ${context.evolucao.movimentacaoPorClasse.A.gained} produtos, perdeu ${context.evolucao.movimentacaoPorClasse.A.lost}
+- Classe B: ganhou ${context.evolucao.movimentacaoPorClasse.B.gained} produtos, perdeu ${context.evolucao.movimentacaoPorClasse.B.lost}
+- Classe C: ganhou ${context.evolucao.movimentacaoPorClasse.C.gained} produtos, perdeu ${context.evolucao.movimentacaoPorClasse.C.lost}
+- Classe D: ganhou ${context.evolucao.movimentacaoPorClasse.D.gained} produtos, perdeu ${context.evolucao.movimentacaoPorClasse.D.lost}
+
+${context.mudancasRecentes.length > 0 ? `**PRINCIPAIS MUDANÇAS RECENTES:**
+${context.mudancasRecentes.map((m, i) => `${i + 1}. ${m.produto}: ${m.de} → ${m.para} (${m.tendencia}, ${m.variacaoFaturamento})`).join('\n')}` : ''}
+
+**CONFIGURAÇÃO DA ANÁLISE:**
+- Período: ${context.configuracao.periodoAnalise} meses
+- Pesos: Faturamento ${context.configuracao.pesoFaturamento}%, Quantidade ${context.configuracao.pesoQuantidade}%, Pedidos ${context.configuracao.pesoPedidos}%
+
+Forneça uma análise estruturada em markdown com:
+1. **Pontos Positivos**: O que está funcionando bem
+2. **Pontos de Atenção**: Problemas e riscos identificados
+3. **Recomendações**: Ações concretas e prioritárias para melhorar a gestão`,
+        },
+      ],
+    });
+
+    const analysis = response.choices[0]?.message?.content || 'Não foi possível gerar análise';
+
+    return {
+      success: true,
+      analysis,
+      context, // Retornar contexto para debug
+    };
+  } catch (error) {
+    console.error('[ABC] Erro ao gerar análise com IA:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      analysis: null,
     };
   }
 }

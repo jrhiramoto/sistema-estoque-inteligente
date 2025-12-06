@@ -368,3 +368,21 @@ export const abcConfig = mysqlTable("abc_config", {
 
 export type AbcConfig = typeof abcConfig.$inferSelect;
 export type InsertAbcConfig = typeof abcConfig.$inferInsert;
+
+/**
+ * Histórico de classificações ABC
+ * Armazena snapshots das classificações para análise de evolução temporal
+ */
+export const abcHistory = mysqlTable("abc_history", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  abcClass: mysqlEnum("abcClass", ["A", "B", "C", "D"]).notNull(),
+  abcRevenue: int("abcRevenue").notNull().default(0), // Faturamento no período (em centavos)
+  abcPercentage: int("abcPercentage").notNull().default(0), // % do faturamento total (0-10000 = 0-100.00%)
+  calculatedAt: timestamp("calculatedAt").notNull(), // Data do cálculo
+  analysisMonths: int("analysisMonths").notNull(), // Período de análise usado
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AbcHistory = typeof abcHistory.$inferSelect;
+export type InsertAbcHistory = typeof abcHistory.$inferInsert;

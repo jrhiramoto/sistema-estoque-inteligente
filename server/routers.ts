@@ -782,6 +782,26 @@ export const appRouter = router({
       return await db.getAbcCounts();
     }),
     
+    getEvolutionStats: protectedProcedure
+      .input(z.object({
+        months: z.number().min(1).max(12).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getEvolutionStats(input?.months || 6);
+      }),
+    
+    getClassChanges: protectedProcedure
+      .input(z.object({
+        months: z.number().min(1).max(12).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getClassChanges(input?.months || 6);
+      }),
+    
+    analyzeWithAI: protectedProcedure.mutation(async ({ ctx }) => {
+      return await db.generateAbcAnalysisWithAI(ctx.user.id);
+    }),
+    
     getProducts: protectedProcedure
       .input(z.object({
         limit: z.number().optional(),
