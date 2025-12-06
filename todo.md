@@ -776,3 +776,29 @@
 - ✅ Loading: botão já tinha "Calculando..." com ícone girando
 - ✅ Contagem: A=332, B=222, C=118, D=37.835 (total=38.507)
 
+
+## Melhorias nos Badges de Classe ABC
+
+- [ ] Verificar se quantidades das classes A, B, C, D estão atualizando corretamente
+- [ ] Adicionar texto "Quantidade de produtos:" antes do número no badge
+- [ ] Testar atualização após recálculo da análise ABC
+- [ ] Validar que todas as classes mostram contagem correta
+
+**Objetivo:** Deixar mais explícito que o número no badge representa a quantidade de produtos
+
+
+## Melhorias nos Badges de Classe ABC - CONCLUÍDO
+
+- [x] Verificar se quantidades das classes A, B, C, D estão atualizando corretamente
+- [x] Adicionar texto "produtos" após o número no badge
+- [x] Aplicar mudança em todas as 4 classes (A, B, C, D)
+- [x] Validar que todas as classes mostram contagem correta
+
+**Implementação:**
+- ✅ Classe A: "332 produtos" (antes só "332")
+- ✅ Classe B: "222 produtos" (antes só "222")
+- ✅ Classe C: "118 produtos" (antes só "118")
+- ✅ Classe D: "37835 produtos" (antes só "37835")
+
+**Resultado:** Badges agora são mais explícitos e fáceis de entender
+

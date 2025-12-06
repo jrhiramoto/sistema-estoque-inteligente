@@ -319,7 +319,7 @@ export default function AbcAnalysis() {
             <CardTitle className="flex items-center justify-between">
               <span>Classe A</span>
               <Badge className="bg-green-500">
-                {metrics?.classA.count || 0}
+                {metrics?.classA.count || 0} produtos
               </Badge>
             </CardTitle>
             <CardDescription>Prioridade máxima</CardDescription>
@@ -364,7 +364,7 @@ export default function AbcAnalysis() {
             <CardTitle className="flex items-center justify-between">
               <span>Classe B</span>
               <Badge className="bg-blue-500">
-                {metrics?.classB.count || 0}
+                {metrics?.classB.count || 0} produtos
               </Badge>
             </CardTitle>
             <CardDescription>Prioridade média</CardDescription>
@@ -409,7 +409,7 @@ export default function AbcAnalysis() {
             <CardTitle className="flex items-center justify-between">
               <span>Classe C</span>
               <Badge className="bg-yellow-500">
-                {metrics?.classC.count || 0}
+                {metrics?.classC.count || 0} produtos
               </Badge>
             </CardTitle>
             <CardDescription>Prioridade baixa</CardDescription>
@@ -454,7 +454,7 @@ export default function AbcAnalysis() {
             <CardTitle className="flex items-center justify-between">
               <span>Classe D</span>
               <Badge className="bg-gray-500">
-                {metrics?.classD.count || 0}
+                {metrics?.classD.count || 0} produtos
               </Badge>
             </CardTitle>
             <CardDescription>Sem vendas</CardDescription>
