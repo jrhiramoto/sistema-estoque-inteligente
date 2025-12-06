@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE products \nSET blingId = '5803012120' \nWHERE code = '36543'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute UPDATE products \nSET blingId = '5803012120' \nWHERE code = '36543'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 89
+}

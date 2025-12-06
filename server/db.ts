@@ -798,6 +798,17 @@ export async function deleteSale(saleId: number) {
   }
 }
 
+export async function deleteOrderByBlingId(blingId: string) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.delete(orders).where(eq(orders.blingId, blingId));
+  } catch (error) {
+    console.error('[Database] Error deleting order:', error);
+  }
+}
+
 
 // ===== Product Supplier Management =====
 

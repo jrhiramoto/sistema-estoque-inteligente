@@ -1,0 +1,25 @@
+{
+  "query": "SELECT \n  DATE_FORMAT(saleDate, '%Y-%m') as mes,\n  COUNT(*) as num_vendas,\n  SUM(quantity) as total_quantidade\nFROM sales s\nJOIN products p ON s.productId = p.id\nWHERE p.code = '36543'\n  AND s.saleDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)\nGROUP BY mes\nORDER BY mes",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  DATE_FORMAT(saleDate, '%Y-%m') as mes,\n  COUNT(*) as num_vendas,\n  SUM(quantity) as total_quantidade\nFROM sales s\nJOIN products p ON s.productId = p.id\nWHERE p.code = '36543'\n  AND s.saleDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)\nGROUP BY mes\nORDER BY mes",
+  "rows": [
+    {
+      "mes": "2025-10",
+      "num_vendas": "3",
+      "total_quantidade": "17"
+    },
+    {
+      "mes": "2025-11",
+      "num_vendas": "13",
+      "total_quantidade": "51"
+    },
+    {
+      "mes": "2025-12",
+      "num_vendas": "5",
+      "total_quantidade": "27"
+    }
+  ],
+  "messages": [],
+  "stdout": "mes\tnum_vendas\ttotal_quantidade\n2025-10\t3\t17\n2025-11\t13\t51\n2025-12\t5\t27\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

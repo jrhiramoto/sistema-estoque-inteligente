@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  COUNT(DISTINCT blingOrderId) as total_pedidos_importados,\n  COUNT(*) as total_itens_importados,\n  MIN(saleDate) as primeira_venda,\n  MAX(saleDate) as ultima_venda\nFROM sales\nWHERE saleDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  COUNT(DISTINCT blingOrderId) as total_pedidos_importados,\n  COUNT(*) as total_itens_importados,\n  MIN(saleDate) as primeira_venda,\n  MAX(saleDate) as ultima_venda\nFROM sales\nWHERE saleDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)",
+  "rows": [
+    {
+      "total_pedidos_importados": "1758",
+      "total_itens_importados": "2321",
+      "primeira_venda": "2024-12-07 18:53:23",
+      "ultima_venda": "2025-12-05 18:53:23"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_pedidos_importados\ttotal_itens_importados\tprimeira_venda\tultima_venda\n1758\t2321\t2024-12-07 18:53:23\t2025-12-05 18:53:23\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

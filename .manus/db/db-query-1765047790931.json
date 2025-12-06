@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  p.id as product_id,\n  p.code,\n  p.blingId,\n  COUNT(s.id) as vendas_setembro\nFROM products p\nLEFT JOIN sales s ON p.id = s.productId \n  AND s.saleDate >= '2025-09-01' \n  AND s.saleDate < '2025-10-01'\nWHERE p.code = '36543'\nGROUP BY p.id, p.code, p.blingId",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  p.id as product_id,\n  p.code,\n  p.blingId,\n  COUNT(s.id) as vendas_setembro\nFROM products p\nLEFT JOIN sales s ON p.id = s.productId \n  AND s.saleDate >= '2025-09-01' \n  AND s.saleDate < '2025-10-01'\nWHERE p.code = '36543'\nGROUP BY p.id, p.code, p.blingId",
+  "rows": [
+    {
+      "product_id": "53681",
+      "code": "36543",
+      "blingId": "5803012120",
+      "vendas_setembro": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "product_id\tcode\tblingId\tvendas_setembro\n53681\t36543\t5803012120\t0\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

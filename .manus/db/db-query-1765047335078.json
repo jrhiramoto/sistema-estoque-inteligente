@@ -1,0 +1,9 @@
+{
+  "query": "SELECT \n  o.orderNumber,\n  o.orderDate,\n  o.itemsCount as itens_no_pedido,\n  COUNT(s.id) as itens_salvos_sales\nFROM orders o\nLEFT JOIN sales s ON o.blingId = s.blingOrderId\nWHERE o.orderDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)\n  AND o.itemsCount > 0\nGROUP BY o.id, o.orderNumber, o.orderDate, o.itemsCount\nHAVING itens_salvos_sales = 0\nLIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  o.orderNumber,\n  o.orderDate,\n  o.itemsCount as itens_no_pedido,\n  COUNT(s.id) as itens_salvos_sales\nFROM orders o\nLEFT JOIN sales s ON o.blingId = s.blingOrderId\nWHERE o.orderDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)\n  AND o.itemsCount > 0\nGROUP BY o.id, o.orderNumber, o.orderDate, o.itemsCount\nHAVING itens_salvos_sales = 0\nLIMIT 10",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 69
+}

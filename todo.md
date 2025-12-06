@@ -1402,3 +1402,25 @@ Sistema agora notifica APENAS quando:
 - [x] Indicador "Mostrando X-Y de Z produtos"
 - [x] Paginação mantida ao ordenar/filtrar
 
+
+## 🚨 BUG CRÍTICO - Dados de Vendas Incorretos
+
+### Produto 36543 - Discrepâncias:
+- [ ] 12 meses: Bling = 268 unidades vs Sistema = ?
+- [ ] Setembro: Bling = 176 unidades vs Sistema = 17 unidades (10x menor!)
+- [ ] Apenas 3 meses mostrados (faltam outros meses com vendas)
+
+### Investigação:
+- [ ] Verificar query getMonthlySalesByProduct
+- [ ] Verificar dados brutos na tabela sales (produto 36543)
+- [ ] Verificar sincronização do Bling (status dos pedidos)
+- [ ] Verificar agregação (SUM de quantity)
+- [ ] Verificar filtro de data (saleDate)
+
+
+## Correções de Webhooks de Vendas ✅
+- [x] Webhook order.created/updated agora salva itens na tabela sales
+- [x] Webhook order.deleted remove pedido da tabela orders
+- [x] Conversão de valores para centavos implementada
+- [x] Criar função deleteOrderByBlingId no db.ts
+- [x] Vendas agora são atualizadas em tempo real via webhooks

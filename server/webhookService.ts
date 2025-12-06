@@ -379,13 +379,45 @@ async function handleOrderWebhook(action: string, data: any) {
           orderNumber: String(pedido.numero),
           orderDate: new Date(pedido.data),
           customerName: pedido.contato?.nome || 'Cliente não informado',
-          totalAmount,
+          customerDocument: pedido.contato?.numeroDocumento || null,
+          totalAmount: Math.round(totalAmount * 100), // converter para centavos
           itemsCount,
           status: statusName,
           statusId,
         });
         
         console.log(`[Webhook] ✅ Order ${orderId} saved successfully`);
+        
+        // Salvar itens individuais na tabela sales para análise ABC
+        if (pedido.itens && Array.isArray(pedido.itens)) {
+          let itemsSaved = 0;
+          
+          for (const item of pedido.itens) {
+            try {
+              // Buscar produto pelo blingId
+              const produto = await db.getProductByBlingId(String(item.produto?.id || 0));
+              
+              if (produto) {
+                await db.upsertSale({
+                  blingOrderId: String(pedido.id),
+                  productId: produto.id,
+                  quantity: item.quantidade,
+                  unitPrice: Math.round(item.valor * 100), // converter para centavos
+                  totalPrice: Math.round(item.valor * item.quantidade * 100),
+                  orderStatus: statusName,
+                  saleDate: new Date(pedido.data),
+                });
+                itemsSaved++;
+              } else {
+                console.warn(`[Webhook] Product ${item.produto?.id} not found in database`);
+              }
+            } catch (error) {
+              console.error(`[Webhook] Error saving sale item:`, error);
+            }
+          }
+          
+          console.log(`[Webhook] ✅ Saved ${itemsSaved}/${pedido.itens.length} sales items`);
+        }
         
       } catch (error) {
         console.error(`[Webhook] Error processing order ${orderId}:`, error);
@@ -405,8 +437,13 @@ async function handleOrderWebhook(action: string, data: any) {
         }
         
         console.log(`[Webhook] ✅ Removed ${sales.length} sales from deleted order ${orderId}`);
+        
+        // Remover o pedido da tabela orders
+        await db.deleteOrderByBlingId(orderId.toString());
+        console.log(`[Webhook] ✅ Removed order ${orderId} from orders table`);
+        
       } catch (error) {
-        console.error(`[Webhook] Error deleting sales for order ${orderId}:`, error);
+        console.error(`[Webhook] Error deleting order ${orderId}:`, error);
       }
       break;
     

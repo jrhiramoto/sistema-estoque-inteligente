@@ -1,0 +1,60 @@
+{
+  "query": "SELECT \n  p.code,\n  p.name,\n  SUM(s.quantity) as total_vendido\nFROM sales s\nJOIN products p ON s.productId = p.id\nWHERE s.saleDate >= '2025-09-01'\n  AND s.saleDate < '2025-10-01'\nGROUP BY p.id, p.code, p.name\nORDER BY total_vendido DESC\nLIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  p.code,\n  p.name,\n  SUM(s.quantity) as total_vendido\nFROM sales s\nJOIN products p ON s.productId = p.id\nWHERE s.saleDate >= '2025-09-01'\n  AND s.saleDate < '2025-10-01'\nGROUP BY p.id, p.code, p.name\nORDER BY total_vendido DESC\nLIMIT 10",
+  "rows": [
+    {
+      "code": "110205",
+      "name": "PUXADOR PIGNATTA M MIUMIU -Z5843",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110943",
+      "name": "GUARNIÇÃO BAUER INTERNA/EURO 904.21.381 -FOSCO -HAF",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110164",
+      "name": "PUXADOR CUCINA -PONTO -ZP5816 Cor:Titanium",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110566",
+      "name": "PAPELEIRA DE CHÃO DUPLO QUADRADO INOX S200 -KEPERFIL Cor:Preto",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110524",
+      "name": "KIT CAMARÃO SEM TRILHO",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110221",
+      "name": "PUXADOR PIGNATTA M MIUMIU -Z5843 Cor:Rose",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110235",
+      "name": "PUXADOR PIGNATTA M CARACOL -Z5844 Cor:Níquel escovado",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110649",
+      "name": "PORTA SHAMPOO KEYZIG DIVERSE 500MM INOX 304 -ITA Cor:Preto",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110231",
+      "name": "PUXADOR PIGNATTA M CARACOL -Z5844 Cor:Cromo escovado",
+      "total_vendido": "10"
+    },
+    {
+      "code": "110812",
+      "name": "ALÇA 101136 TUBO REDONDO 25MM -KEBS Furação:300MM (TOTAL 325MM);Cor:Branco",
+      "total_vendido": "9"
+    }
+  ],
+  "messages": [],
+  "stdout": "code\tname\ttotal_vendido\n110205\tPUXADOR PIGNATTA M MIUMIU -Z5843\t10\n110943\tGUARNIÇÃO BAUER INTERNA/EURO 904.21.381 -FOSCO -HAF\t10\n110164\tPUXADOR CUCINA -PONTO -ZP5816 Cor:Titanium\t10\n110566\tPAPELEIRA DE CHÃO DUPLO QUADRADO INOX S200 -KEPERFIL Cor:Preto\t10\n110524\tKIT CAMARÃO SEM TRILHO\t10\n110221\tPUXADOR PIGNATTA M MIUMIU -Z5843 Cor:Rose\t10\n110235\tPUXADOR PIGNATTA M CARACOL -Z5844 Cor:Níquel escovado\t10\n110649\tPORTA SHAMPOO KEYZIG DIVERSE 500MM INOX 304 -ITA Cor:Preto\t10\n110231\tPUXADOR PIGNATTA M CARACOL -Z5844 Cor:Cromo escovado\t10\n110812\tALÇA 101136 TUBO REDONDO 25MM -KEBS Furação:300MM (TOTAL 325MM);Cor:Branco\t9\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

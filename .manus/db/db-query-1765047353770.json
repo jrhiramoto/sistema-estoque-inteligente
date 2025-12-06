@@ -1,0 +1,9 @@
+{
+  "query": "SELECT \n  s.id,\n  s.blingOrderId,\n  s.quantity,\n  s.saleDate,\n  o.orderNumber,\n  o.status\nFROM sales s\nJOIN products p ON s.productId = p.id\nLEFT JOIN orders o ON s.blingOrderId = o.blingId\nWHERE p.code = '36543'\n  AND s.saleDate >= '2024-09-01'\n  AND s.saleDate < '2024-10-01'\nORDER BY s.saleDate\nLIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  s.id,\n  s.blingOrderId,\n  s.quantity,\n  s.saleDate,\n  o.orderNumber,\n  o.status\nFROM sales s\nJOIN products p ON s.productId = p.id\nLEFT JOIN orders o ON s.blingOrderId = o.blingId\nWHERE p.code = '36543'\n  AND s.saleDate >= '2024-09-01'\n  AND s.saleDate < '2024-10-01'\nORDER BY s.saleDate\nLIMIT 20",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 53
+}

@@ -1,0 +1,62 @@
+{
+  "query": "SELECT \n  DATE_FORMAT(orderDate, '%Y-%m') as mes,\n  COUNT(*) as total_pedidos\nFROM orders\nWHERE orderDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)\nGROUP BY mes\nORDER BY mes",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2JcS2SMt4kXiaZg.root --database e5hjdPqiFqSfQ5APk99tn8 --execute SELECT \n  DATE_FORMAT(orderDate, '%Y-%m') as mes,\n  COUNT(*) as total_pedidos\nFROM orders\nWHERE orderDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)\nGROUP BY mes\nORDER BY mes",
+  "rows": [
+    {
+      "mes": "2024-12",
+      "total_pedidos": "303"
+    },
+    {
+      "mes": "2025-01",
+      "total_pedidos": "482"
+    },
+    {
+      "mes": "2025-02",
+      "total_pedidos": "547"
+    },
+    {
+      "mes": "2025-03",
+      "total_pedidos": "517"
+    },
+    {
+      "mes": "2025-04",
+      "total_pedidos": "524"
+    },
+    {
+      "mes": "2025-05",
+      "total_pedidos": "598"
+    },
+    {
+      "mes": "2025-06",
+      "total_pedidos": "521"
+    },
+    {
+      "mes": "2025-07",
+      "total_pedidos": "625"
+    },
+    {
+      "mes": "2025-08",
+      "total_pedidos": "608"
+    },
+    {
+      "mes": "2025-09",
+      "total_pedidos": "515"
+    },
+    {
+      "mes": "2025-10",
+      "total_pedidos": "569"
+    },
+    {
+      "mes": "2025-11",
+      "total_pedidos": "508"
+    },
+    {
+      "mes": "2025-12",
+      "total_pedidos": "144"
+    }
+  ],
+  "messages": [],
+  "stdout": "mes\ttotal_pedidos\n2024-12\t303\n2025-01\t482\n2025-02\t547\n2025-03\t517\n2025-04\t524\n2025-05\t598\n2025-06\t521\n2025-07\t625\n2025-08\t608\n2025-09\t515\n2025-10\t569\n2025-11\t508\n2025-12\t144\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}
