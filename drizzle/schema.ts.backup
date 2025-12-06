@@ -70,8 +70,6 @@ export const products = mysqlTable("products", {
   suggestedOrderQty: int("suggestedOrderQty").default(0).notNull(),
   lastSaleDate: timestamp("lastSaleDate"),
   
-  isNew: boolean("isNew").default(false).notNull(), // Produto novo (< 90 dias)
-  
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -325,7 +323,6 @@ export const productSuppliers = mysqlTable("product_suppliers", {
   
   isDefault: boolean("isDefault").default(false).notNull(), // Fornecedor padrão
   warranty: int("warranty").default(0), // Garantia em meses
-  leadTimeDays: int("leadTimeDays").default(0).notNull(), // Tempo de entrega em dias
   
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

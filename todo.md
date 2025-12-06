@@ -19,9 +19,9 @@
 
 ## Métricas de Estoque
 - [ ] Implementar cálculo de estoque atual
-- [ ] Implementar cálculo de ponto de pedido
-- [ ] Implementar cálculo de média de vendas (12 meses)
-- [ ] Implementar cálculo de quantidade sugerida de compra
+- [x] Implementar cálculo de ponto de pedido
+- [x] Implementar cálculo de média de vendas (12 meses)
+- [x] Implementar cálculo de quantidade sugerida de compra
 - [ ] Implementar indicador de produto a estocar
 - [ ] Implementar sugestão para estocar produto
 - [ ] Implementar giro de estoque
@@ -1424,3 +1424,46 @@ Sistema agora notifica APENAS quando:
 - [x] Conversão de valores para centavos implementada
 - [x] Criar função deleteOrderByBlingId no db.ts
 - [x] Vendas agora são atualizadas em tempo real via webhooks
+
+## Módulo de Reposição Inteligente 🛒
+
+### Schema e Estrutura de Dados
+- [x] Adicionar campo leadTimeDays em product_suppliers (tempo de entrega do fornecedor)
+- [ ] Adicionar campo maxStock em products (estoque máximo opcional)
+- [x] Adicionar campo isNew em products (flag para produtos novos)
+- [ ] Adicionar campo createdAt em products (para calcular idade do produto)
+- [x] Migrar schema do banco de dados
+
+### Fórmulas e Cálculos
+- [x] Implementar cálculo de média de vendas (últimos 3, 6 e 12 meses)
+- [x] Implementar cálculo de giro de estoque (vendas / estoque médio)
+- [x] Implementar cálculo de ponto de pedido (média vendas × lead time + estoque segurança)
+- [x] Implementar cálculo de quantidade sugerida (baseado em ABC, giro e lead time)
+- [ ] Implementar lógica especial para produtos novos (< 90 dias)
+- [ ] Implementar alerta de estoque máximo
+
+### Backend
+- [ ] Criar query para listar produtos no ponto de pedido
+- [ ] Agrupar produtos por fornecedor
+- [ ] Ordenar por prioridade (ABC + urgência)
+- [ ] Implementar busca por produto específico
+- [ ] Implementar filtros (fornecedor, classe ABC, urgência)
+- [ ] Criar endpoints tRPC para reposição
+
+### Interface
+- [ ] Criar página Replenishment.tsx
+- [ ] Listagem agrupada por fornecedor com cards expansíveis
+- [ ] Indicadores visuais de prioridade (cores, badges)
+- [ ] Campo de busca rápida
+- [ ] Filtros por fornecedor e classe ABC
+- [ ] Exibir métricas: giro, média vendas, lead time, estoque atual/máximo
+- [ ] Botão de ação rápida "Comprar sugerido"
+- [ ] Adicionar rota /replenishment no App.tsx
+- [ ] Adicionar card no dashboard
+
+### Regras de Negócio
+- [ ] Classe A: Nunca deixar faltar, reposição frequente com quantidade otimizada
+- [ ] Classe B: Manter estoque menor, reposição menos frequente
+- [ ] Classe C: Estoque mínimo, reposição sob demanda
+- [ ] Classe D: Não estocar (exceto produtos novos)
+- [ ] Produtos novos (< 90 dias): Tratamento especial, não classificar como D automaticamente
