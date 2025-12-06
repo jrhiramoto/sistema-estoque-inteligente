@@ -5,10 +5,12 @@ import {
   inventoryCounts, alerts, countSchedule, blingConfig,
   syncHistory, syncConfig, apiUsageLog, webhookEvents,
   productSuppliers, validOrderStatuses, abcConfig, abcHistory,
+  abcAutoCalculationConfig,
   Product, Inventory, Sale, Order, InsertOrder, Alert, InventoryCount, CountSchedule, BlingConfig,
   InsertSyncHistory, InsertSyncConfig, SyncHistory, SyncConfig,
   ApiUsageLog, InsertApiUsageLog, WebhookEvent, InsertWebhookEvent,
-  ProductSupplier, InsertProductSupplier, ValidOrderStatus, InsertValidOrderStatus
+  ProductSupplier, InsertProductSupplier, ValidOrderStatus, InsertValidOrderStatus,
+  AbcAutoCalculationConfig, InsertAbcAutoCalculationConfig
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1946,4 +1948,50 @@ Forneça uma análise estruturada em markdown com:
       analysis: null,
     };
   }
+}
+
+
+// ===== ABC Auto Calculation Config =====
+
+export async function getAbcAutoCalculationConfig(userId: number): Promise<AbcAutoCalculationConfig | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(abcAutoCalculationConfig)
+    .where(eq(abcAutoCalculationConfig.userId, userId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function upsertAbcAutoCalculationConfig(config: InsertAbcAutoCalculationConfig): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .insert(abcAutoCalculationConfig)
+    .values(config)
+    .onDuplicateKeyUpdate({
+      set: {
+        enabled: config.enabled,
+        frequency: config.frequency,
+        lastCalculationAt: config.lastCalculationAt,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+export async function updateAbcAutoCalculationConfig(
+  userId: number,
+  updates: Partial<Omit<AbcAutoCalculationConfig, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(abcAutoCalculationConfig)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(abcAutoCalculationConfig.userId, userId));
 }

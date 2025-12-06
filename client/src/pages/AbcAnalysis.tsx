@@ -33,6 +33,7 @@ export default function AbcAnalysis() {
   const [sortBy, setSortBy] = useState<"revenue" | "name">("revenue");
 
   const { data: config, isLoading: configLoading } = trpc.abc.getConfig.useQuery();
+  const { data: autoConfig } = trpc.abc.getAutoCalculationConfig.useQuery();
   const { data: distribution } = trpc.abc.getDistribution.useQuery();
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = trpc.abc.getCounts.useQuery();
   const { data: stockMetrics, isLoading: stockMetricsLoading, refetch: refetchStockMetrics } = trpc.abc.getStockMetrics.useQuery();
@@ -245,7 +246,12 @@ export default function AbcAnalysis() {
               </p>
               <p className="text-sm text-blue-700">
                 Período analisado: {config?.analysisMonths || 12} meses • 
-                Recálculo automático: {config?.autoRecalculate ? "Ativado" : "Desativado"}
+                Recálculo automático: {autoConfig?.enabled ? (
+                  autoConfig.frequency === 'daily' ? 'Diário' :
+                  autoConfig.frequency === 'weekly' ? 'Semanal' :
+                  autoConfig.frequency === 'biweekly' ? 'Quinzenal' :
+                  'Mensal'
+                ) : "Desativado"}
               </p>
             </div>
           </div>

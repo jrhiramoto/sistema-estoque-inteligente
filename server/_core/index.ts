@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { startScheduledSync } from "../scheduledSync";
 import { webhookEndpoint } from "./webhookEndpoint";
 import { startTokenRenewalJob } from "../tokenRenewalJob";
+import { startAbcAutoCalculationJob } from "../abcAutoCalculationJob";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -107,6 +108,13 @@ async function startServer() {
       startTokenRenewalJob();
     } catch (error) {
       console.error('[Server] Erro ao iniciar job de renovação de token:', error);
+    }
+    
+    // Iniciar job de recálculo automático da análise ABC
+    try {
+      startAbcAutoCalculationJob();
+    } catch (error) {
+      console.error('[Server] Erro ao iniciar job de recálculo ABC:', error);
     }
   });
 }

@@ -802,6 +802,32 @@ export const appRouter = router({
       return await db.generateAbcAnalysisWithAI(ctx.user.id);
     }),
     
+    getAutoCalculationConfig: protectedProcedure.query(async ({ ctx }) => {
+      let config = await db.getAbcAutoCalculationConfig(ctx.user.id);
+      
+      // Se não existe, criar com valores padrão
+      if (!config) {
+        await db.upsertAbcAutoCalculationConfig({
+          userId: ctx.user.id,
+          enabled: true,
+          frequency: "weekly",
+        });
+        config = await db.getAbcAutoCalculationConfig(ctx.user.id);
+      }
+      
+      return config;
+    }),
+    
+    updateAutoCalculationConfig: protectedProcedure
+      .input(z.object({
+        enabled: z.boolean().optional(),
+        frequency: z.enum(["daily", "weekly", "biweekly", "monthly"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateAbcAutoCalculationConfig(ctx.user.id, input);
+        return { success: true };
+      }),
+    
     getProducts: protectedProcedure
       .input(z.object({
         limit: z.number().optional(),

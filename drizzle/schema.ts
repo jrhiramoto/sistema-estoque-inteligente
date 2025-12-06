@@ -386,3 +386,20 @@ export const abcHistory = mysqlTable("abc_history", {
 
 export type AbcHistory = typeof abcHistory.$inferSelect;
 export type InsertAbcHistory = typeof abcHistory.$inferInsert;
+
+/**
+ * Configuração de recálculo automático da análise ABC
+ * Controla frequência e horário de execução automática
+ */
+export const abcAutoCalculationConfig = mysqlTable("abc_auto_calculation_config", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  enabled: boolean("enabled").default(true).notNull(), // Se recálculo automático está ativado
+  frequency: mysqlEnum("frequency", ["daily", "weekly", "biweekly", "monthly"]).default("weekly").notNull(),
+  lastCalculationAt: timestamp("lastCalculationAt"), // Última execução automática
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AbcAutoCalculationConfig = typeof abcAutoCalculationConfig.$inferSelect;
+export type InsertAbcAutoCalculationConfig = typeof abcAutoCalculationConfig.$inferInsert;

@@ -962,3 +962,45 @@ Sistema agora notifica APENAS quando:
 
 **Resultado:** Usuário receberá 1 último e-mail explicando que precisa reautorizar. Depois disso, NENHUM e-mail adicional até reautorizar.
 
+
+## Recálculo Automático da Análise ABC
+
+- [ ] Estudar periodicidade ideal (semanal, quinzenal, mensal)
+- [ ] Criar job de recálculo automático
+- [ ] Adicionar configuração de frequência no banco
+- [ ] Permitir ajuste de frequência pelo usuário
+- [ ] Implementar logs de execução
+- [ ] Adicionar notificação opcional de conclusão
+- [ ] Testar execução automática
+- [ ] Validar que histórico está sendo salvo corretamente
+
+**Objetivo:** Recálculo automático para não depender de ação manual e garantir dados sempre atualizados
+
+
+## Recálculo Automático da Análise ABC - IMPLEMENTADO ✅
+
+### Backend ✅
+- [x] Estudar periodicidade ideal → SEMANAL (domingos 3h)
+- [x] Criar tabela abc_auto_calculation_config
+- [x] Criar job abcAutoCalculationJob.ts
+- [x] Adicionar funções no db.ts (get/upsert/update)
+- [x] Criar procedures no routers.ts
+- [x] Inicializar job no server/index.ts
+- [x] Verificação a cada 1h para executar baseado na frequência
+
+### Frontend ✅
+- [x] Adicionar query getAutoCalculationConfig
+- [x] Mostrar status na página (Diário/Semanal/Quinzenal/Mensal/Desativado)
+- [x] Integrar com info card existente
+
+### Funcionalidades ✅
+- [x] Recálculo automático SEMANAL (padrão)
+- [x] Configurável: daily, weekly, biweekly, monthly
+- [x] Pode ser desativado (enabled: false)
+- [x] Logs detalhados de execução
+- [x] Criação automática de configuração padrão
+
+**Status:** Sistema rodando! Configuração criada automaticamente (userId=1, frequency=weekly, enabled=true)
+
+**Próximos passos:** Interface para usuário ajustar frequência (Configurações)
+
