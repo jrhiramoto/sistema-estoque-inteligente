@@ -1,0 +1,1 @@
+ALTER TABLE `bling_config` ADD `lastNotificationSent` timestamp;

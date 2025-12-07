@@ -141,10 +141,19 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
         if (!success) {
           console.error("[Token Renewal] ❌ Falha ao renovar token após 3 tentativas");
           
-          // NOTIFICAR APENAS SE:
+          // SISTEMA DE COOLDOWN: Notificar apenas se:
           // 1. Token já expirou (hoursRemaining <= 0) OU
-          // 2. Token expira em menos de 6h (urgente, próxima verificação pode ser tarde demais)
-          const shouldNotify = hoursRemaining <= 6;
+          // 2. Token expira em menos de 6h (urgente) E
+          // 3. Não enviou notificação nas últimas 24h (cooldown)
+          
+          const lastNotification = config.lastNotificationSent ? new Date(config.lastNotificationSent) : null;
+          const hoursSinceLastNotification = lastNotification 
+            ? Math.floor((now.getTime() - lastNotification.getTime()) / (1000 * 60 * 60))
+            : 999; // Se nunca enviou, considerar muito tempo atrás
+          
+          const isUrgent = hoursRemaining <= 6;
+          const cooldownExpired = hoursSinceLastNotification >= 24;
+          const shouldNotify = isUrgent && cooldownExpired;
           
           if (shouldNotify) {
             console.log(`[Token Renewal] 📧 Enviando notificação (token expira em ${hoursRemaining}h)`);
@@ -157,11 +166,21 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
                          `Enquanto isso, as sincronizações automáticas estarão pausadas.`
               });
               console.log("[Token Renewal] 📧 Notificação enviada ao administrador");
+              
+              // Registrar timestamp da notificação para cooldown
+              await db.upsertBlingConfig({
+                userId,
+                lastNotificationSent: now,
+              });
             } catch (notifyError) {
               console.error("[Token Renewal] Erro ao enviar notificação:", notifyError);
             }
           } else {
-            console.log(`[Token Renewal] ⏳ Não enviando notificação ainda (token expira em ${hoursRemaining}h, próxima tentativa em 2h)`);
+            if (!isUrgent) {
+              console.log(`[Token Renewal] ⏳ Não enviando notificação (token expira em ${hoursRemaining}h, não urgente ainda)`);
+            } else if (!cooldownExpired) {
+              console.log(`[Token Renewal] 🔇 Notificação em cooldown (última enviada há ${hoursSinceLastNotification}h, aguardando 24h)`);
+            }
           }
         }
       } catch (error: any) {
@@ -181,6 +200,13 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
                        `Após reautorizar, a renovação automática voltará a funcionar.`
             });
             console.log('[Token Renewal] 📧 Notificação de reautorização enviada');
+            
+            // Registrar timestamp da notificação
+            const now = new Date();
+            await db.upsertBlingConfig({
+              userId,
+              lastNotificationSent: now,
+            });
             
             // Desativar integração para parar tentativas até reautorização
             await db.upsertBlingConfig({

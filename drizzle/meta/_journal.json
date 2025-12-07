@@ -120,6 +120,13 @@
       "when": 1765052472201,
       "tag": "0016_salty_boomerang",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1765065748192,
+      "tag": "0017_wonderful_firestar",
+      "breakpoints": true
     }
   ]
 }

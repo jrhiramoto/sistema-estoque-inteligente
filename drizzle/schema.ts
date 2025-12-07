@@ -31,6 +31,7 @@ export const blingConfig = mysqlTable("bling_config", {
   tokenExpiresAt: timestamp("tokenExpiresAt"),
   isActive: boolean("isActive").default(false).notNull(),
   lastSync: timestamp("lastSync"),
+  lastNotificationSent: timestamp("lastNotificationSent"), // Última notificação de erro enviada
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
