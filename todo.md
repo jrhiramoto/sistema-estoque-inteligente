@@ -1470,3 +1470,4 @@ Sistema agora notifica APENAS quando:
 - [x] Adicionar botão de retorno ao dashboard em todas as páginas
 - [x] Resolver definitivamente notificações repetidas de token expirado
 - [x] Corrigir erro HTML ao invés de JSON na página de configurações
+- [x] Corrigir discrepância entre dados de vendas do Bling e sistema

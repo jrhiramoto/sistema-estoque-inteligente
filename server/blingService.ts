@@ -715,10 +715,12 @@ export async function syncSales(
     
     const dataFinal = new Date();
 
-    // TEMPORÁRIO: Removendo filtro de situações para buscar TODOS os pedidos
-    // Depois de validar, adicionar filtro conforme necessário
-    // const situacoesValidas = [15, 24]; // atendido e faturado
-    // const idsSituacoesParam = situacoesValidas.map(id => `idsSituacoes[]=${id}`).join('&');
+    // Buscar situações válidas do banco de dados
+    const situacoesValidas = await db.getValidOrderStatuses(userId);
+    const situacoesIds = situacoesValidas
+      .filter(s => s.isActive)
+      .map(s => s.statusId);
+    console.log(`[Bling] Situações válidas para sincronização:`, situacoesIds);
     
     let synced = 0;
     let errors = 0;
@@ -788,11 +790,11 @@ export async function syncSales(
               }
             }
             
-            // TEMPORÁRIO: Removendo validação de situações para buscar TODOS os pedidos
-            // if (!situacoesValidas.includes(pedido.situacao.id)) {
-            //   console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação não válida`);
-            //   continue;
-            // }
+            // Validar situação do pedido
+            if (!situacoesIds.includes(pedido.situacao.id)) {
+              console.log(`[Bling] Pedido ${pedido.numero} ignorado - situação ${pedido.situacao.id} não está na lista de válidas`);
+              continue;
+            }
             
             // Calcular total do pedido
             // Usar campo 'total' da API se disponível, senão calcular dos itens
