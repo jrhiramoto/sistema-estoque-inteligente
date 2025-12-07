@@ -716,11 +716,19 @@ export async function syncSales(
     const dataFinal = new Date();
 
     // Buscar situações válidas do banco de dados
+    console.log(`[Bling] Buscando situações válidas para userId=${userId}...`);
     const situacoesValidas = await db.getValidOrderStatuses(userId);
+    console.log(`[Bling] Situações retornadas do banco:`, situacoesValidas);
+    
     const situacoesIds = situacoesValidas
       .filter(s => s.isActive)
       .map(s => s.statusId);
-    console.log(`[Bling] Situações válidas para sincronização:`, situacoesIds);
+    console.log(`[Bling] Situações válidas (ativas) para sincronização:`, situacoesIds);
+    
+    if (situacoesIds.length === 0) {
+      console.error('[Bling] ❌ ERRO: Nenhuma situação válida encontrada! Sincronização abortada.');
+      throw new Error('Nenhuma situação de pedido válida configurada. Configure os status válidos antes de sincronizar.');
+    }
     
     let synced = 0;
     let errors = 0;

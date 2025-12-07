@@ -48,9 +48,20 @@ export function getCurrentSync() {
 /**
  * Atualiza o progresso da sincronização atual
  */
-export function updateProgress(current: number, total: number | null, message: string) {
+export async function updateProgress(current: number, total: number | null, message: string, historyId?: number) {
   if (syncLock.currentSync) {
     syncLock.currentSync.progress = { current, total: total || 0, message };
+  }
+  
+  // Atualizar banco de dados a cada 100 itens ou quando total for conhecido
+  if (historyId && (current % 100 === 0 || (total && current === total))) {
+    try {
+      await db.updateSyncHistory(historyId, {
+        itemsSynced: current,
+      });
+    } catch (error) {
+      console.error(`[SyncManager] Erro ao atualizar progresso no banco:`, error);
+    }
   }
 }
 
@@ -118,7 +129,13 @@ export async function executeSync(
     triggeredBy,
   });
   
-  await executeSyncInternal(userId, syncType, triggeredBy, historyId);
+  // Executar sincronização em background (não aguardar conclusão)
+  // O lock será liberado quando a sincronização terminar
+  executeSyncInternal(userId, syncType, triggeredBy, historyId)
+    .catch(error => {
+      console.error(`[SyncManager] Erro não tratado em executeSyncInternal:`, error);
+      releaseLock();
+    });
   
   return {
     success: true,
@@ -137,44 +154,49 @@ async function executeSyncInternal(
   triggeredBy: "manual" | "scheduled" | "webhook",
   historyId: number
 ) {
+  console.log(`[SyncManager] 🚀 Iniciando executeSyncInternal: syncType=${syncType}, userId=${userId}, historyId=${historyId}`);
+  
   try {
     let result: any;
+    console.log(`[SyncManager] Entrando no switch para syncType=${syncType}...`);
     
     switch (syncType) {
       case "products":
         result = await blingService.syncProducts(userId, false, (current, total, message) => {
-          updateProgress(current, total, message);
+          updateProgress(current, total, message, historyId);
         });
         break;
       case "inventory":
         result = await blingService.syncInventory(userId, (current, total, message) => {
-          updateProgress(current, total, message);
+          updateProgress(current, total, message, historyId);
         });
         break;
       case "sales":
+        console.log(`[SyncManager] Chamando blingService.syncSales(userId=${userId}, incremental=false)...`);
         result = await blingService.syncSales(userId, false, (current, total, message) => {
-          updateProgress(current, total, message);
+          updateProgress(current, total, message, historyId);
         });
+        console.log(`[SyncManager] syncSales retornou:`, result);
         break;
       case "suppliers":
         result = await syncAllProductSuppliers(
           userId,
           blingService.blingRequest,
           (current, total) => {
-            updateProgress(current, total, `Fornecedores: ${current}/${total} produtos processados`);
+            updateProgress(current, total, `Fornecedores: ${current}/${total} produtos processados`, historyId);
           }
         );
         break;
       case "full":
         // Sincronização completa (produtos + estoque + vendas + fornecedores)
         const products = await blingService.syncProducts(userId, false, (current, total, message) => {
-          updateProgress(current, total, `Produtos: ${message}`);
+          updateProgress(current, total, `Produtos: ${message}`, historyId);
         });
         const inventory = await blingService.syncInventory(userId, (current, total, message) => {
-          updateProgress(current, total, `Estoque: ${message}`);
+          updateProgress(current, total, `Estoque: ${message}`, historyId);
         });
         const sales = await blingService.syncSales(userId, false, (current, total, message) => {
-          updateProgress(current, total, `Vendas: ${message}`);
+          updateProgress(current, total, `Vendas: ${message}`, historyId);
         });
         
         // Sincronizar fornecedores de produtos
@@ -183,7 +205,7 @@ async function executeSyncInternal(
           userId,
           blingService.blingRequest,
           (current, total) => {
-            updateProgress(current, total, `Fornecedores: ${current}/${total} produtos processados`);
+            updateProgress(current, total, `Fornecedores: ${current}/${total} produtos processados`, historyId);
           }
         );
         console.log(`[Sync] Fornecedores sincronizados: ${suppliers.totalSuppliers} de ${suppliers.totalProducts} produtos`);

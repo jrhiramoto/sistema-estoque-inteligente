@@ -1471,3 +1471,4 @@ Sistema agora notifica APENAS quando:
 - [x] Resolver definitivamente notificações repetidas de token expirado
 - [x] Corrigir erro HTML ao invés de JSON na página de configurações
 - [x] Corrigir discrepância entre dados de vendas do Bling e sistema
+- [x] Identificar e corrigir causa da falha na sincronização de vendas
