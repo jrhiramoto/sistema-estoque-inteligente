@@ -69,12 +69,15 @@ export default function AbcAnalysis() {
   const calculateMutation = trpc.abc.calculate.useMutation({
     onSuccess: (result) => {
       if (result.success) {
-        toast.success("Análise ABC calculada com sucesso!", {
-          description: `${result.stats?.totalProducts} produtos classificados`,
+        toast.success("Cálculo ABC iniciado!", {
+          description: result.message || "Aguarde alguns minutos para conclusão",
         });
-        refetchCounts();
-        refetchProducts();
-        refetchStockMetrics();
+        // Refetch após 5 segundos para dar tempo do cálculo background processar
+        setTimeout(() => {
+          refetchCounts();
+          refetchProducts();
+          refetchStockMetrics();
+        }, 5000);
       } else {
         toast.error("Erro ao calcular análise ABC", {
           description: result.message,

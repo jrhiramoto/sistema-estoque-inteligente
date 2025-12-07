@@ -26,6 +26,7 @@ function Router() {
       <Route path={"/api-monitoring"} component={ApiMonitoring} />
       <Route path={"/debug"} component={Debug} />
       <Route path={"/analise-abc"} component={AbcAnalysis} />
+      <Route path={"/abc"} component={AbcAnalysis} />
       <Route path={"/abc/report/:class"} component={AbcClassReport} />
       <Route path={"/replenishment"} component={Replenishment} />
       <Route path={"/404"} component={NotFound} />

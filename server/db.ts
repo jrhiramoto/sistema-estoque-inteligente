@@ -1353,7 +1353,9 @@ export async function calculateAbcClassification(userId: number) {
     }
     
     // Atualizar produtos no banco
+    console.log(`[ABC] Iniciando atualização de ${classifications.length} produtos...`);
     const now = new Date();
+    let updated = 0;
     for (const classification of classifications) {
       await db
         .update(products)
@@ -1365,7 +1367,13 @@ export async function calculateAbcClassification(userId: number) {
           updatedAt: now,
         })
         .where(eq(products.id, classification.productId));
+      
+      updated++;
+      if (updated % 1000 === 0) {
+        console.log(`[ABC] Progresso: ${updated}/${classifications.length} produtos atualizados (${Math.round(updated/classifications.length*100)}%)`);
+      }
     }
+    console.log(`[ABC] Todos os ${classifications.length} produtos atualizados!`);
     
     // Salvar histórico para análise de evolução temporal
     console.log('[ABC] Salvando histórico de classificações...');

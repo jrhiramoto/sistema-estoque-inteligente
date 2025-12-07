@@ -1474,3 +1474,6 @@ Sistema agora notifica APENAS quando:
 - [x] Identificar e corrigir causa da falha na sincronização de vendas
 - [x] Corrigir erros de queries tRPC em todas as páginas
 - [x] Corrigir deslocamento de 1 mês nas datas de vendas
+- [ ] Ajustar visualização de cards mensais para mostrar 12 meses
+- [ ] Validar todos os cálculos que dependem de dados de vendas
+- [ ] Corrigir timeout no cálculo ABC

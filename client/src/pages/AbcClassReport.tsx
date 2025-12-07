@@ -583,7 +583,7 @@ function ProductRow({
                 Vendas Mensais (Últimos 12 Meses)
               </h4>
               {salesData && salesData.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {salesData.map((sale: any) => {
                     // Parsear mês diretamente da string para evitar problemas de timezone
                     const [year, month] = sale.month.split('-');

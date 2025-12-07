@@ -760,7 +760,19 @@ export const appRouter = router({
       }),
     
     calculate: protectedProcedure.mutation(async ({ ctx }) => {
-      return await db.calculateAbcClassification(ctx.user.id);
+      // Executar em background (fire-and-forget) sem bloquear resposta
+      db.calculateAbcClassification(ctx.user.id)
+        .then(result => {
+          console.log('[ABC] Cálculo concluído:', result);
+        })
+        .catch(error => {
+          console.error('[ABC] Erro no cálculo:', error);
+        });
+      
+      return { 
+        success: true, 
+        message: 'Cálculo ABC iniciado. Aguarde alguns minutos para conclusão.' 
+      };
     }),
     
     getDistribution: protectedProcedure.query(async () => {
