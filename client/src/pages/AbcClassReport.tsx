@@ -584,13 +584,16 @@ function ProductRow({
               </h4>
               {salesData && salesData.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {salesData.map((sale: any) => (
+                  {salesData.map((sale: any) => {
+                    // Parsear mês diretamente da string para evitar problemas de timezone
+                    const [year, month] = sale.month.split('-');
+                    const monthNames = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+                    const monthLabel = `${monthNames[parseInt(month) - 1]}. de ${year}`;
+                    
+                    return (
                     <Card key={sale.month} className="p-3">
                       <div className="text-xs text-muted-foreground mb-1">
-                        {new Date(sale.month + '-01').toLocaleDateString('pt-BR', { 
-                          month: 'short', 
-                          year: 'numeric' 
-                        })}
+                        {monthLabel}
                       </div>
                       <div className="font-semibold">{sale.quantity} un</div>
                       <div className="text-xs text-muted-foreground">
@@ -601,7 +604,8 @@ function ProductRow({
                         }).format(sale.revenue)}
                       </div>
                     </Card>
-                  ))}
+                  );
+                  })}
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground py-4 text-center">
