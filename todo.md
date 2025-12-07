@@ -1469,3 +1469,4 @@ Sistema agora notifica APENAS quando:
 - [ ] Produtos novos (< 90 dias): Tratamento especial, não classificar como D automaticamente
 - [x] Adicionar botão de retorno ao dashboard em todas as páginas
 - [x] Resolver definitivamente notificações repetidas de token expirado
+- [x] Corrigir erro HTML ao invés de JSON na página de configurações

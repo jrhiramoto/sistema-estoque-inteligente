@@ -23,7 +23,11 @@ export default function Settings() {
   
   const { data: config, isLoading } = trpc.bling.getConfig.useQuery(
     undefined,
-    { enabled: !!user }
+    { 
+      enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
   );
   
   // Query para status da sincronização (polling a cada 2 segundos quando está rodando)
@@ -31,6 +35,8 @@ export default function Settings() {
     undefined,
     {
       enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false,
       refetchInterval: (query) => {
         // Se está sincronizando, atualizar a cada 2 segundos
         return query?.state?.data?.isRunning ? 2000 : false;
@@ -41,7 +47,11 @@ export default function Settings() {
   // Query para configuração de sincronização automática
   const { data: syncConfig } = trpc.bling.getSyncConfig.useQuery(
     undefined,
-    { enabled: !!user }
+    { 
+      enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
   );
   
   const hasConfig = config !== null && config !== undefined;
@@ -159,7 +169,11 @@ export default function Settings() {
   
   const { data: webhooks } = trpc.bling.listWebhooks.useQuery(
     undefined,
-    { enabled: !!user && hasConfig }
+    { 
+      enabled: !!user && hasConfig,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
   );
   
   const saveSyncConfig = trpc.bling.saveSyncConfig.useMutation({
@@ -174,7 +188,11 @@ export default function Settings() {
   
   const listOrderSituations = trpc.bling.listOrderSituations.useQuery(
     undefined,
-    { enabled: false } // Só executa quando chamado manualmente
+    { 
+      enabled: false, // Só executa quando chamado manualmente
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
   );
   
   const testFetchOrders = trpc.bling.testFetchOrders.useMutation({
@@ -1087,7 +1105,15 @@ export default function Settings() {
  * Componente para configurar pesos da análise ABC
  */
 function ABCWeightsConfig() {
-  const { data: config, isLoading } = trpc.abc.getConfig.useQuery();
+  const { user } = useAuth();
+  const { data: config, isLoading } = trpc.abc.getConfig.useQuery(
+    undefined,
+    {
+      enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  );
   const updateConfig = trpc.abc.updateConfig.useMutation();
   const utils = trpc.useUtils();
   
