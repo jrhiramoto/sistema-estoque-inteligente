@@ -60,9 +60,15 @@ export default function Orders() {
     offset: page * ITEMS_PER_PAGE,
     search: debouncedSearch || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
+  }, {
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
-  const { data: stats } = trpc.orders.stats.useQuery();
+  const { data: stats } = trpc.orders.stats.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
   const orders = data?.orders || [];
   const total = data?.total || 0;

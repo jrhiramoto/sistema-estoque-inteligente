@@ -1472,3 +1472,4 @@ Sistema agora notifica APENAS quando:
 - [x] Corrigir erro HTML ao invés de JSON na página de configurações
 - [x] Corrigir discrepância entre dados de vendas do Bling e sistema
 - [x] Identificar e corrigir causa da falha na sincronização de vendas
+- [x] Corrigir erros de queries tRPC em todas as páginas

@@ -93,6 +93,9 @@ export default function AbcClassReport() {
     orderBy,
     orderDirection,
     filters,
+  }, {
+    retry: false,
+    refetchOnWindowFocus: false,
   });
   
   // Calcular informações de paginação

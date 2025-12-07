@@ -14,7 +14,11 @@ export default function Alerts() {
   
   const { data: alerts, isLoading } = trpc.alerts.list.useQuery(
     undefined,
-    { enabled: !!user }
+    { 
+      enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
   );
 
   const resolveAlert = trpc.alerts.resolve.useMutation({

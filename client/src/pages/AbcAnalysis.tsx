@@ -34,16 +34,34 @@ export default function AbcAnalysis() {
   const [classFilter, setClassFilter] = useState<AbcClass>(null);
   const [sortBy, setSortBy] = useState<"revenue" | "name">("revenue");
 
-  const { data: config, isLoading: configLoading } = trpc.abc.getConfig.useQuery();
-  const { data: autoConfig } = trpc.abc.getAutoCalculationConfig.useQuery();
-  const { data: distribution } = trpc.abc.getDistribution.useQuery();
-  const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = trpc.abc.getCounts.useQuery();
-  const { data: stockMetrics, isLoading: stockMetricsLoading, refetch: refetchStockMetrics } = trpc.abc.getStockMetrics.useQuery();
+  const { data: config, isLoading: configLoading } = trpc.abc.getConfig.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const { data: autoConfig } = trpc.abc.getAutoCalculationConfig.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const { data: distribution } = trpc.abc.getDistribution.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = trpc.abc.getCounts.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const { data: stockMetrics, isLoading: stockMetricsLoading, refetch: refetchStockMetrics } = trpc.abc.getStockMetrics.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
   const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = trpc.abc.getProducts.useQuery({
     limit: 1000,
     sortBy: sortBy,
     search: searchTerm || undefined,
     classFilter: classFilter || undefined,
+  }, {
+    retry: false,
+    refetchOnWindowFocus: false,
   });
   
   const products = productsData?.products || [];

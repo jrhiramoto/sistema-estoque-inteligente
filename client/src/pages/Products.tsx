@@ -48,7 +48,11 @@ export default function Products() {
       page,
       limit,
     },
-    { enabled: !!user }
+    { 
+      enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
   );
 
   const products = data?.products || [];
