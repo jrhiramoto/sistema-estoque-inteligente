@@ -1488,3 +1488,8 @@ Sistema agora notifica APENAS quando:
   - [x] Score ponderado final (que determinou a posição no ranking)
 - [x] Modificar backend getProductsByAbcClass para retornar métricas de classificação
 - [x] Atualizar interface do relatório para exibir métricas em formato visual claro
+
+## Bug - Badges de Classe ABC
+
+- [x] Corrigir erro 404 ao clicar nos badges de classe na página de Análise ABC
+- [x] Verificar URLs dos links nos badges (devem usar /abc/class/:class)

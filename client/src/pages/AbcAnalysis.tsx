@@ -353,7 +353,7 @@ export default function AbcAnalysis() {
 
       {/* Distribuição por Classe */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/abc/report/A">
+        <Link href="/abc/class/A">
           <Card className="border-green-200 bg-green-50 cursor-pointer hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -404,7 +404,7 @@ export default function AbcAnalysis() {
           </Card>
         </Link>
 
-        <Link href="/abc/report/B">
+        <Link href="/abc/class/B">
           <Card className="border-blue-200 bg-blue-50 cursor-pointer hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -455,7 +455,7 @@ export default function AbcAnalysis() {
           </Card>
         </Link>
 
-        <Link href="/abc/report/C">
+        <Link href="/abc/class/C">
           <Card className="border-yellow-200 bg-yellow-50 cursor-pointer hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -506,7 +506,7 @@ export default function AbcAnalysis() {
           </Card>
         </Link>
 
-        <Link href="/abc/report/D">
+        <Link href="/abc/class/D">
           <Card className="border-gray-200 bg-gray-50 cursor-pointer hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
