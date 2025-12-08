@@ -1522,3 +1522,11 @@ Sistema agora notifica APENAS quando:
 - [x] Implementar flexbox wrap para badges quebrarem linha automaticamente
 - [x] Garantir que número de meses exibidos corresponda ao período configurado (analysisMonths dinâmico)
 - [x] Validar responsividade de todos os dados ao alterar período em configurações
+
+## Bugs Urgentes - Badges e Faturamento ABC
+
+- [ ] Badges de vendas mensais mostrando apenas 6 de 12 meses (faltam 6 meses)
+- [ ] Query getMonthlySalesByProduct precisa retornar TODOS os meses do período, incluindo meses com vendas zero
+- [ ] Faturamento ABC incorreto - está mostrando R$ 17,33 ao invés da soma dos 12 meses (R$ 1.733,20)
+- [ ] Verificar cálculo de abcRevenue - deve somar faturamento de TODOS os meses do período
+- [ ] Ajustar largura mínima das badges para garantir que 12 meses caibam com quebra de linha

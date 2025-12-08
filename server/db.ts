@@ -1188,7 +1188,7 @@ export async function calculateProductRevenue(userId: number, months: number) {
   const result = await db
     .select({
       productId: sales.productId,
-      totalRevenue: sql<number>`SUM(${sales.totalPrice}) / 100`.as('totalRevenue'),
+      totalRevenue: sql<number>`SUM(${sales.totalPrice})`.as('totalRevenue'),
       totalQuantity: sql<number>`SUM(${sales.quantity})`.as('totalQuantity'),
       totalOrders: sql<number>`COUNT(DISTINCT ${sales.blingOrderId})`.as('totalOrders'),
     })
@@ -2226,14 +2226,25 @@ export async function getMonthlySalesByProduct(productId: number, months: number
   const db = await getDb();
   if (!db) return [];
   
+  // Gerar lista de todos os meses do período
+  const allMonths: Array<{ month: string; quantity: number; revenue: number }> = [];
+  const now = new Date();
+  
+  for (let i = 0; i < months; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    allMonths.push({ month: monthStr, quantity: 0, revenue: 0 });
+  }
+  
+  // Buscar vendas reais do período
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - months);
   
-  const monthlySales = await db
+  const actualSales = await db
     .select({
-      month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m') as month`,
-      quantity: sql<number>`SUM(${sales.quantity}) as quantity`,
-      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice}) / 100 as revenue`,
+      month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`,
+      quantity: sql<number>`SUM(${sales.quantity})`,
+      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice}) / 100`,
     })
     .from(sales)
     .where(
@@ -2242,10 +2253,16 @@ export async function getMonthlySalesByProduct(productId: number, months: number
         sql`${sales.saleDate} >= ${startDate}`
       )
     )
-    .groupBy(sql`month`)
-    .orderBy(sql`month DESC`);
+    .groupBy(sql`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`);
   
-  return monthlySales;
+  // Mesclar vendas reais com todos os meses
+  const salesMap = new Map(actualSales.map(s => [s.month, s]));
+  
+  return allMonths.map(m => ({
+    month: m.month,
+    quantity: salesMap.get(m.month)?.quantity || 0,
+    revenue: salesMap.get(m.month)?.revenue || 0,
+  }));
 }
 
 
