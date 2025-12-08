@@ -2243,7 +2243,7 @@ export async function getMonthlySalesByProduct(productId: number, months: number
       )
     )
     .groupBy(sql`month`)
-    .orderBy(sql`month`);
+    .orderBy(sql`month DESC`);
   
   return monthlySales;
 }

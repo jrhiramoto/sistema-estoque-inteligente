@@ -1511,3 +1511,14 @@ Sistema agora notifica APENAS quando:
 - [x] Ajustar cards de vendas mensais para mobile (2 colunas)
 - [x] Testar em diferentes resoluções (mobile, tablet, desktop)
 - [x] Garantir que todas as páginas futuras sejam mobile-first
+
+## Bugs Críticos - Relatório ABC por Classe
+
+- [x] Corrigir cálculo de faturamento ABC (backend já retorna em reais, removida divisão dupla)
+- [x] Investigar query abcRevenue - backend divide por 100, frontend não deve dividir novamente
+- [x] Corrigir ordenação dos meses nas badges de vendas (ORDER BY month DESC implementado)
+- [x] Ajustar layout das badges de vendas mensais para quebrar linha (flex-wrap implementado)
+- [x] Reduzir tamanho das badges para caber mais por linha (min-width: 110px)
+- [x] Implementar flexbox wrap para badges quebrarem linha automaticamente
+- [x] Garantir que número de meses exibidos corresponda ao período configurado (analysisMonths dinâmico)
+- [x] Validar responsividade de todos os dados ao alterar período em configurações

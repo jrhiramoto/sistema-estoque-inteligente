@@ -86,6 +86,10 @@ export default function AbcClassReport() {
   
   const config = CLASS_CONFIG[abcClass];
   
+  // Query configuração ABC para obter analysisMonths
+  const { data: abcConfig } = trpc.abc.getConfig.useQuery();
+  const analysisMonths = abcConfig?.analysisMonths || 12;
+  
   // Query produtos da classe
   const { data, isLoading } = trpc.abc.getProductsByClass.useQuery({
     abcClass,
@@ -459,6 +463,7 @@ export default function AbcClassReport() {
                     product={product}
                     isExpanded={expandedProducts.has(product.id)}
                     onToggle={() => toggleExpand(product.id)}
+                    analysisMonths={analysisMonths}
                   />
                 ))
               )}
@@ -542,14 +547,16 @@ export default function AbcClassReport() {
 function ProductRow({ 
   product, 
   isExpanded, 
-  onToggle 
+  onToggle,
+  analysisMonths 
 }: { 
   product: any; 
   isExpanded: boolean; 
   onToggle: () => void;
+  analysisMonths: number;
 }) {
   const { data: salesData } = trpc.abc.getMonthlySales.useQuery(
-    { productId: product.id, months: 12 },
+    { productId: product.id, months: analysisMonths },
     { enabled: isExpanded }
   );
   
@@ -665,10 +672,10 @@ function ProductRow({
               <div>
                 <h4 className="font-semibold mb-4 flex items-center gap-2 text-base">
                   <TrendingUp className="h-5 w-5" />
-                  Vendas Mensais (Últimos 12 Meses)
+                  Vendas Mensais (Últimos {analysisMonths} Meses)
                 </h4>
               {salesData && salesData.length > 0 ? (
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                <div className="flex flex-wrap gap-2">
                   {salesData.map((sale: any) => {
                     // Parsear mês diretamente da string para evitar problemas de timezone
                     const [year, month] = sale.month.split('-');
@@ -676,7 +683,7 @@ function ProductRow({
                     const monthLabel = `${monthNames[parseInt(month) - 1]}. de ${year}`;
                     
                     return (
-                    <Card key={sale.month} className="p-2.5">
+                    <Card key={sale.month} className="p-2 min-w-[110px] flex-shrink-0">
                       <div className="text-[11px] text-muted-foreground mb-1 font-medium">
                         {monthLabel}
                       </div>
