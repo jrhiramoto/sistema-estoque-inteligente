@@ -1501,3 +1501,13 @@ Sistema agora notifica APENAS quando:
 - [x] Exibir cards coloridos com badges de peso para cada métrica
 - [x] Melhorar layout dos cards de vendas mensais (reduzir tamanho, garantir 12 meses visíveis)
 - [x] Aumentar fonte dos textos nos cards de vendas mensais
+
+## Correção de Overflow e Responsividade Mobile - Relatório ABC
+
+- [x] Corrigir overflow horizontal na tabela (colunas Fornecedor e Faturamento cortadas)
+- [x] Adicionar scroll horizontal na tabela para desktop
+- [x] Implementar layout responsivo mobile com cards empilhados ao invés de tabela
+- [x] Ajustar cards de métricas ABC para empilhar em mobile (1 coluna)
+- [x] Ajustar cards de vendas mensais para mobile (2 colunas)
+- [x] Testar em diferentes resoluções (mobile, tablet, desktop)
+- [x] Garantir que todas as páginas futuras sejam mobile-first

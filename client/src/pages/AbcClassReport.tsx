@@ -313,6 +313,7 @@ export default function AbcClassReport() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -463,6 +464,7 @@ export default function AbcClassReport() {
               )}
             </TableBody>
           </Table>
+          </div>
           
           {/* Controles de Paginação */}
           {data && data.total > 0 && (
