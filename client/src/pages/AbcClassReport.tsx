@@ -356,17 +356,34 @@ export default function AbcClassReport() {
                   </button>
                 </TableHead>
                 <TableHead className="text-right">
-                  <button
-                    onClick={() => handleSort('virtualStock')}
-                    className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors"
-                  >
-                    Estoque Virtual
-                    {orderBy === 'virtualStock' ? (
-                      orderDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                    ) : (
-                      <ArrowUpDown className="h-4 w-4 opacity-50" />
-                    )}
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    Qtd. Vendida
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-semibold mb-1">Quantidade Total Vendida</p>
+                        <p className="text-xs">Total de unidades vendidas no período de análise</p>
+                        <p className="text-xs text-muted-foreground mt-1">Métrica usada na classificação ABC (peso 30%)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    Nº Pedidos
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-semibold mb-1">Número de Pedidos</p>
+                        <p className="text-xs">Quantidade de pedidos distintos que incluíram este produto</p>
+                        <p className="text-xs text-muted-foreground mt-1">Métrica usada na classificação ABC (peso 20%)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </TableHead>
                 <TableHead className="text-right">
                   <div className="flex items-center justify-end gap-1">
@@ -429,7 +446,7 @@ export default function AbcClassReport() {
             <TableBody>
               {data?.products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     Nenhum produto encontrado nesta classe
                   </TableCell>
                 </TableRow>
@@ -550,8 +567,11 @@ function ProductRow({
         <TableCell className="text-right font-medium">
           {product.physicalStock?.toLocaleString('pt-BR') || 0}
         </TableCell>
-        <TableCell className="text-right">
-          {Number(product.virtualStock || 0).toLocaleString('pt-BR')}
+        <TableCell className="text-right font-medium text-orange-600">
+          {Number(product.totalQuantitySold || 0).toLocaleString('pt-BR')}
+        </TableCell>
+        <TableCell className="text-right font-medium text-indigo-600">
+          {Number(product.totalOrders || 0).toLocaleString('pt-BR')}
         </TableCell>
         <TableCell className="text-right font-medium text-blue-600">
           {Number(product.averageMonthlySales || 0).toFixed(1)}
@@ -576,7 +596,7 @@ function ProductRow({
       
       {isExpanded && (
         <TableRow>
-          <TableCell colSpan={9} className="bg-muted/30">
+          <TableCell colSpan={10} className="bg-muted/30">
             <div className="py-4 px-2">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />

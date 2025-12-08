@@ -2150,8 +2150,21 @@ export async function getProductsByAbcClass(
           ELSE 0
         END
       )`,
+      // Métricas de classificação ABC (para entender posição no ranking)
+      totalQuantitySold: sql<number>`(
+        SELECT COALESCE(SUM(s.quantity), 0)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      )`,
+      totalOrders: sql<number>`(
+        SELECT COUNT(DISTINCT s.blingOrderId)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      )`,
+      abcScore: sql<number>`${products.abcPercentage} / 100`,
       physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
-      virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
       supplierName: productSuppliers.supplierName,
       supplierId: productSuppliers.supplierId,
     })

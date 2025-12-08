@@ -1477,3 +1477,14 @@ Sistema agora notifica APENAS quando:
 - [ ] Ajustar visualização de cards mensais para mostrar 12 meses
 - [ ] Validar todos os cálculos que dependem de dados de vendas
 - [ ] Corrigir timeout no cálculo ABC
+
+## Melhorias no Relatório ABC por Classe
+
+- [x] Remover coluna "Estoque Virtual" duplicada (manter apenas "Estoque Físico")
+- [x] Adicionar métricas individuais de classificação para cada produto:
+  - [x] Faturamento total no período
+  - [x] Quantidade vendida total
+  - [x] Número de pedidos
+  - [x] Score ponderado final (que determinou a posição no ranking)
+- [x] Modificar backend getProductsByAbcClass para retornar métricas de classificação
+- [x] Atualizar interface do relatório para exibir métricas em formato visual claro
