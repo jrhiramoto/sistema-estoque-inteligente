@@ -1493,3 +1493,11 @@ Sistema agora notifica APENAS quando:
 
 - [x] Corrigir erro 404 ao clicar nos badges de classe na página de Análise ABC
 - [x] Verificar URLs dos links nos badges (devem usar /abc/class/:class)
+
+## Melhorias na Visualização de Métricas ABC
+
+- [x] Adicionar visualização do peso percentual de cada métrica (Faturamento 50%, Qtd. Vendida 30%, Nº Pedidos 20%)
+- [x] Calcular contribuição individual de cada métrica para o score final
+- [x] Exibir cards coloridos com badges de peso para cada métrica
+- [x] Melhorar layout dos cards de vendas mensais (reduzir tamanho, garantir 12 meses visíveis)
+- [x] Aumentar fonte dos textos nos cards de vendas mensais

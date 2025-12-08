@@ -2164,6 +2164,20 @@ export async function getProductsByAbcClass(
           AND s.saleDate >= ${startDate}
       )`,
       abcScore: sql<number>`${products.abcPercentage} / 100`,
+      // Peso percentual de cada métrica (normalizado e ponderado)
+      revenueContribution: sql<number>`${products.abcRevenue}`,
+      quantityContribution: sql<number>`(
+        SELECT COALESCE(SUM(s.quantity), 0)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      )`,
+      ordersContribution: sql<number>`(
+        SELECT COUNT(DISTINCT s.blingOrderId)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      )`,
       physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
       supplierName: productSuppliers.supplierName,
       supplierId: productSuppliers.supplierId,

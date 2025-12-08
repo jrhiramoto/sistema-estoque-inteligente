@@ -18,6 +18,7 @@ import {
   ArrowDown,
   Download,
   Filter,
+  BarChart3,
   X,
   ChevronLeft,
   ChevronsLeft,
@@ -597,13 +598,75 @@ function ProductRow({
       {isExpanded && (
         <TableRow>
           <TableCell colSpan={10} className="bg-muted/30">
-            <div className="py-4 px-2">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Vendas Mensais (Últimos 12 Meses)
-              </h4>
+            <div className="py-4 px-2 space-y-6">
+              {/* Peso das Métricas ABC */}
+              <div>
+                <h4 className="font-semibold mb-4 flex items-center gap-2 text-base">
+                  <BarChart3 className="h-5 w-5" />
+                  Contribuição de Cada Métrica para Classificação ABC
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Faturamento - 50% */}
+                  <Card className="p-4 border-green-200 bg-green-50/50">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Faturamento</span>
+                        <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded">Peso: 50%</span>
+                      </div>
+                      <div className="text-2xl font-bold text-green-700">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.abcRevenue || 0)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Faturamento total no período de análise
+                      </div>
+                    </div>
+                  </Card>
+                  
+                  {/* Quantidade Vendida - 30% */}
+                  <Card className="p-4 border-orange-200 bg-orange-50/50">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Qtd. Vendida</span>
+                        <span className="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-0.5 rounded">Peso: 30%</span>
+                      </div>
+                      <div className="text-2xl font-bold text-orange-700">
+                        {(product.totalQuantitySold || 0).toLocaleString('pt-BR')} un
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Quantidade total vendida no período
+                      </div>
+                    </div>
+                  </Card>
+                  
+                  {/* Número de Pedidos - 20% */}
+                  <Card className="p-4 border-indigo-200 bg-indigo-50/50">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Nº Pedidos</span>
+                        <span className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">Peso: 20%</span>
+                      </div>
+                      <div className="text-2xl font-bold text-indigo-700">
+                        {(product.totalOrders || 0).toLocaleString('pt-BR')}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Pedidos distintos no período
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground italic">
+                  ℹ️ Estes três fatores são normalizados e ponderados para calcular o score final que determina a posição do produto no ranking ABC.
+                </div>
+              </div>
+              
+              {/* Vendas Mensais */}
+              <div>
+                <h4 className="font-semibold mb-4 flex items-center gap-2 text-base">
+                  <TrendingUp className="h-5 w-5" />
+                  Vendas Mensais (Últimos 12 Meses)
+                </h4>
               {salesData && salesData.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {salesData.map((sale: any) => {
                     // Parsear mês diretamente da string para evitar problemas de timezone
                     const [year, month] = sale.month.split('-');
@@ -611,12 +674,12 @@ function ProductRow({
                     const monthLabel = `${monthNames[parseInt(month) - 1]}. de ${year}`;
                     
                     return (
-                    <Card key={sale.month} className="p-3">
-                      <div className="text-xs text-muted-foreground mb-1">
+                    <Card key={sale.month} className="p-2.5">
+                      <div className="text-[11px] text-muted-foreground mb-1 font-medium">
                         {monthLabel}
                       </div>
-                      <div className="font-semibold">{sale.quantity} un</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="font-semibold text-sm">{sale.quantity} un</div>
+                      <div className="text-[11px] text-muted-foreground font-medium">
                         {new Intl.NumberFormat('pt-BR', { 
                           style: 'currency', 
                           currency: 'BRL',
@@ -632,6 +695,7 @@ function ProductRow({
                   Sem dados de vendas nos últimos 12 meses
                 </div>
               )}
+              </div>
             </div>
           </TableCell>
         </TableRow>
