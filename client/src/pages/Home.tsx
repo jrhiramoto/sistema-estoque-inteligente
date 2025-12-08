@@ -21,7 +21,11 @@ export default function Home() {
   const { user, loading } = useAuth();
   const { data: overview, isLoading: overviewLoading } = trpc.dashboard.overview.useQuery(
     undefined,
-    { enabled: !!user }
+    { 
+      enabled: !!user,
+      retry: false,
+      refetchOnWindowFocus: false
+    }
   );
 
   if (loading) {

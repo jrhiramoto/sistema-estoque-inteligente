@@ -1537,3 +1537,11 @@ Sistema agora notifica APENAS quando:
 - [x] Query antiga reescrita usando raw SQL com db.execute() para evitar sql_mode=only_full_group_by
 - [x] Cast TypeScript corrigido usando unknown intermediário
 - [x] Query executa sem erros e retorna todos os 12 meses incluindo zeros
+
+
+## Erro na Página Inicial (Dashboard)
+
+- [x] Corrigir 3 erros "Unexpected token '<'" na página /
+- [x] Identificar quais queries tRPC estão retornando HTML ao invés de JSON (trpc.dashboard.overview.useQuery)
+- [x] Aplicar retry:false e refetchOnWindowFocus:false nas queries problemáticas
+- [x] Validar que página inicial carrega sem erros
