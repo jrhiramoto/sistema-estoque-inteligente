@@ -1530,3 +1530,10 @@ Sistema agora notifica APENAS quando:
 - [ ] Faturamento ABC incorreto - está mostrando R$ 17,33 ao invés da soma dos 12 meses (R$ 1.733,20)
 - [ ] Verificar cálculo de abcRevenue - deve somar faturamento de TODOS os meses do período
 - [ ] Ajustar largura mínima das badges para garantir que 12 meses caibam com quebra de linha
+
+## Erro Crítico - Query getMonthlySalesByProduct
+
+- [x] Corrigir erro na query getMonthlySalesByProduct: "Failed query: select DATE_FORMAT..."
+- [x] Query antiga reescrita usando raw SQL com db.execute() para evitar sql_mode=only_full_group_by
+- [x] Cast TypeScript corrigido usando unknown intermediário
+- [x] Query executa sem erros e retorna todos os 12 meses incluindo zeros

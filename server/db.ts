@@ -2240,23 +2240,27 @@ export async function getMonthlySalesByProduct(productId: number, months: number
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - months);
   
-  const actualSales = await db
-    .select({
-      month: sql<string>`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`,
-      quantity: sql<number>`SUM(${sales.quantity})`,
-      revenue: sql<number>`SUM(${sales.quantity} * ${sales.unitPrice}) / 100`,
-    })
-    .from(sales)
-    .where(
-      and(
-        eq(sales.productId, productId),
-        sql`${sales.saleDate} >= ${startDate}`
-      )
-    )
-    .groupBy(sql`DATE_FORMAT(${sales.saleDate}, '%Y-%m')`);
+  // Usar raw SQL para evitar erro sql_mode=only_full_group_by
+  const result = await db.execute(sql`
+    SELECT 
+      DATE_FORMAT(saleDate, '%Y-%m') as month,
+      SUM(quantity) as quantity,
+      SUM(quantity * unitPrice) / 100 as revenue
+    FROM sales
+    WHERE productId = ${productId}
+      AND saleDate >= ${startDate}
+    GROUP BY DATE_FORMAT(saleDate, '%Y-%m')
+    ORDER BY month DESC
+  `);
+  
+  const rows = result[0] as unknown as Array<{
+    month: string;
+    quantity: number;
+    revenue: number;
+  }>;
   
   // Mesclar vendas reais com todos os meses
-  const salesMap = new Map(actualSales.map(s => [s.month, s]));
+  const salesMap = new Map(rows.map(s => [s.month, s]));
   
   return allMonths.map(m => ({
     month: m.month,

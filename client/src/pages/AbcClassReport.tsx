@@ -683,7 +683,7 @@ function ProductRow({
                     const monthLabel = `${monthNames[parseInt(month) - 1]}. de ${year}`;
                     
                     return (
-                    <Card key={sale.month} className="p-2 min-w-[110px] flex-shrink-0">
+                    <Card key={sale.month} className="p-2 min-w-[95px] flex-shrink-0">
                       <div className="text-[11px] text-muted-foreground mb-1 font-medium">
                         {monthLabel}
                       </div>
