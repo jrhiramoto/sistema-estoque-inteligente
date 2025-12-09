@@ -74,7 +74,7 @@ export default function AbcClassReport() {
   const params = useParams();
   const abcClass = (params.class?.toUpperCase() || "A") as AbcClass;
   const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
-  const [orderBy, setOrderBy] = useState<string>('physicalStock');
+  const [orderBy, setOrderBy] = useState<string>('relevanceScore');
   const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('desc');
   const [filters, setFilters] = useState<{
     lowStock?: boolean;

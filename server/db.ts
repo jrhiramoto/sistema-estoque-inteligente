@@ -2085,7 +2085,7 @@ export async function getAbcCalculationStats(userId: number) {
 // ===== ABC Class Report =====
 
 // Helper para mapear campo de ordenação para coluna SQL
-function getOrderByColumn(orderBy: string) {
+function getOrderByColumn(orderBy: string, startDate?: Date) {
   const columnMap: Record<string, any> = {
     code: products.code,
     name: products.name,
@@ -2093,8 +2093,23 @@ function getOrderByColumn(orderBy: string) {
     physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
     virtualStock: sql<number>`COALESCE(SUM(${inventory.virtualStock}), 0)`,
     supplierName: productSuppliers.supplierName,
+    relevanceScore: startDate ? sql<number>`(
+      (${products.abcRevenue} / 100) * 0.7 +
+      (
+        SELECT COALESCE(SUM(s.quantity), 0)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      ) * 0.2 +
+      (
+        SELECT COUNT(DISTINCT s.blingOrderId)
+        FROM sales s
+        WHERE s.productId = ${products.id}
+          AND s.saleDate >= ${startDate}
+      ) * 0.1
+    )` : products.abcRevenue,
   };
-  return columnMap[orderBy] || columnMap.physicalStock;
+  return columnMap[orderBy] || columnMap.relevanceScore;
 }
 
 export async function getProductsByAbcClass(
@@ -2130,6 +2145,22 @@ export async function getProductsByAbcClass(
       name: products.name,
       abcClass: products.abcClass,
       abcRevenue: sql<number>`${products.abcRevenue} / 100`,
+      // Score de relevância ponderado (faturamento 70% + quantidade 20% + frequência 10%)
+      relevanceScore: sql<number>`(
+        (${products.abcRevenue} / 100) * 0.7 +
+        (
+          SELECT COALESCE(SUM(s.quantity), 0)
+          FROM sales s
+          WHERE s.productId = ${products.id}
+            AND s.saleDate >= ${startDate}
+        ) * 0.2 +
+        (
+          SELECT COUNT(DISTINCT s.blingOrderId)
+          FROM sales s
+          WHERE s.productId = ${products.id}
+            AND s.saleDate >= ${startDate}
+        ) * 0.1
+      )`,
       // Média de vendas mensais (em tempo real)
       averageMonthlySales: sql<number>`(
         SELECT COALESCE(SUM(s.quantity), 0) / ${months}
@@ -2189,8 +2220,8 @@ export async function getProductsByAbcClass(
     .groupBy(products.id, productSuppliers.supplierName, productSuppliers.supplierId)
     .orderBy(
       orderDirection === 'desc'
-        ? desc(getOrderByColumn(orderBy))
-        : asc(getOrderByColumn(orderBy))
+        ? desc(getOrderByColumn(orderBy, startDate))
+        : asc(getOrderByColumn(orderBy, startDate))
     );
   
   // Aplicar filtros em JavaScript

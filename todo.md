@@ -1553,3 +1553,13 @@ Sistema agora notifica APENAS quando:
 - [x] Identificar quais queries tRPC estão falhando (abc.getConfig, abc.getProductsByClass, abc.getMonthlySales)
 - [x] Aplicar retry:false e refetchOnWindowFocus:false em todas as queries
 - [x] Validar que página carrega sem erros (997 produtos Classe A exibidos corretamente)
+
+
+## Ordenação por Relevância nas Listagens ABC
+
+- [x] Implementar cálculo de score de relevância no backend (campo relevanceScore)
+- [x] Score ponderado: faturamento (70%) + quantidade vendida (20%) + frequência de pedidos (10%)
+- [x] Modificar query getProductsByClass para ordenar por score (maior para menor)
+- [x] Produto mais relevante primeiro, menos relevante por último
+- [x] Testar ordenação em todas as classes (A, B testadas com sucesso)
+- [x] Validar que produtos com maior impacto aparecem no topo (Classe A: top produto R$ 25.935)

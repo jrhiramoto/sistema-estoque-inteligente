@@ -858,7 +858,7 @@ export const appRouter = router({
           input.abcClass,
           input.limit || 100,
           input.offset || 0,
-          input.orderBy || 'physicalStock',
+          input.orderBy || 'relevanceScore',
           input.orderDirection || 'desc',
           input.filters
         );
