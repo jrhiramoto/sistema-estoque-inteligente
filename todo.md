@@ -1545,3 +1545,11 @@ Sistema agora notifica APENAS quando:
 - [x] Identificar quais queries tRPC estão retornando HTML ao invés de JSON (trpc.dashboard.overview.useQuery)
 - [x] Aplicar retry:false e refetchOnWindowFocus:false nas queries problemáticas
 - [x] Validar que página inicial carrega sem erros
+
+
+## Erro na Página de Relatório ABC por Classe
+
+- [x] Corrigir 3 erros "Unexpected token '<'" na página /abc/class/:class
+- [x] Identificar quais queries tRPC estão falhando (abc.getConfig, abc.getProductsByClass, abc.getMonthlySales)
+- [x] Aplicar retry:false e refetchOnWindowFocus:false em todas as queries
+- [x] Validar que página carrega sem erros (997 produtos Classe A exibidos corretamente)

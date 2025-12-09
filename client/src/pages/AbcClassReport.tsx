@@ -87,7 +87,10 @@ export default function AbcClassReport() {
   const config = CLASS_CONFIG[abcClass];
   
   // Query configuração ABC para obter analysisMonths
-  const { data: abcConfig } = trpc.abc.getConfig.useQuery();
+  const { data: abcConfig } = trpc.abc.getConfig.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
   const analysisMonths = abcConfig?.analysisMonths || 12;
   
   // Query produtos da classe
@@ -557,7 +560,11 @@ function ProductRow({
 }) {
   const { data: salesData } = trpc.abc.getMonthlySales.useQuery(
     { productId: product.id, months: analysisMonths },
-    { enabled: isExpanded }
+    { 
+      enabled: isExpanded,
+      retry: false,
+      refetchOnWindowFocus: false
+    }
   );
   
   return (
