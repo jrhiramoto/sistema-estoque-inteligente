@@ -18,9 +18,15 @@ import { ENV } from './_core/env';
 let _db: ReturnType<typeof drizzle> | null = null;
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Usar TiDB Cloud próprio do usuário ao invés do banco gerenciado pela Manus
+      const connectionString = process.env.CUSTOM_DATABASE_URL || 
+        "mysql://6XpTpfC3EDPpy61.root:7fhxmAJLgfUUrDu7@gateway01.us-east-1.prod.aws.tidbcloud.com:4000/test?ssl={\"rejectUnauthorized\":true}";
+      
+      console.log("[Database] Connecting to TiDB Cloud...");
+      _db = drizzle(connectionString);
+      console.log("[Database] Connected successfully!");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -1220,6 +1226,9 @@ export async function calculateProductRevenue(userId: number, months: number) {
     totalRevenue: Number(r.totalRevenue || 0),
     totalQuantity: Number(r.totalQuantity || 0),
     totalOrders: Number(r.totalOrders || 0),
+    adjustedRevenue: Number(r.totalRevenue || 0), // Será calculado depois
+    hasOutliers: false,
+    outliersCount: 0,
   }));
 }
 
@@ -2124,6 +2133,7 @@ export async function getProductsByAbcClass(
     highTurnover?: boolean;
   }
 ) {
+  console.log('[getProductsByAbcClass] orderBy:', orderBy, '| direction:', orderDirection);
   const db = await getDb();
   if (!db) return { products: [], total: 0 };
   
@@ -2243,7 +2253,69 @@ export async function getProductsByAbcClass(
   const totalRevenue = allProducts.reduce((sum, p) => sum + Number(p.abcRevenue || 0), 0);
   const totalStock = allProducts.reduce((sum, p) => sum + Number(p.physicalStock || 0), 0);
   
-  // Aplicar paginação
+  // Se ordenando por relevanceScore, aplicar fator de consistência ANTES da paginação
+  // mas calcular CV apenas para TODOS os produtos (necessário para ordenação correta)
+  if (orderBy === 'relevanceScore') {
+    const productsWithConsistency = await Promise.all(
+      allProducts.map(async (product) => {
+        const monthlySales = await getMonthlySalesByProduct(product.id, months);
+        const quantities = monthlySales.map(m => m.quantity);
+        
+        // Calcular média e desvio padrão
+        const mean = quantities.reduce((sum, q) => sum + q, 0) / quantities.length;
+        const variance = quantities.reduce((sum, q) => sum + Math.pow(q - mean, 2), 0) / quantities.length;
+        const stdDev = Math.sqrt(variance);
+        
+        // Coeficiente de Variação (CV)
+        const cv = mean > 0 ? stdDev / mean : 0;
+        
+        // Fator de consistência baseado em CV
+        let consistencyFactor = 1.0;
+        if (cv >= 2.0) {
+          consistencyFactor = 0.40; // Penalização severa 60%
+        } else if (cv >= 1.5) {
+          consistencyFactor = 0.55; // Penalização forte 45%
+        } else if (cv >= 1.0) {
+          consistencyFactor = 0.70; // Penalização média 30%
+        } else if (cv >= 0.5) {
+          consistencyFactor = 0.85; // Penalização leve 15%
+        }
+        
+        // Aplicar fator de consistência ao relevanceScore
+        const adjustedScore = Number(product.relevanceScore) * consistencyFactor;
+        
+        // Debug produto 73762
+        if (product.id === 73762) {
+          console.log('[DEBUG 73762] CV:', cv, '| Factor:', consistencyFactor, '| Original Score:', product.relevanceScore, '| Adjusted:', adjustedScore);
+        }
+        
+        return {
+          ...product,
+          coefficientOfVariation: cv,
+          consistencyFactor,
+          relevanceScore: adjustedScore,
+        };
+      })
+    );
+    
+    // Reordenar por relevanceScore ajustado
+    productsWithConsistency.sort((a, b) => {
+      const diff = Number(b.relevanceScore) - Number(a.relevanceScore);
+      return orderDirection === 'desc' ? diff : -diff;
+    });
+    
+    // Aplicar paginação
+    const productsList = productsWithConsistency.slice(offset, offset + limit);
+    
+    return {
+      products: productsList,
+      total,
+      totalRevenue,
+      totalStock,
+    };
+  }
+  
+  // Para outras ordenações, aplicar paginação diretamente
   const productsList = allProducts.slice(offset, offset + limit);
   
   return {

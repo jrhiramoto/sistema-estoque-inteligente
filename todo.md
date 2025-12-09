@@ -1572,3 +1572,35 @@ Sistema agora notifica APENAS quando:
 - [x] Investigar por que há produtos com mesmo ID na query (GROUP BY incluía supplierName/supplierId)
 - [x] Corrigir GROUP BY para agrupar apenas por products.id, usando MIN() para fornecedores
 - [x] Validar que warning não aparece mais (977 produtos sem duplicações)
+
+
+## Critério de Consistência de Vendas (Coeficiente de Variação)
+
+- [ ] Analisar produto 73762 (venda atípica em abril, meses fracos no restante)
+- [ ] Implementar cálculo de coeficiente de variação (CV = desvio padrão / média)
+- [ ] Criar fator de ajuste baseado em CV para penalizar vendas inconsistentes
+- [ ] Aplicar fator de consistência ao relevanceScore (multiplicador implícito)
+- [ ] Produtos com CV alto (vendas irregulares) devem cair no ranking
+- [ ] Produtos com CV baixo (vendas consistentes) mantêm posição
+- [ ] Testar com produto 73762 e validar reposicionamento no ranking
+
+
+## Implementação de Detecção de Outliers e Reclassificação ABC
+
+- [ ] Implementar função de detecção de outliers usando método IQR (Interquartile Range)
+- [ ] Calcular Q1, Q3, IQR e limites superior/inferior para cada produto
+- [ ] Identificar meses atípicos (outliers) nas vendas mensais
+- [ ] Implementar recálculo de faturamento ajustado substituindo outliers pela mediana
+- [ ] Modificar processo de classificação ABC para usar faturamento ajustado ao invés de original
+- [ ] Executar reclassificação de todos os produtos com novo critério
+- [ ] Validar que produto 73762 foi rebaixado de classe (de A para C/D)
+- [ ] Adicionar indicador visual de "Faturamento Ajustado" para produtos afetados
+- [ ] Testar nova listagem da Classe A sem produtos com vendas irregulares
+
+## Migração de Banco de Dados para TiDB Cloud Próprio
+- [x] Obter connection string do TiDB Cloud (Cluster0)
+- [x] Atualizar server/db.ts para usar nova connection string
+- [x] Atualizar drizzle.config.ts para usar nova connection string
+- [x] Executar migrações (pnpm db:push) - 19 tabelas criadas
+- [x] Testar conexão e funcionalidade do sistema
+- [ ] Sincronizar dados do Bling para popular banco novo
