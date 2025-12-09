@@ -1563,3 +1563,12 @@ Sistema agora notifica APENAS quando:
 - [x] Produto mais relevante primeiro, menos relevante por último
 - [x] Testar ordenação em todas as classes (A, B testadas com sucesso)
 - [x] Validar que produtos com maior impacto aparecem no topo (Classe A: top produto R$ 25.935)
+
+
+## Erro de Chaves Duplicadas na Listagem ABC
+
+- [x] Corrigir warning "Encountered two children with the same key, `2076`"
+- [x] Identificar onde keys estão sendo usadas na renderização da tabela (ProductRow key={product.id})
+- [x] Investigar por que há produtos com mesmo ID na query (GROUP BY incluía supplierName/supplierId)
+- [x] Corrigir GROUP BY para agrupar apenas por products.id, usando MIN() para fornecedores
+- [x] Validar que warning não aparece mais (977 produtos sem duplicações)

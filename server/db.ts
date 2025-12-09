@@ -2210,14 +2210,15 @@ export async function getProductsByAbcClass(
           AND s.saleDate >= ${startDate}
       )`,
       physicalStock: sql<number>`COALESCE(SUM(${inventory.physicalStock}), 0)`,
-      supplierName: productSuppliers.supplierName,
-      supplierId: productSuppliers.supplierId,
+      // Usar MIN para pegar primeiro fornecedor quando há múltiplos (evita duplicação)
+      supplierName: sql<string>`MIN(${productSuppliers.supplierName})`,
+      supplierId: sql<string>`MIN(${productSuppliers.supplierId})`,
     })
     .from(products)
     .leftJoin(inventory, eq(products.id, inventory.productId))
     .leftJoin(productSuppliers, eq(products.id, productSuppliers.productId))
     .where(sql`${products.abcClass} = ${abcClass}`)
-    .groupBy(products.id, productSuppliers.supplierName, productSuppliers.supplierId)
+    .groupBy(products.id)
     .orderBy(
       orderDirection === 'desc'
         ? desc(getOrderByColumn(orderBy, startDate))
