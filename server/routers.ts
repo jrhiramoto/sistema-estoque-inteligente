@@ -13,6 +13,22 @@ export const appRouter = router({
   system: systemRouter,
   webhook: webhookRouter,
   
+  // Utilitários de debug
+  debug: router({
+    resetDbConnection: protectedProcedure.mutation(() => {
+      db.resetDbConnection();
+      return { success: true, message: "Conexão resetada com sucesso" };
+    }),
+    testDb: publicProcedure.query(async () => {
+      const database = await db.getDb();
+      if (!database) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      }
+      const result = await database.execute('SELECT 1 as test');
+      return { success: true, result: result.rows };
+    }),
+  }),
+  
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

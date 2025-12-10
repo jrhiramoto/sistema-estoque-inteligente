@@ -1604,3 +1604,27 @@ Sistema agora notifica APENAS quando:
 - [x] Executar migrações (pnpm db:push) - 19 tabelas criadas
 - [x] Testar conexão e funcionalidade do sistema
 - [ ] Sincronizar dados do Bling para popular banco novo
+
+## Bug Crítico - Erro HTML na página /settings
+- [ ] Investigar causa raiz do erro "Unexpected token '<', '<!doctype'" 
+- [ ] Servidor retornando HTML ao invés de JSON durante sincronização
+- [ ] Identificar queries/mutations problemáticas
+- [ ] Corrigir tratamento de erros no backend
+- [ ] Testar correção na página Settings
+
+## Sincronização Completa Forçada
+- [ ] Identificar código de sincronização incremental de produtos
+- [ ] Adicionar parâmetro forceFullSync para ignorar dataAlteracaoInicial
+- [ ] Atualizar interface com botão de sync completa
+- [ ] Testar sincronização completa de ~40 mil produtos
+- [ ] Monitorar progresso e garantir que todos sejam sincronizados
+
+## Migração para Novo Cluster TiDB "Keyato"
+- [ ] Atualizar credenciais do banco no código
+- [ ] Atualizar drizzle.config.ts
+- [ ] Executar migrações (pnpm db:push)
+- [ ] Testar conexão e queries
+- [ ] Sincronizar todos os produtos do Bling
+- [ ] Sincronizar estoque
+- [ ] Sincronizar vendas
+- [ ] Verificar dados no dashboard

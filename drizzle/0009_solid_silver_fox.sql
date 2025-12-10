@@ -1,1 +1,0 @@
-ALTER TABLE `sync_history` MODIFY COLUMN `sync_type` enum('products','inventory','sales','suppliers','full') NOT NULL;
