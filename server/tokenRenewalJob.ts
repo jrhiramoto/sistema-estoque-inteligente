@@ -231,7 +231,14 @@ export async function checkAndRenewToken(userId: number = 1): Promise<void> {
 }
 
 /**
- * Inicia o job de renovação automática
+ * Executa a renovação de token (para ser chamada por Vercel Cron)
+ */
+export async function performTokenRenewal(): Promise<void> {
+  await checkAndRenewToken();
+}
+
+/**
+ * Inicia o job de renovação automática (para ambiente local/Manus)
  * Executa a cada 2 horas (mais frequente para evitar expiração)
  */
 export function startTokenRenewalJob(): void {

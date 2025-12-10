@@ -1,11 +1,46 @@
-import * as cron from 'node-cron';
+import cron from 'node-cron';
 import * as db from './db';
 import { executeSync } from './syncManager';
 
 let scheduledTask: cron.ScheduledTask | null = null;
 
 /**
- * Inicia o job agendado de sincronização automática
+ * Executa a sincronização agendada (para ser chamada por Vercel Cron)
+ */
+export async function performScheduledSync() {
+  console.log('[Scheduled Sync] Executando sincronização automática incremental...');
+  
+  try {
+    // Buscar configuração de sincronização
+    const config = await db.getSyncConfig(1); // TODO: usar userId correto
+    
+    if (!config || !config.autoSyncEnabled) {
+      console.log('[Scheduled Sync] Sincronização automática desativada');
+      return;
+    }
+
+    // Executar sincronização incremental completa (produtos, estoque, vendas)
+    await executeSync(
+      1, // TODO: usar userId correto
+      'full',
+      'scheduled'
+    );
+    
+    // Atualizar timestamp da última sincronização automática
+    await db.upsertSyncConfig({
+      userId: 1, // TODO: usar userId correto
+      lastAutoSync: new Date(),
+    });
+    
+    console.log('[Scheduled Sync] ✅ Sincronização automática concluída com sucesso');
+  } catch (error: any) {
+    console.error('[Scheduled Sync] ❌ Erro na sincronização automática:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Inicia o job agendado de sincronização automática (para ambiente local/Manus)
  */
 export async function startScheduledSync() {
   // Verificar se já existe um job rodando
@@ -42,26 +77,7 @@ export async function startScheduledSync() {
   console.log(`[Scheduled Sync] Iniciando job agendado - frequência: a cada ${frequencyHours}h (cron: ${cronExpression})`);
 
   scheduledTask = cron.schedule(cronExpression, async () => {
-    console.log('[Scheduled Sync] Executando sincronização automática incremental...');
-    
-    try {
-      // Executar sincronização incremental completa (produtos, estoque, vendas)
-      await executeSync(
-        1, // TODO: usar userId correto
-        'full',
-        'scheduled'
-      );
-      
-      // Atualizar timestamp da última sincronização automática
-      await db.upsertSyncConfig({
-        userId: 1, // TODO: usar userId correto
-        lastAutoSync: new Date(),
-      });
-      
-      console.log('[Scheduled Sync] ✅ Sincronização automática concluída com sucesso');
-    } catch (error: any) {
-      console.error('[Scheduled Sync] ❌ Erro na sincronização automática:', error.message);
-    }
+    await performScheduledSync();
   });
 
   console.log('[Scheduled Sync] ✅ Job agendado iniciado com sucesso');

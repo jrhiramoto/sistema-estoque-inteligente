@@ -108,7 +108,14 @@ async function checkAndExecute(): Promise<void> {
 }
 
 /**
- * Inicia o job de recálculo automático
+ * Executa o cálculo ABC (para ser chamada por Vercel Cron)
+ */
+export async function performAbcAutoCalculation(): Promise<void> {
+  await checkAndExecute();
+}
+
+/**
+ * Inicia o job de recálculo automático (para ambiente local/Manus)
  * Verifica a cada 1 hora se deve executar baseado na configuração
  */
 export function startAbcAutoCalculationJob(): void {

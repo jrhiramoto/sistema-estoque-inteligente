@@ -1,9 +1,33 @@
 {
   "version": 2,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/api"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sync",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/token-renewal",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/abc-calculation",
+      "schedule": "0 3 * * 0"
     }
   ]
 }
