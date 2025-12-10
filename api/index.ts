@@ -4,8 +4,13 @@ import { registerOAuthRoutes } from "../server/_core/oauth";
 import { appRouter } from "../server/routers";
 import { createContext } from "../server/_core/context";
 import { webhookEndpoint } from "../server/_core/webhookEndpoint";
+import path from "path";
 
 const app = express();
+
+// Serve static files from dist/client
+const clientPath = path.join(__dirname, "../dist/client");
+app.use(express.static(clientPath));
 
 // Webhook endpoint (MUST be before body parser to capture raw body)
 app.use(webhookEndpoint);
@@ -28,6 +33,17 @@ app.use(
     },
   })
 );
+
+// SPA fallback - serve index.html for all non-API routes
+app.get("*", (req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith("/api/")) {
+    return next();
+  }
+  
+  // Serve index.html for all other routes (SPA)
+  res.sendFile(path.join(clientPath, "index.html"));
+});
 
 // Global error handler - ensure all errors return JSON
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
