@@ -8,16 +8,25 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { ENV } from './_core/env';
 
-const JWT_SECRET = ENV.jwtSecret;
+// Validação crítica: JWT_SECRET DEVE existir
+if (!process.env.JWT_SECRET) {
+  console.error('\n' + '='.repeat(80));
+  console.error('❌ ERRO CRÍTICO: JWT_SECRET não está definido!');
+  console.error('='.repeat(80));
+  console.error('Variáveis de ambiente disponíveis:');
+  console.error('- DATABASE_URL:', process.env.DATABASE_URL ? '✅ definido' : '❌ não definido');
+  console.error('- NODE_ENV:', process.env.NODE_ENV || 'não definido');
+  console.error('- JWT_SECRET:', process.env.JWT_SECRET ? '✅ definido' : '❌ NÃO DEFINIDO');
+  console.error('='.repeat(80));
+  console.error('Por favor, configure JWT_SECRET nas variáveis de ambiente do Railway');
+  console.error('='.repeat(80) + '\n');
+  throw new Error('JWT_SECRET não está configurado. Impossível iniciar servidor.');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRATION = '30d'; // Sessão persistente de 30 dias
 
-// Debug: verificar se JWT_SECRET está definido
-if (!JWT_SECRET) {
-  console.error('[AUTH] ❌ JWT_SECRET não definido! ENV.jwtSecret:', ENV.jwtSecret);
-  console.error('[AUTH] process.env.JWT_SECRET:', process.env.JWT_SECRET);
-} else {
-  console.log('[AUTH] ✅ JWT_SECRET configurado (length:', JWT_SECRET.length, ')');
-}
+console.log('[AUTH] ✅ JWT_SECRET configurado (length:', JWT_SECRET.length, ')');
 
 export interface JWTPayload {
   userId: number;
