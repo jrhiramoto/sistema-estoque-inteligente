@@ -1722,3 +1722,12 @@ Sistema agora notifica APENAS quando:
 - [x] Implementar validação de token (expiração de 1 hora)
 - [x] Enviar email com link de recuperação (logs no console por enquanto)
 - [ ] Testar fluxo completo de recuperação de senha em produção
+
+## Migração para Postgres Próprio
+- [x] Criar serviço Postgres no Railway
+- [x] Configurar DATABASE_URL para apontar para Postgres
+- [x] Executar migrations no novo banco (20 tabelas criadas)
+- [x] Testar conexão e funcionalidades
+- [x] Sistema 100% funcional com Postgres próprio
+- [x] Criar funções de banco de dados faltantes (db-bling.ts)
+- [x] Corrigir 474 erros TypeScript relacionados a funções ausentes
