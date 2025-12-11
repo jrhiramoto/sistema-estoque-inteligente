@@ -14,21 +14,73 @@ import ApiMonitoring from "./pages/ApiMonitoring";
 import Debug from "./pages/Debug";
 import AbcAnalysis from "./pages/AbcAnalysis";
 import AbcClassReport from "./pages/AbcClassReport";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/products"} component={Products} />
-      <Route path={"/orders"} component={Orders} />
-      <Route path={"/alerts"} component={Alerts} />
-      <Route path={"/settings"} component={Settings} />
-      <Route path={"/api-monitoring"} component={ApiMonitoring} />
-      <Route path={"/debug"} component={Debug} />
-      <Route path={"/analise-abc"} component={AbcAnalysis} />
-      <Route path={"/abc"} component={AbcAnalysis} />
-      <Route path={"/abc/class/:class"} component={AbcClassReport} />
-      <Route path={"/replenishment"} component={Replenishment} />
+      {/* Rotas Públicas - Autenticação */}
+      <Route path={"/login"} component={Login} />
+      <Route path={"/register"} component={Register} />
+      
+      {/* Rotas Protegidas - Requerem autenticação */}
+      <Route path={"/"}>
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/products"}>
+        <ProtectedRoute>
+          <Products />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/orders"}>
+        <ProtectedRoute>
+          <Orders />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/alerts"}>
+        <ProtectedRoute>
+          <Alerts />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/settings"}>
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/api-monitoring"}>
+        <ProtectedRoute>
+          <ApiMonitoring />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/debug"}>
+        <ProtectedRoute>
+          <Debug />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/analise-abc"}>
+        <ProtectedRoute>
+          <AbcAnalysis />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/abc"}>
+        <ProtectedRoute>
+          <AbcAnalysis />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/abc/class/:class"}>
+        <ProtectedRoute>
+          <AbcClassReport />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/replenishment"}>
+        <ProtectedRoute>
+          <Replenishment />
+        </ProtectedRoute>
+      </Route>
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -22,13 +22,25 @@ export const triggeredByEnum = pgEnum("triggered_by", ["manual", "scheduled", "w
 
 /**
  * Core user table backing auth flow.
+ * Suporta autenticação híbrida: Google OAuth e Email/Senha
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
+  // openId é nullable para suportar autenticação email/senha
+  openId: varchar("openId", { length: 64 }).unique(),
+  name: text("name").notNull(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  
+  // Campos para autenticação email/senha
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  
+  // loginMethod: "google" ou "email"
+  loginMethod: varchar("loginMethod", { length: 64 }).notNull(),
+  
+  // Sistema de permissões (JSON) - para implementação futura
+  // Estrutura: { "products": ["view", "create", "edit"], "sales": ["view"], ... }
+  permissions: text("permissions"),
+  
   role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

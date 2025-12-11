@@ -111,4 +111,87 @@ export async function getUserByOpenId(openId: string): Promise<User | undefined>
   return result.length > 0 ? result[0] : undefined;
 }
 
+// ===== Autenticação Email/Senha =====
+
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserById(id: number): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createUserWithPassword(data: {
+  name: string;
+  email: string;
+  passwordHash: string;
+}): Promise<User> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(users).values({
+    name: data.name,
+    email: data.email,
+    passwordHash: data.passwordHash,
+    loginMethod: 'email',
+    role: 'user',
+    lastSignedIn: new Date(),
+  }).returning();
+
+  return result[0];
+}
+
+export async function createUserWithGoogle(data: {
+  openId: string;
+  name: string;
+  email: string;
+}): Promise<User> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Verificar se é o owner
+  const role = data.openId === ENV.ownerOpenId ? 'admin' : 'user';
+
+  const result = await db.insert(users).values({
+    openId: data.openId,
+    name: data.name,
+    email: data.email,
+    loginMethod: 'google',
+    role,
+    lastSignedIn: new Date(),
+  }).returning();
+
+  return result[0];
+}
+
+export async function updateUserLastSignedIn(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update user: database not available");
+    return;
+  }
+
+  await db.update(users)
+    .set({ lastSignedIn: new Date() })
+    .where(eq(users.id, userId));
+}
+
 // TODO: Migrar outras funções do db.ts original conforme necessário

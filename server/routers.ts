@@ -8,6 +8,7 @@ import * as db from "./db";
 import * as blingService from "./blingService";
 import * as syncManager from "./syncManager";
 import { webhookRouter } from "./webhookRouter";
+import { authRouter } from "./authRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,14 +30,8 @@ export const appRouter = router({
     }),
   }),
   
-  auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return { success: true } as const;
-    }),
-  }),
+  // Sistema de autenticação híbrido (Google OAuth + Email/Senha)
+  auth: authRouter,
 
   // Configuração do Bling
   bling: router({

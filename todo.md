@@ -1628,3 +1628,61 @@ Sistema agora notifica APENAS quando:
 - [ ] Sincronizar estoque
 - [ ] Sincronizar vendas
 - [ ] Verificar dados no dashboard
+
+## Sistema de Autenticação Híbrido (Google OAuth + Email/Senha)
+
+### Schema do Banco
+- [x] Adicionar campo passwordHash na tabela users
+- [x] Adicionar campo permissions (JSON) para sistema de permissões futuro
+- [x] Tornar campo openId nullable (para suportar email/senha)
+- [x] Aplicar migração do banco
+
+### Backend - Autenticação Email/Senha
+- [x] Instalar dependências (bcrypt, jsonwebtoken)
+- [x] Criar endpoint POST /api/auth/register (registro simplificado)
+- [x] Criar endpoint POST /api/auth/login (login email/senha)
+- [x] Criar middleware de autenticação JWT
+- [x] Configurar JWT com expiração de 30 dias (sessão persistente)
+- [x] Adicionar procedures tRPC para auth
+
+### Backend - Google OAuth
+- [ ] Instalar passport-google-oauth20
+- [ ] Configurar estratégia Google OAuth
+- [ ] Criar endpoint GET /api/auth/google (iniciar OAuth)
+- [ ] Criar endpoint GET /api/auth/google/callback (callback OAuth)
+- [ ] Integrar com sistema de sessão existente
+
+### Frontend
+- [x] Criar página /login com ambas opções (Google + Email/Senha)
+- [x] Criar página /register (apenas email/senha)
+- [x] Adicionar botão "Login com Google" (placeholder)
+- [x] Criar componente ProtectedRoute
+- [ ] Aplicar proteção nas rotas existentes
+- [x] Atualizar useAuth hook para suportar ambos métodos
+
+### Configuração
+- [ ] Criar projeto no Google Cloud Console
+- [ ] Obter Client ID e Client Secret do Google
+- [ ] Configurar variáveis de ambiente (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+- [ ] Atualizar variáveis no Railway
+
+### Sistema de Permissões (Preparação)
+- [x] Adicionar campo permissions (JSON) no schema
+- [x] Documentar estrutura de permissões para implementação futura
+- [ ] Criar enum de módulos (products, sales, inventory, settings, etc) - FUTURO
+- [ ] Criar enum de ações (view, create, edit, delete) - FUTURO
+- [ ] Implementar validação de permissões no backend - FUTURO
+- [ ] Implementar controle de permissões no frontend - FUTURO
+
+### Testes
+- [ ] Testar registro com email/senha
+- [ ] Testar login com email/senha
+- [ ] Testar login com Google OAuth
+- [ ] Testar proteção de rotas
+- [ ] Testar no Railway
+
+## Proteção de Rotas e Logout
+- [x] Proteger todas as rotas exceto /login e /register
+- [x] Adicionar botão de logout no DashboardLayout
+- [ ] Testar redirecionamento para login quando não autenticado
+- [ ] Testar logout e limpeza de token

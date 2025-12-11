@@ -8,6 +8,13 @@
       "when": 1765393231747,
       "tag": "0000_acoustic_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765460836181,
+      "tag": "0001_true_stick",
+      "breakpoints": true
     }
   ]
 }
