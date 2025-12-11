@@ -11,6 +11,8 @@ import { startScheduledSync } from "../scheduledSync";
 import { webhookEndpoint } from "./webhookEndpoint";
 import { startTokenRenewalJob } from "../tokenRenewalJob";
 import { startAbcAutoCalculationJob } from "../abcAutoCalculationJob";
+import googleOAuthRoutes from "../googleOAuthRoutes";
+import passport from "passport";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,8 +43,14 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Passport initialization
+  app.use(passport.initialize());
+  
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Google OAuth routes under /api/auth/google
+  app.use('/api/auth', googleOAuthRoutes);
   // tRPC API
   app.use(
     "/api/trpc",

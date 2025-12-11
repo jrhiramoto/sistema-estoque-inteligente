@@ -1686,3 +1686,18 @@ Sistema agora notifica APENAS quando:
 - [x] Adicionar botão de logout no DashboardLayout
 - [ ] Testar redirecionamento para login quando não autenticado
 - [ ] Testar logout e limpeza de token
+
+## Google OAuth com Vinculação Automática de Contas
+- [x] Atualizar função updateUser no db.ts para vincular métodos de login
+- [x] Criar função para atualizar loginMethod (suportar "email,google")
+- [x] Implementar estratégia de vinculação automática por email
+- [x] Instalar passport e passport-google-oauth20
+- [x] Configurar estratégia Google OAuth no backend
+- [x] Criar endpoint GET /api/auth/google (iniciar OAuth)
+- [x] Criar endpoint GET /api/auth/google/callback (processar callback)
+- [x] Atualizar botão "Login com Google" no frontend
+- [ ] Solicitar GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET do usuário
+- [ ] Testar: Criar conta email/senha → Login com Google (vinculação)
+- [ ] Testar: Login com Google → Adicionar senha (vinculação)
+- [ ] Testar: Login com Google → Login com Google novamente
+- [x] Documentar fluxos de vinculação

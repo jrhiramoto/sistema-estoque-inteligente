@@ -15,8 +15,19 @@ import {
   validatePassword,
   validateEmail,
 } from './auth';
+import { configureGoogleOAuth, isGoogleOAuthEnabled } from './googleOAuth';
+
+// Configurar Google OAuth ao inicializar
+configureGoogleOAuth();
 
 export const authRouter = router({
+  /**
+   * Verifica se Google OAuth está habilitado
+   */
+  googleStatus: publicProcedure.query(() => {
+    return { enabled: isGoogleOAuthEnabled() };
+  }),
+
   /**
    * Registro com email/senha (simplificado)
    */

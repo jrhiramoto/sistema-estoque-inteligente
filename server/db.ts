@@ -194,4 +194,79 @@ export async function updateUserLastSignedIn(userId: number): Promise<void> {
     .where(eq(users.id, userId));
 }
 
+// ===== Vinculação de Contas (Account Linking) =====
+
+/**
+ * Vincula Google OAuth a uma conta existente
+ * Usado quando usuário tem conta email/senha e faz login com Google
+ */
+export async function linkGoogleToUser(userId: number, openId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Atualizar loginMethod para incluir google
+  const currentMethods = user.loginMethod?.split(',') || [];
+  if (!currentMethods.includes('google')) {
+    currentMethods.push('google');
+  }
+
+  await db.update(users)
+    .set({ 
+      openId,
+      loginMethod: currentMethods.join(','),
+      lastSignedIn: new Date()
+    })
+    .where(eq(users.id, userId));
+}
+
+/**
+ * Vincula senha a uma conta existente (criada via Google)
+ * Usado quando usuário tem conta Google e quer adicionar senha
+ */
+export async function linkPasswordToUser(userId: number, passwordHash: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Atualizar loginMethod para incluir email
+  const currentMethods = user.loginMethod?.split(',') || [];
+  if (!currentMethods.includes('email')) {
+    currentMethods.push('email');
+  }
+
+  await db.update(users)
+    .set({ 
+      passwordHash,
+      loginMethod: currentMethods.join(','),
+    })
+    .where(eq(users.id, userId));
+}
+
+/**
+ * Busca usuário por openId do Google
+ */
+export async function getUserByGoogleId(openId: string): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 // TODO: Migrar outras funções do db.ts original conforme necessário

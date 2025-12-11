@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,31 @@ export default function Login() {
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [, navigate] = useLocation();
+
+  // Verificar se Google OAuth está habilitado
+  const { data: googleStatus } = trpc.auth.googleStatus.useQuery();
+
+  // Processar token do Google OAuth (callback)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+
+    if (token && success === 'google_login') {
+      // Armazenar token
+      localStorage.setItem('auth_token', token);
+      toast.success('Login com Google realizado com sucesso!');
+      // Limpar URL
+      window.history.replaceState({}, '', '/login');
+      // Redirecionar
+      setTimeout(() => setLocation('/'), 100);
+    } else if (error) {
+      toast.error('Erro ao fazer login com Google');
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [setLocation]);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
@@ -37,7 +62,12 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    toast.info('Login com Google será implementado em breve');
+    if (!googleStatus?.enabled) {
+      toast.error('Google OAuth não configurado. Entre em contato com o administrador.');
+      return;
+    }
+    // Redirecionar para endpoint do Google OAuth
+    window.location.href = '/api/auth/google';
   };
 
   return (
