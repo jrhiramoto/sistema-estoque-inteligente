@@ -14,6 +14,9 @@ import { startAbcAutoCalculationJob } from "../abcAutoCalculationJob";
 import googleOAuthRoutes from "../googleOAuthRoutes";
 import passport from "passport";
 
+// Forçar carregamento de auth.ts no startup (valida JWT_SECRET)
+import "../auth";
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
