@@ -339,3 +339,7 @@ export async function updateUserPassword(userId: number, passwordHash: string): 
     .set({ passwordHash })
     .where(eq(users.id, userId));
 }
+
+
+// ===== Exportar funções do Bling =====
+export * from './db-bling';

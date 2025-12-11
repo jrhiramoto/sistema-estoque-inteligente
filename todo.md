@@ -1731,3 +1731,11 @@ Sistema agora notifica APENAS quando:
 - [x] Sistema 100% funcional com Postgres próprio
 - [x] Criar funções de banco de dados faltantes (db-bling.ts)
 - [x] Corrigir 474 erros TypeScript relacionados a funções ausentes
+
+## Passos Finais - Otimização e Limpeza
+- [x] Recriar arquivo db-bling.ts com funções faltantes
+- [ ] Corrigir 503 erros TypeScript restantes (ignorados temporariamente - funcionalidades secundárias)
+- [ ] Testar integração Bling completa (OAuth + Sincronização)
+- [ ] Validar webhooks em tempo real
+- [ ] Remover serviço MySQL do Railway
+- [ ] Verificar economia de custos
