@@ -1701,3 +1701,24 @@ Sistema agora notifica APENAS quando:
 - [ ] Testar: Login com Google → Adicionar senha (vinculação)
 - [ ] Testar: Login com Google → Login com Google novamente
 - [x] Documentar fluxos de vinculação
+
+## Autenticação Google OAuth e Recuperação de Senha
+
+### Google OAuth
+- [x] Criar credenciais OAuth no Google Cloud Console
+- [x] Configurar URLs de callback autorizadas
+- [x] Adicionar variáveis de ambiente no Railway (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+- [x] Implementar detecção automática de URL de callback
+- [ ] Fazer push do código para GitHub conectado ao Railway
+- [ ] Testar login com Google em produção
+
+### Recuperação de Senha
+- [x] Implementar endpoint para solicitar recuperação de senha
+- [x] Criar tabela password_reset_tokens no banco de dados
+- [x] Gerar token único e seguro para recuperação
+- [x] Integrar com serviço de email (configurar SMTP ou API) - usando console.log por enquanto
+- [x] Criar página de solicitação de recuperação de senha
+- [x] Criar página de redefinição de senha (com token)
+- [x] Implementar validação de token (expiração de 1 hora)
+- [x] Enviar email com link de recuperação (logs no console por enquanto)
+- [ ] Testar fluxo completo de recuperação de senha em produção

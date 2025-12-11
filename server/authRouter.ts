@@ -199,4 +199,119 @@ export const authRouter = router({
       message: 'Logout realizado com sucesso',
     };
   }),
+
+  /**
+   * Solicitar recuperação de senha
+   */
+  requestPasswordReset: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email('Email inválido'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Buscar usuário por email
+      const user = await db.getUserByEmail(input.email);
+      
+      // Por segurança, sempre retorna sucesso mesmo se o email não existir
+      // Isso evita que atacantes descubram quais emails estão cadastrados
+      if (!user) {
+        return {
+          success: true,
+          message: 'Se o email existir, você receberá um link de recuperação',
+        };
+      }
+
+      // Verificar se o usuário tem senha (não é apenas Google OAuth)
+      if (!user.passwordHash) {
+        return {
+          success: true,
+          message: 'Se o email existir, você receberá um link de recuperação',
+        };
+      }
+
+      // Criar token de recuperação
+      const { createPasswordResetToken, sendPasswordResetEmail } = await import('./passwordResetService');
+      const token = await createPasswordResetToken(user.id);
+      
+      // Enviar email
+      await sendPasswordResetEmail(user.email, token);
+
+      return {
+        success: true,
+        message: 'Se o email existir, você receberá um link de recuperação',
+      };
+    }),
+
+  /**
+   * Validar token de recuperação de senha
+   */
+  validateResetToken: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { validatePasswordResetToken } = await import('./passwordResetService');
+      const resetToken = await validatePasswordResetToken(input.token);
+
+      if (!resetToken) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Token inválido ou expirado',
+        });
+      }
+
+      return {
+        valid: true,
+        userId: resetToken.userId,
+      };
+    }),
+
+  /**
+   * Redefinir senha usando token
+   */
+  resetPassword: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        newPassword: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validar token
+      const { validatePasswordResetToken, markTokenAsUsed } = await import('./passwordResetService');
+      const resetToken = await validatePasswordResetToken(input.token);
+
+      if (!resetToken) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Token inválido ou expirado',
+        });
+      }
+
+      // Validar senha
+      const passwordValidation = validatePassword(input.newPassword);
+      if (!passwordValidation.valid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: passwordValidation.message || 'Senha inválida',
+        });
+      }
+
+      // Criar hash da nova senha
+      const passwordHash = await hashPassword(input.newPassword);
+
+      // Atualizar senha do usuário
+      await db.updateUserPassword(resetToken.userId, passwordHash);
+
+      // Marcar token como usado
+      await markTokenAsUsed(input.token);
+
+      return {
+        success: true,
+        message: 'Senha redefinida com sucesso',
+      };
+    }),
 });

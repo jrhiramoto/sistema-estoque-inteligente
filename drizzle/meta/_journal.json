@@ -15,6 +15,13 @@
       "when": 1765460836181,
       "tag": "0001_true_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765476600846,
+      "tag": "0002_brave_stranger",
+      "breakpoints": true
     }
   ]
 }

@@ -270,3 +270,72 @@ export async function getUserByGoogleId(openId: string): Promise<User | undefine
 }
 
 // TODO: Migrar outras funções do db.ts original conforme necessário
+
+/**
+ * ═══════════════════════════════════════════════════════════
+ * PASSWORD RESET TOKENS
+ * ═══════════════════════════════════════════════════════════
+ */
+
+import { passwordResetTokens, type InsertPasswordResetToken, type PasswordResetToken } from '../drizzle/schema';
+
+/**
+ * Cria um token de recuperação de senha
+ */
+export async function createPasswordResetToken(data: InsertPasswordResetToken): Promise<PasswordResetToken> {
+  const database = await getDb();
+  if (!database) {
+    throw new Error("Database not available");
+  }
+
+  const result = await database.insert(passwordResetTokens).values(data).returning();
+  return result[0];
+}
+
+/**
+ * Busca um token de recuperação de senha
+ */
+export async function getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+  const database = await getDb();
+  if (!database) {
+    throw new Error("Database not available");
+  }
+
+  const result = await database
+    .select()
+    .from(passwordResetTokens)
+    .where(eq(passwordResetTokens.token, token))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+/**
+ * Marca um token como usado
+ */
+export async function markPasswordResetTokenAsUsed(token: string): Promise<void> {
+  const database = await getDb();
+  if (!database) {
+    throw new Error("Database not available");
+  }
+
+  await database
+    .update(passwordResetTokens)
+    .set({ used: true })
+    .where(eq(passwordResetTokens.token, token));
+}
+
+/**
+ * Atualiza a senha de um usuário
+ */
+export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
+  const database = await getDb();
+  if (!database) {
+    throw new Error("Database not available");
+  }
+
+  await database
+    .update(users)
+    .set({ passwordHash })
+    .where(eq(users.id, userId));
+}
