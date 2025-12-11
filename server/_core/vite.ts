@@ -3,10 +3,6 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
 
@@ -29,9 +25,9 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
-      const clientTemplate = path.resolve(
-        __dirname,
-        "../..",
+      // Em desenvolvimento, o index.html está em client/index.html relativo ao cwd
+      const clientTemplate = path.join(
+        process.cwd(),
         "client",
         "index.html"
       );
@@ -52,25 +48,23 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // Em produção, os arquivos estáticos estão em ./public relativo ao dist/index.js
-  // Em desenvolvimento, estão em ../../dist/public
-  const distPath =
-    process.env.NODE_ENV === "development"
-      ? path.resolve(__dirname, "../..", "dist", "public")
-      : path.join(process.cwd(), "dist", "public");
+  // Em produção e desenvolvimento, usar process.cwd() como base
+  // Produção: /app (Railway) → /app/dist/public
+  // Desenvolvimento: /home/ubuntu/projeto → /home/ubuntu/projeto/dist/public
+  const distPath = path.join(process.cwd(), "dist", "public");
   
   if (!fs.existsSync(distPath)) {
     console.error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
+      `[serveStatic] Could not find the build directory: ${distPath}`
     );
-    console.error(`Current working directory: ${process.cwd()}`);
-    console.error(`__dirname: ${__dirname}`);
+    console.error(`[serveStatic] Current working directory: ${process.cwd()}`);
+    console.error(`[serveStatic] Make sure to build the client first`);
   }
 
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.join(distPath, "index.html"));
   });
 }
