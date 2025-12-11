@@ -11,6 +11,14 @@ import { ENV } from './_core/env';
 const JWT_SECRET = ENV.jwtSecret;
 const JWT_EXPIRATION = '30d'; // Sessão persistente de 30 dias
 
+// Debug: verificar se JWT_SECRET está definido
+if (!JWT_SECRET) {
+  console.error('[AUTH] ❌ JWT_SECRET não definido! ENV.jwtSecret:', ENV.jwtSecret);
+  console.error('[AUTH] process.env.JWT_SECRET:', process.env.JWT_SECRET);
+} else {
+  console.log('[AUTH] ✅ JWT_SECRET configurado (length:', JWT_SECRET.length, ')');
+}
+
 export interface JWTPayload {
   userId: number;
   email: string;
