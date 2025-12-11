@@ -52,14 +52,19 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
+  // Em produção, os arquivos estáticos estão em ./public relativo ao dist/index.js
+  // Em desenvolvimento, estão em ../../dist/public
   const distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(__dirname, "../..", "dist", "public")
-      : path.resolve(__dirname, "public");
+      : path.join(process.cwd(), "dist", "public");
+  
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
+    console.error(`Current working directory: ${process.cwd()}`);
+    console.error(`__dirname: ${__dirname}`);
   }
 
   app.use(express.static(distPath));
