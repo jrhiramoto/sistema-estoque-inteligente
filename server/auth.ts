@@ -52,7 +52,19 @@ export async function comparePassword(password: string, hash: string): Promise<b
  */
 export function generateToken(payload: JWTPayload): string {
   const secret = getJwtSecret();
-  console.log('[AUTH] generateToken - secret length:', secret.length);
+  console.log('[AUTH] ========== GENERATE TOKEN DEBUG ==========');
+  console.log('[AUTH] secret type:', typeof secret);
+  console.log('[AUTH] secret value:', secret);
+  console.log('[AUTH] secret length:', secret?.length);
+  console.log('[AUTH] secret is null?', secret === null);
+  console.log('[AUTH] secret is undefined?', secret === undefined);
+  console.log('[AUTH] secret is empty string?', secret === '');
+  console.log('[AUTH] ===========================================');
+  
+  if (!secret) {
+    throw new Error(`JWT_SECRET inválido: tipo=${typeof secret}, valor=${secret}`);
+  }
+  
   return jwt.sign(payload, secret, { expiresIn: JWT_EXPIRATION });
 }
 
