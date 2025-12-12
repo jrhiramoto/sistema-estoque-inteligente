@@ -47,14 +47,14 @@ export default function ForgotPassword() {
             <Alert className="bg-green-50 border-green-200">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                Se o email <strong>{email}</strong> estiver cadastrado, você receberá um link para redefinir sua senha.
+                Se o email <strong>{email}</strong> estiver cadastrado, você receberá sua senha por email.
               </AlertDescription>
             </Alert>
 
             <div className="text-sm text-muted-foreground space-y-2">
               <p>• Verifique sua caixa de entrada e spam</p>
-              <p>• O link expira em 1 hora</p>
-              <p>• Se não receber, tente novamente</p>
+              <p>• Você receberá sua senha atual</p>
+              <p>• Se não receber, entre em contato com o administrador</p>
             </div>
 
             <div className="flex flex-col gap-2 pt-4">
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
           </div>
           <CardTitle className="text-2xl">Esqueceu sua senha?</CardTitle>
           <CardDescription>
-            Digite seu email para receber um link de recuperação
+            Digite seu email para receber sua senha
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -129,7 +129,7 @@ export default function ForgotPassword() {
               ) : (
                 <>
                   <Mail className="mr-2 h-4 w-4" />
-                  Enviar link de recuperação
+                  Enviar senha por email
                 </>
               )}
             </Button>

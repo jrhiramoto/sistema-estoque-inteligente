@@ -9,10 +9,12 @@ import * as blingService from "./blingService";
 import * as syncManager from "./syncManager";
 import { webhookRouter } from "./webhookRouter";
 import { authRouter } from "./authRouter";
+import { userRouter } from "./userRouter";
 
 export const appRouter = router({
   system: systemRouter,
   webhook: webhookRouter,
+  users: userRouter,
   
   // Utilitários de debug
   debug: router({

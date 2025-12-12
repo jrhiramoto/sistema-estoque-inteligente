@@ -3,7 +3,7 @@ import { pgTable, serial, varchar, text, timestamp, boolean, integer, pgEnum, in
 /**
  * Enums para Postgres
  */
-export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const roleEnum = pgEnum("role", ["user", "admin", "master"]);
 export const abcClassEnum = pgEnum("abc_class", ["A", "B", "C", "D"]);
 export const countTypeEnum = pgEnum("count_type", ["scheduled", "alert", "manual"]);
 export const alertTypeEnum = pgEnum("alert_type", [
@@ -22,26 +22,23 @@ export const triggeredByEnum = pgEnum("triggered_by", ["manual", "scheduled", "w
 
 /**
  * Core user table backing auth flow.
- * Suporta autenticação híbrida: Google OAuth e Email/Senha
+ * Sistema simplificado: apenas email/senha para uso interno
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  // openId é nullable para suportar autenticação email/senha
-  openId: varchar("openId", { length: 64 }).unique(),
   name: text("name").notNull(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   
-  // Campos para autenticação email/senha
-  passwordHash: varchar("passwordHash", { length: 255 }),
+  // Senha sempre obrigatória (hash bcrypt)
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   
-  // loginMethod: "google" ou "email"
-  loginMethod: varchar("loginMethod", { length: 64 }).notNull(),
+  // Sistema de permissões (JSON array)
+  // Exemplo: ["manage_users", "manage_settings"]
+  permissions: text("permissions").default('[]').notNull(),
   
-  // Sistema de permissões (JSON) - para implementação futura
-  // Estrutura: { "products": ["view", "create", "edit"], "sales": ["view"], ... }
-  permissions: text("permissions"),
-  
+  // Roles: master (primeiro usuário), admin (com permissões), user (comum)
   role: roleEnum("role").default("user").notNull(),
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

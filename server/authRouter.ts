@@ -1,100 +1,17 @@
 /**
- * Router de Autenticação tRPC
- * Suporta: Email/Senha e Google OAuth
+ * Router de Autenticação tRPC - Sistema Simplificado
+ * Apenas Email/Senha para uso interno
  * Sessão persistente: 30 dias
  */
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { publicProcedure, router } from './_core/trpc';
-import * as db from './db';
-import {
-  hashPassword,
-  comparePassword,
-  generateToken,
-  validatePassword,
-  validateEmail,
-} from './auth';
-import { configureGoogleOAuth, isGoogleOAuthEnabled } from './googleOAuth';
-
-// Configurar Google OAuth ao inicializar
-configureGoogleOAuth();
+import * as userDb from './userDb';
+import * as emailService from './emailService';
+import { generateToken } from './auth';
 
 export const authRouter = router({
-  /**
-   * Verifica se Google OAuth está habilitado
-   */
-  googleStatus: publicProcedure.query(() => {
-    return { enabled: isGoogleOAuthEnabled() };
-  }),
-
-  /**
-   * Registro com email/senha (simplificado)
-   */
-  register: publicProcedure
-    .input(
-      z.object({
-        name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
-        email: z.string().email('Email inválido'),
-        password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
-      })
-    )
-    .mutation(async ({ input }) => {
-      // Validar email
-      if (!validateEmail(input.email)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Email inválido',
-        });
-      }
-
-      // Validar senha
-      const passwordValidation = validatePassword(input.password);
-      if (!passwordValidation.valid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: passwordValidation.message || 'Senha inválida',
-        });
-      }
-
-      // Verificar se email já existe
-      const existingUser = await db.getUserByEmail(input.email);
-      if (existingUser) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'Email já cadastrado',
-        });
-      }
-
-      // Criar hash da senha
-      const passwordHash = await hashPassword(input.password);
-
-      // Criar usuário
-      const user = await db.createUserWithPassword({
-        name: input.name,
-        email: input.email,
-        passwordHash,
-      });
-
-      // Gerar token JWT (30 dias)
-      const token = generateToken({
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      });
-
-      return {
-        success: true,
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      };
-    }),
-
   /**
    * Login com email/senha
    */
@@ -106,47 +23,46 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Buscar usuário por email
-      const user = await db.getUserByEmail(input.email);
-      
-      if (!user || !user.passwordHash) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Email ou senha incorretos',
-        });
-      }
+      try {
+        // Verificar credenciais
+        const user = await userDb.verifyPassword(input.email, input.password);
+        
+        if (!user) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Email ou senha incorretos',
+          });
+        }
 
-      // Verificar senha
-      const isPasswordValid = await comparePassword(input.password, user.passwordHash);
-      
-      if (!isPasswordValid) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Email ou senha incorretos',
-        });
-      }
-
-      // Atualizar último login
-      await db.updateUserLastSignedIn(user.id);
-
-      // Gerar token JWT (30 dias)
-      const token = generateToken({
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      });
-
-      return {
-        success: true,
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
+        // Gerar token JWT (30 dias)
+        const token = generateToken({
+          userId: user.id,
           email: user.email,
           role: user.role,
-          loginMethod: user.loginMethod,
-        },
-      };
+        });
+
+        // Parse permissions
+        const permissions = JSON.parse(user.permissions || '[]');
+
+        return {
+          success: true,
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            permissions,
+          },
+        };
+      } catch (error) {
+        console.error('[AuthRouter] Erro no login:', error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Erro ao fazer login',
+        });
+      }
     }),
 
   /**
@@ -159,35 +75,47 @@ export const authRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const { verifyToken } = await import('./auth');
-      
-      // Verificar token
-      const payload = verifyToken(input.token);
-      
-      if (!payload) {
+      try {
+        const { verifyToken } = await import('./auth');
+        
+        // Verificar token
+        const payload = verifyToken(input.token);
+        
+        if (!payload) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Token inválido ou expirado',
+          });
+        }
+
+        // Buscar usuário atualizado
+        const user = await userDb.getUserById(payload.userId);
+        
+        if (!user) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Usuário não encontrado',
+          });
+        }
+
+        // Parse permissions
+        const permissions = JSON.parse(user.permissions || '[]');
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          permissions,
+        };
+      } catch (error) {
+        console.error('[AuthRouter] Erro ao buscar usuário:', error);
+        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Token inválido ou expirado',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Erro ao buscar dados do usuário',
         });
       }
-
-      // Buscar usuário atualizado
-      const user = await db.getUserById(payload.userId);
-      
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Usuário não encontrado',
-        });
-      }
-
-      return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        loginMethod: user.loginMethod,
-      };
     }),
 
   /**
@@ -201,7 +129,7 @@ export const authRouter = router({
   }),
 
   /**
-   * Solicitar recuperação de senha
+   * Solicitar recuperação de senha (envia senha atual por email)
    */
   requestPasswordReset: publicProcedure
     .input(
@@ -210,108 +138,48 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Buscar usuário por email
-      const user = await db.getUserByEmail(input.email);
-      
-      // Por segurança, sempre retorna sucesso mesmo se o email não existir
-      // Isso evita que atacantes descubram quais emails estão cadastrados
-      if (!user) {
+      try {
+        // Buscar usuário por email
+        const user = await userDb.getUserByEmail(input.email);
+        
+        // Por segurança, sempre retorna sucesso mesmo se o email não existir
+        if (!user) {
+          return {
+            success: true,
+            message: 'Se o email existir, você receberá as instruções de recuperação',
+          };
+        }
+
+        // Gerar nova senha temporária
+        const tempPassword = Math.random().toString(36).slice(-8);
+        await userDb.resetUserPassword(user.id, tempPassword);
+
+        // Enviar email com nova senha
+        const emailSent = await emailService.sendPasswordRecoveryEmail(
+          user.email,
+          user.name,
+          tempPassword
+        );
+
+        if (!emailSent) {
+          console.error('[AuthRouter] Falha ao enviar email de recuperação');
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Erro ao enviar email de recuperação',
+          });
+        }
+
         return {
           success: true,
-          message: 'Se o email existir, você receberá um link de recuperação',
+          message: 'Email de recuperação enviado com sucesso',
         };
-      }
-
-      // Verificar se o usuário tem senha (não é apenas Google OAuth)
-      if (!user.passwordHash) {
-        return {
-          success: true,
-          message: 'Se o email existir, você receberá um link de recuperação',
-        };
-      }
-
-      // Criar token de recuperação
-      const { createPasswordResetToken, sendPasswordResetEmail } = await import('./passwordResetService');
-      const token = await createPasswordResetToken(user.id);
-      
-      // Enviar email
-      await sendPasswordResetEmail(user.email, token);
-
-      return {
-        success: true,
-        message: 'Se o email existir, você receberá um link de recuperação',
-      };
-    }),
-
-  /**
-   * Validar token de recuperação de senha
-   */
-  validateResetToken: publicProcedure
-    .input(
-      z.object({
-        token: z.string(),
-      })
-    )
-    .query(async ({ input }) => {
-      const { validatePasswordResetToken } = await import('./passwordResetService');
-      const resetToken = await validatePasswordResetToken(input.token);
-
-      if (!resetToken) {
+      } catch (error) {
+        console.error('[AuthRouter] Erro na recuperação de senha:', error);
+        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Token inválido ou expirado',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Erro ao solicitar recuperação de senha',
         });
       }
-
-      return {
-        valid: true,
-        userId: resetToken.userId,
-      };
-    }),
-
-  /**
-   * Redefinir senha usando token
-   */
-  resetPassword: publicProcedure
-    .input(
-      z.object({
-        token: z.string(),
-        newPassword: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
-      })
-    )
-    .mutation(async ({ input }) => {
-      // Validar token
-      const { validatePasswordResetToken, markTokenAsUsed } = await import('./passwordResetService');
-      const resetToken = await validatePasswordResetToken(input.token);
-
-      if (!resetToken) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Token inválido ou expirado',
-        });
-      }
-
-      // Validar senha
-      const passwordValidation = validatePassword(input.newPassword);
-      if (!passwordValidation.valid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: passwordValidation.message || 'Senha inválida',
-        });
-      }
-
-      // Criar hash da nova senha
-      const passwordHash = await hashPassword(input.newPassword);
-
-      // Atualizar senha do usuário
-      await db.updateUserPassword(resetToken.userId, passwordHash);
-
-      // Marcar token como usado
-      await markTokenAsUsed(input.token);
-
-      return {
-        success: true,
-        message: 'Senha redefinida com sucesso',
-      };
     }),
 });

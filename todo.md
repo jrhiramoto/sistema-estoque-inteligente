@@ -1739,3 +1739,77 @@ Sistema agora notifica APENAS quando:
 - [ ] Validar webhooks em tempo real
 - [ ] Remover serviço MySQL do Railway
 - [ ] Verificar economia de custos
+
+
+## Sistema de Autenticação Simplificado (Uso Interno)
+
+### Backend - Autenticação
+- [ ] Remover sistema de auto-registro (endpoint register)
+- [ ] Remover OAuth do Google (googleOAuth.ts)
+- [ ] Remover OAuth da Manus (código legado)
+- [ ] Simplificar auth.ts (apenas email/senha local)
+- [ ] Criar campo `role` no schema: master, admin, user
+- [ ] Criar campo `permissions` (JSON) no schema
+- [ ] Implementar lógica de usuário master (primeiro usuário criado)
+
+### Backend - Gestão de Usuários
+- [ ] Criar endpoint createUser (master/admin com permissão)
+- [ ] Criar endpoint listUsers (master/admin com permissão)
+- [ ] Criar endpoint updateUser (master/admin com permissão)
+- [ ] Criar endpoint deleteUser (master/admin com permissão)
+- [ ] Criar endpoint resetUserPassword (master/admin com permissão)
+- [ ] Criar endpoint grantPermission (apenas master)
+- [ ] Criar endpoint revokePermission (apenas master)
+- [ ] Validar permissões em cada endpoint
+
+### Backend - Email
+- [ ] Criar serviço de email com Resend
+- [ ] Template de boas-vindas (credenciais iniciais)
+- [ ] Template de recuperação de senha (envia senha atual)
+- [ ] Função sendWelcomeEmail(email, password)
+- [ ] Função sendPasswordRecoveryEmail(email, password)
+
+### Frontend - Gestão de Usuários
+- [ ] Criar página UserManagement (/users)
+- [ ] Tabela com lista de usuários (nome, email, role, permissões)
+- [ ] Botão "Adicionar Usuário" (abre modal)
+- [ ] Modal de criação de usuário (nome, email, senha, permissões)
+- [ ] Checkbox "Pode gerenciar usuários" (visível apenas para master)
+- [ ] Ações na tabela: editar, resetar senha, excluir
+- [ ] Modal de edição de usuário
+- [ ] Modal de confirmação de exclusão
+- [ ] Filtros e busca por nome/email
+
+### Frontend - Login e Recuperação
+- [ ] Atualizar página Login (/login)
+- [ ] Remover botão "Criar conta"
+- [ ] Manter apenas "Esqueci minha senha"
+- [ ] Atualizar página ForgotPassword (/forgot-password)
+- [ ] Simplificar: apenas solicita email
+- [ ] Mensagem: "Você receberá sua senha por email"
+- [ ] Remover página Register (/register)
+- [ ] Remover rota /register do App.tsx
+
+### Frontend - Dashboard
+- [ ] Adicionar link "Gerenciar Usuários" no dashboard
+- [ ] Visível apenas para master e admins com permissão
+- [ ] Ícone Users do lucide-react
+- [ ] Card com descrição clara
+
+### Testes
+- [ ] Testar criação de usuário master (primeiro)
+- [ ] Testar login com usuário master
+- [ ] Testar criação de usuário comum pelo master
+- [ ] Testar concessão de permissão "Gerenciar Usuários"
+- [ ] Testar criação de usuário por admin com permissão
+- [ ] Testar que admin NÃO pode conceder permissões
+- [ ] Testar recuperação de senha por email
+- [ ] Testar exclusão de usuário
+- [ ] Testar reset de senha
+
+### Deploy
+- [ ] Configurar RESEND_API_KEY no Render
+- [ ] Configurar RESEND_FROM_EMAIL no Render
+- [ ] Fazer push para GitHub
+- [ ] Aguardar deploy automático no Render
+- [ ] Testar sistema em produção
