@@ -283,6 +283,16 @@ export default function Home() {
                   </Card>
                 </Link>
               )}
+
+              <Link href="/profile">
+                <Card className="hover:bg-accent cursor-pointer transition-colors">
+                  <CardHeader>
+                    <Users className="w-8 h-8 text-gray-600 mb-2" />
+                    <CardTitle className="text-lg">Meu Perfil</CardTitle>
+                    <CardDescription>Alterar senha e informações</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
             </div>
           </>
         )}

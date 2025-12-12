@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import * as userDb from "./userDb";
 import * as emailService from "./emailService";
@@ -27,6 +27,59 @@ const masterOnlyProcedure = protectedProcedure.use(({ ctx, next }) => {
 });
 
 export const userRouter = router({
+  /**
+   * Verifica se existe algum usuário no sistema (para setup inicial)
+   */
+  hasUsers: publicProcedure.query(async () => {
+    try {
+      const { users } = await userDb.listUsers({ limit: 1 });
+      return { hasUsers: users.length > 0 };
+    } catch (error) {
+      console.error("[UserRouter] Erro ao verificar usuários:", error);
+      return { hasUsers: false };
+    }
+  }),
+
+  /**
+   * Cria o primeiro usuário master (apenas se não houver usuários)
+   */
+  createFirstUser: publicProcedure
+    .input(
+      z.object({
+        name: z.string().min(1, "Nome é obrigatório"),
+        email: z.string().email("Email inválido"),
+        password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Verificar se já existe algum usuário
+        const { users } = await userDb.listUsers({ limit: 1 });
+        if (users.length > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Já existem usuários no sistema",
+          });
+        }
+
+        // Criar primeiro usuário (será master automaticamente)
+        const user = await userDb.createUser({
+          name: input.name,
+          email: input.email,
+          password: input.password,
+        });
+
+        return { success: true, user };
+      } catch (error) {
+        console.error("[UserRouter] Erro ao criar primeiro usuário:", error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Erro ao criar primeiro usuário",
+        });
+      }
+    }),
+
   /**
    * Lista todos os usuários
    */
@@ -373,12 +426,52 @@ export const userRouter = router({
     }),
 
   /**
+   * Troca senha do usuário logado
+   */
+  changePassword: protectedProcedure
+    .input(
+      z.object({
+        currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+        newPassword: z.string().min(6, "Nova senha deve ter no mínimo 6 caracteres"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Verificar senha atual
+        const isValid = await userDb.verifyPassword(ctx.user.email, input.currentPassword);
+        if (!isValid) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Senha atual incorreta",
+          });
+        }
+
+        // Atualizar senha
+        await userDb.resetUserPassword(ctx.user.id, input.newPassword);
+
+        return {
+          success: true,
+          message: "Senha alterada com sucesso",
+        };
+      } catch (error) {
+        console.error("[UserRouter] Erro ao trocar senha:", error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Erro ao trocar senha",
+        });
+      }
+    }),
+
+  /**
    * Recupera senha por email
    */
-  recoverPassword: z
-    .object({
-      email: z.string().email("Email inválido"),
-    })
+  recoverPassword: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email("Email inválido"),
+      })
+    )
     .mutation(async ({ input }) => {
       try {
         // Buscar usuário

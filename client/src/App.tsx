@@ -17,12 +17,15 @@ import AbcClassReport from "./pages/AbcClassReport";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserManagement from "./pages/UserManagement";
+import Setup from "./pages/Setup";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       {/* Rotas Públicas - Autenticação */}
+      <Route path={"/setup"} component={Setup} />
       <Route path={"/login"} component={Login} />
       <Route path={"/forgot-password"} component={ForgotPassword} />
       
@@ -85,6 +88,11 @@ function Router() {
       <Route path={"/users"}>
         <ProtectedRoute>
           <UserManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/profile"}>
+        <ProtectedRoute>
+          <Profile />
         </ProtectedRoute>
       </Route>
       <Route path={"/404"} component={NotFound} />

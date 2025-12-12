@@ -1813,3 +1813,32 @@ Sistema agora notifica APENAS quando:
 - [ ] Fazer push para GitHub
 - [ ] Aguardar deploy automático no Render
 - [ ] Testar sistema em produção
+
+
+## Melhorias Finais - Sistema de Autenticação
+
+### Configuração Resend
+- [x] Documentar variáveis de ambiente necessárias (RESEND_API_KEY, RESEND_FROM_EMAIL)
+- [x] Adicionar validação de configuração Resend no backend
+- [x] Criar página de ajuda para configuração de email
+
+### Setup Inicial (Primeiro Usuário Master)
+- [x] Criar endpoint para verificar se existe algum usuário no sistema
+- [x] Criar página de setup inicial (/setup)
+- [x] Formulário de criação do primeiro usuário (master)
+- [x] Redirecionar automaticamente para /setup se não houver usuários
+- [x] Bloquear acesso a /setup após primeiro usuário criado
+
+### Troca de Senha
+- [x] Criar endpoint changePassword (usuário logado)
+- [x] Criar página "Meu Perfil" (/profile)
+- [x] Formulário de troca de senha (senha atual + nova senha)
+- [x] Validação de senha atual antes de alterar
+- [x] Adicionar link "Meu Perfil" no menu/header
+- [x] Toast de sucesso após troca de senha
+
+### Testes
+- [ ] Testar setup inicial (primeiro usuário)
+- [ ] Testar troca de senha
+- [ ] Testar envio de emails em produção
+- [ ] Validar fluxo completo de autenticação
