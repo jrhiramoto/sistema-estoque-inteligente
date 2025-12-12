@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sistema-estoque-inteligente
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: a78ab949198597689777d06c84656aff2d2ebb3b708b74b858fbe9244223653fb73361b6e281341f9afba36f27b01fa051031d12c490eff75c5ebd6ac7254059
+      - key: OAUTH_SERVER_URL
+        value: https://api.manus.im
+      - key: VITE_OAUTH_PORTAL_URL
+        value: https://portal.manus.im
+      - key: VITE_APP_TITLE
+        value: Sistema de Gestão de Estoque Inteligente
+      - key: DATABASE_URL
+        sync: false
+      - key: VITE_APP_ID
+        sync: false
