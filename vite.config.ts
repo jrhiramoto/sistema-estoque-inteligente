@@ -24,6 +24,18 @@ export default defineConfig({
   build: {
     outDir: path.resolve(process.cwd(), "dist/public"),
     emptyOutDir: true,
+    sourcemap: false, // Desabilitar source maps em produção para economizar memória
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separar vendors grandes em chunks menores
+          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
+          'trpc-vendor': ['@trpc/client', '@trpc/react-query', '@tanstack/react-query'],
+          'ui-vendor': ['lucide-react', 'sonner'],
+        },
+      },
+    },
   },
   server: {
     host: true,
