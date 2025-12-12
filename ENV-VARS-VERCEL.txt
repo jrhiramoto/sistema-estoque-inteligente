@@ -1,0 +1,91 @@
+🔐 VARIÁVEIS DE AMBIENTE PARA O VERCEL
+==========================================
+
+Copie e cole estas variáveis na seção "Environment Variables" do Vercel.
+Para cada uma, clique em "Add" e cole o nome e valor.
+
+IMPORTANTE: Marque "Production", "Preview" e "Development" para todas!
+
+==========================================
+OBRIGATÓRIAS (Sistema não funciona sem estas)
+==========================================
+
+Nome: DATABASE_URL
+Valor: postgresql://postgres:SEU_PASSWORD@SEU_HOST:5432/railway
+(⚠️ SUBSTITUA pelos dados do seu banco PostgreSQL do Railway)
+
+Nome: JWT_SECRET
+Valor: a78ab949198597689777d06c84656aff2d2ebb3b708b74b858fbe9244223653fb73361b6e281341f9afba36f27b01fa051031d12c490eff75c5ebd6ac7254059
+
+Nome: NODE_ENV
+Valor: production
+
+==========================================
+OAUTH MANUS (Para login funcionar)
+==========================================
+
+Nome: OAUTH_SERVER_URL
+Valor: https://api.manus.im
+
+Nome: VITE_OAUTH_PORTAL_URL
+Valor: https://portal.manus.im
+
+Nome: VITE_APP_ID
+Valor: (⚠️ PEGUE DO SEU PROJETO MANUS - verifique no Management UI)
+
+==========================================
+BRANDING
+==========================================
+
+Nome: VITE_APP_TITLE
+Valor: Sistema de Gestão de Estoque Inteligente
+
+Nome: VITE_APP_LOGO
+Valor: (deixe vazio por enquanto ou adicione URL do logo)
+
+==========================================
+APIs INTERNAS MANUS (Opcional mas recomendado)
+==========================================
+
+Nome: BUILT_IN_FORGE_API_URL
+Valor: (⚠️ PEGUE DO SEU PROJETO MANUS)
+
+Nome: BUILT_IN_FORGE_API_KEY
+Valor: (⚠️ PEGUE DO SEU PROJETO MANUS)
+
+Nome: VITE_FRONTEND_FORGE_API_KEY
+Valor: (⚠️ PEGUE DO SEU PROJETO MANUS)
+
+Nome: VITE_FRONTEND_FORGE_API_URL
+Valor: (⚠️ PEGUE DO SEU PROJETO MANUS)
+
+==========================================
+GOOGLE OAUTH (Opcional - se quiser login com Google)
+==========================================
+
+Nome: GOOGLE_CLIENT_ID
+Valor: (seu client ID do Google Cloud Console)
+
+Nome: GOOGLE_CLIENT_SECRET
+Valor: (seu client secret do Google Cloud Console)
+
+==========================================
+BLING ERP (Opcional - se quiser integração com Bling)
+==========================================
+
+Nome: BLING_CLIENT_ID
+Valor: (seu client ID do Bling)
+
+Nome: BLING_CLIENT_SECRET
+Valor: (seu client secret do Bling)
+
+==========================================
+✅ CHECKLIST
+==========================================
+[ ] DATABASE_URL configurada
+[ ] JWT_SECRET configurada
+[ ] OAUTH_SERVER_URL configurada
+[ ] VITE_APP_ID configurada
+[ ] Todas marcadas para Production, Preview e Development
+
+Depois de adicionar todas, clique em "Deploy"!
