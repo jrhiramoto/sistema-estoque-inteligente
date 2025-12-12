@@ -98,10 +98,8 @@ export default function Login() {
 
         {/* Link de Recuperação de Senha */}
         <div className="mt-6 text-center">
-          <Link href="/forgot-password">
-            <a className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
-              Esqueci minha senha
-            </a>
+          <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+            Esqueci minha senha
           </Link>
         </div>
 
