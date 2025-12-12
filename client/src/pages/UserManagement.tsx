@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Home, UserPlus, Search, Edit, Trash2, KeyRound, Users } from "lucide-re
 import { toast } from "sonner";
 
 export default function UserManagement() {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
