@@ -4,21 +4,18 @@
   "installCommand": "pnpm install --no-frozen-lockfile",
   "builds": [
     {
-      "src": "dist/index.js",
+      "src": "api/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/dist/index.js"
+      "dest": "/api/index.ts"
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.js"
+      "dest": "/api/index.ts"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
