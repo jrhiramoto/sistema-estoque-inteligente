@@ -28,6 +28,9 @@ export const appRouter = router({
       const result = await database.execute('SELECT 1 as test');
       return { success: true, result: result.rows };
     }),
+    stats: protectedProcedure.query(async () => {
+      return await db.getDataStats();
+    }),
   }),
   
   // Sistema de autenticação híbrido (Google OAuth + Email/Senha)
@@ -511,12 +514,7 @@ export const appRouter = router({
     }),
   }),
 
-  // Debug
-  debug: router({
-    stats: protectedProcedure.query(async () => {
-      return await db.getDataStats();
-    }),
-  }),
+
 
   // Produtos
   products: router({

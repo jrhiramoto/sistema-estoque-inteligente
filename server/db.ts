@@ -20,10 +20,14 @@ export async function getDb() {
     try {
       console.log("[Database] Creating new connection to Supabase Postgres...");
       
-      // Criar cliente Postgres
+      // Criar cliente Postgres com configurações otimizadas para Railway
       const client = postgres(process.env.DATABASE_URL, {
         ssl: 'require',
-        max: 10,
+        max: 3, // Reduzido para plano free do Railway
+        idle_timeout: 20, // Fechar conexões ociosas após 20s
+        connect_timeout: 10, // Timeout de conexão de 10s
+        max_lifetime: 60 * 30, // Máximo de 30 minutos por conexão
+        onnotice: () => {}, // Silenciar notices do PostgreSQL
       });
       
       _db = drizzle(client);
