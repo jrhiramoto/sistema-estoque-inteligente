@@ -3,6 +3,7 @@ import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import * as userDb from "./userDb";
 import * as emailService from "./emailService";
+import * as auditService from "./auditService";
 
 // Middleware para verificar se usuário pode gerenciar outros usuários
 const canManageUsersProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -177,6 +178,20 @@ export const userRouter = router({
         if (!emailSent) {
           console.warn("[UserRouter] Falha ao enviar email de boas-vindas");
         }
+
+        // Registrar auditoria
+        await auditService.logAction({
+          userId: ctx.user.id,
+          action: 'user_created',
+          targetUserId: user.id,
+          details: {
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          },
+          ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string,
+          userAgent: ctx.req.headers['user-agent'],
+        });
 
         return {
           success: true,

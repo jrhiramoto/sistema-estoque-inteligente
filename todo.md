@@ -1842,3 +1842,41 @@ Sistema agora notifica APENAS quando:
 - [ ] Testar troca de senha
 - [ ] Testar envio de emails em produção
 - [ ] Validar fluxo completo de autenticação
+
+
+## Sistema de Auditoria e Sessões Ativas
+
+### Auditoria de Ações
+- [x] Criar tabela audit_logs no schema
+- [x] Criar serviço de auditoria (auditService.ts)
+- [x] Registrar login/logout
+- [x] Registrar criação de usuário
+- [ ] Registrar edição de usuário (implementar incrementalmente)
+- [ ] Registrar exclusão de usuário (implementar incrementalmente)
+- [ ] Registrar alteração de senha (implementar incrementalmente)
+- [ ] Registrar concessão/revogação de permissões (implementar incrementalmente)
+- [x] Criar endpoint para listar logs (protegido, apenas master/admin)
+- [x] Criar página de visualização de logs (/audit-logs)
+- [x] Adicionar filtros (usuário, ação, data)
+- [x] Adicionar paginação
+- [x] Adicionar card "Logs de Auditoria" no dashboard (master/admin)
+
+### Gerenciamento de Sessões Ativas
+- [x] Criar tabela user_sessions no schema
+- [x] Registrar sessão no login (token, IP, user-agent, data)
+- [x] Criar endpoint para listar sessões ativas do usuário
+- [x] Criar endpoint para desconectar sessão específica
+- [x] Criar endpoint para desconectar todas as outras sessões
+- [x] Adicionar seção "Sessões Ativas" na página de perfil
+- [x] Mostrar informações: dispositivo, navegador, IP, data
+- [x] Botão "Desconectar" para cada sessão
+- [x] Botão "Desconectar todas as outras sessões"
+- [x] Limpar sessões expiradas automaticamente (função criada)
+
+### Testes
+- [ ] Testar registro de logs de auditoria (após deploy)
+- [ ] Testar visualização de logs (após deploy)
+- [ ] Testar criação de sessões no login (após deploy)
+- [ ] Testar desconexão de sessão específica (após deploy)
+- [ ] Testar desconexão de todas as sessões (após deploy)
+- [ ] Validar fluxo completo (após deploy)

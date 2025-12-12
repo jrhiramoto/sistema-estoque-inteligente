@@ -19,6 +19,17 @@ export const frequencyEnum = pgEnum("frequency", ["weekly", "biweekly", "monthly
 export const syncTypeEnum = pgEnum("sync_type", ["products", "inventory", "sales", "suppliers", "full"]);
 export const syncStatusEnum = pgEnum("sync_status", ["running", "completed", "failed", "queued", "retrying"]);
 export const triggeredByEnum = pgEnum("triggered_by", ["manual", "scheduled", "webhook"]);
+export const auditActionEnum = pgEnum("audit_action", [
+  "login",
+  "logout",
+  "user_created",
+  "user_updated",
+  "user_deleted",
+  "password_changed",
+  "password_reset",
+  "permission_granted",
+  "permission_revoked"
+]);
 
 /**
  * Core user table backing auth flow.
@@ -61,6 +72,58 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+/**
+ * Sessões ativas dos usuários
+ */
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  
+  // Informações da sessão
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  deviceInfo: text("deviceInfo"), // JSON com informações do dispositivo
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  lastActivity: timestamp("lastActivity").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("user_sessions_user_id_idx").on(table.userId),
+  tokenIdx: uniqueIndex("user_sessions_token_idx").on(table.token),
+}));
+
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = typeof userSessions.$inferInsert;
+
+/**
+ * Logs de auditoria
+ */
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id, { onDelete: 'set null' }),
+  action: auditActionEnum("action").notNull(),
+  
+  // Detalhes da ação (JSON)
+  details: text("details"),
+  
+  // Informações de contexto
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  
+  // Usuário afetado (para ações de gestão de usuários)
+  targetUserId: integer("targetUserId").references(() => users.id, { onDelete: 'set null' }),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("audit_logs_user_id_idx").on(table.userId),
+  actionIdx: index("audit_logs_action_idx").on(table.action),
+  createdAtIdx: index("audit_logs_created_at_idx").on(table.createdAt),
+}));
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
 
 /**
  * Configurações de integração com Bling

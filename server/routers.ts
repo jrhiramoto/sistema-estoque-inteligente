@@ -10,11 +10,15 @@ import * as syncManager from "./syncManager";
 import { webhookRouter } from "./webhookRouter";
 import { authRouter } from "./authRouter";
 import { userRouter } from "./userRouter";
+import { auditRouter } from "./auditRouter";
+import { sessionRouter } from "./sessionRouter";
 
 export const appRouter = router({
   system: systemRouter,
   webhook: webhookRouter,
   users: userRouter,
+  audit: auditRouter,
+  sessions: sessionRouter,
   
   // Utilitários de debug
   debug: router({

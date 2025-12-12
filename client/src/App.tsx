@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import UserManagement from "./pages/UserManagement";
 import Setup from "./pages/Setup";
 import Profile from "./pages/Profile";
+import AuditLogs from "./pages/AuditLogs";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function Router() {
@@ -93,6 +94,11 @@ function Router() {
       <Route path={"/profile"}>
         <ProtectedRoute>
           <Profile />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/audit-logs"}>
+        <ProtectedRoute>
+          <AuditLogs />
         </ProtectedRoute>
       </Route>
       <Route path={"/404"} component={NotFound} />

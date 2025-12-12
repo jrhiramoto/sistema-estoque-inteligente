@@ -9,6 +9,8 @@ import { TRPCError } from '@trpc/server';
 import { publicProcedure, router } from './_core/trpc';
 import * as userDb from './userDb';
 import * as emailService from './emailService';
+import * as auditService from './auditService';
+import * as sessionService from './sessionService';
 import { generateToken } from './auth';
 
 export const authRouter = router({
@@ -22,7 +24,7 @@ export const authRouter = router({
         password: z.string().min(1, 'Senha é obrigatória'),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         // Verificar credenciais
         const user = await userDb.verifyPassword(input.email, input.password);
@@ -34,11 +36,20 @@ export const authRouter = router({
           });
         }
 
-        // Gerar token JWT (30 dias)
-        const token = generateToken({
+        // Criar sessão
+        const token = await sessionService.createSession({
           userId: user.id,
-          email: user.email,
-          role: user.role,
+          ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string,
+          userAgent: ctx.req.headers['user-agent'],
+          expiresInDays: 30,
+        });
+
+        // Registrar auditoria
+        await auditService.logAction({
+          userId: user.id,
+          action: 'login',
+          ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string,
+          userAgent: ctx.req.headers['user-agent'],
         });
 
         // Parse permissions

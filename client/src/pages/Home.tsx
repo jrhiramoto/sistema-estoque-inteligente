@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Activity,
   ShoppingCart,
-  Users
+  Users,
+  FileText
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -273,15 +274,26 @@ export default function Home() {
               </Link>
 
               {(user.role === "master" || (user.permissions && user.permissions.includes("manage_users"))) && (
-                <Link href="/users">
-                  <Card className="hover:bg-accent cursor-pointer transition-colors">
-                    <CardHeader>
-                      <Users className="w-8 h-8 text-indigo-600 mb-2" />
-                      <CardTitle className="text-lg">Gerenciar Usuários</CardTitle>
-                      <CardDescription>Cadastrar e gerenciar usuários</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
+                <>
+                  <Link href="/users">
+                    <Card className="hover:bg-accent cursor-pointer transition-colors">
+                      <CardHeader>
+                        <Users className="w-8 h-8 text-indigo-600 mb-2" />
+                        <CardTitle className="text-lg">Gerenciar Usuários</CardTitle>
+                        <CardDescription>Cadastrar e gerenciar usuários</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                  <Link href="/audit-logs">
+                    <Card className="hover:bg-accent cursor-pointer transition-colors">
+                      <CardHeader>
+                        <FileText className="w-8 h-8 text-purple-600 mb-2" />
+                        <CardTitle className="text-lg">Logs de Auditoria</CardTitle>
+                        <CardDescription>Histórico de ações do sistema</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                </>
               )}
 
               <Link href="/profile">
