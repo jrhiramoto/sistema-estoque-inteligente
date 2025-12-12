@@ -51,6 +51,15 @@ export async function comparePassword(password: string, hash: string): Promise<b
  * Gera JWT token com expiração de 30 dias
  */
 export function generateToken(payload: JWTPayload): string {
+  console.log('[AUTH] generateToken chamado');
+  console.log('[AUTH] JWT_SECRET length:', JWT_SECRET?.length || 0);
+  console.log('[AUTH] JWT_SECRET primeiros 10 chars:', JWT_SECRET?.substring(0, 10) || 'VAZIO');
+  
+  if (!JWT_SECRET || JWT_SECRET.trim().length === 0) {
+    console.error('[AUTH] ❌ ERRO CRÍTICO: JWT_SECRET está vazio no momento de gerar token!');
+    throw new Error('JWT_SECRET não configurado');
+  }
+  
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 }
 

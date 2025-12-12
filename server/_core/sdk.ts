@@ -156,6 +156,12 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
+    // Validação robusta: detecta string vazia
+    if (!secret || secret.trim().length === 0) {
+      const FALLBACK_SECRET = 'a78ab949198597689777d06c84656aff2d2ebb3b708b74b858fbe9244223653fb73361b6e281341f9afba36f27b01fa051031d12c490eff75c5ebd6ac7254059';
+      console.warn('[SDK] ⚠️  cookieSecret está vazio, usando fallback');
+      return new TextEncoder().encode(FALLBACK_SECRET);
+    }
     return new TextEncoder().encode(secret);
   }
 
