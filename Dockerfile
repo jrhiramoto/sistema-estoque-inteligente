@@ -1,4 +1,5 @@
 # Use Node.js 18 LTS
+# Build timestamp: 2025-12-12 14:20:00 UTC - Force rebuild for JWT_SECRET fix
 FROM node:18-alpine
 
 # Install pnpm
