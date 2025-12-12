@@ -68,4 +68,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   next(err);
 });
 
+// Export both as default and as module.exports for CommonJS compatibility
 export default app;
+module.exports = app;
