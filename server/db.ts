@@ -15,6 +15,40 @@ export function resetDbConnection() {
   _db = null;
 }
 
+// Função auxiliar para retry com exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Se não é erro de conexão, não fazer retry
+      if (error.code !== 'ECONNRESET' && 
+          error.code !== 'ETIMEDOUT' && 
+          error.code !== 'ENOTFOUND' &&
+          !error.message?.includes('connection') &&
+          !error.message?.includes('timeout')) {
+        throw error;
+      }
+      
+      if (attempt < maxRetries - 1) {
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.log(`[Database] Retry ${attempt + 1}/${maxRetries} após ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -118,14 +152,16 @@ export async function getUserByOpenId(openId: string): Promise<User | undefined>
 // ===== Autenticação Email/Senha =====
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
+  return retryWithBackoff(async () => {
+    const db = await getDb();
+    if (!db) {
+      console.warn("[Database] Cannot get user: database not available");
+      return undefined;
+    }
 
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  });
 }
 
 export async function getUserById(id: number): Promise<User | undefined> {
