@@ -6,27 +6,26 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { ENV } from './_core/env';
 
-// JWT_SECRET: Usa variável de ambiente se disponível, caso contrário usa chave padrão
+// Chave padrão hardcoded - SEMPRE disponível
 const DEFAULT_JWT_SECRET = 'a78ab949198597689777d06c84656aff2d2ebb3b708b74b858fbe9244223653fb73361b6e281341f9afba36f27b01fa051031d12c490eff75c5ebd6ac7254059';
-
-// Tenta pegar da variável de ambiente, mas sempre garante um valor válido
-let JWT_SECRET = DEFAULT_JWT_SECRET;
-try {
-  const envSecret = process.env.JWT_SECRET?.trim();
-  if (envSecret && envSecret.length > 0) {
-    JWT_SECRET = envSecret;
-    console.log('[AUTH] ✅ Usando JWT_SECRET do ambiente');
-  } else {
-    console.log('[AUTH] ⚠️  Usando JWT_SECRET padrão (ambiente vazio)');
-  }
-} catch (error) {
-  console.log('[AUTH] ⚠️  Erro ao ler JWT_SECRET do ambiente, usando padrão');
-}
 const JWT_EXPIRATION = '30d'; // Sessão persistente de 30 dias
 
-console.log('[AUTH] ✅ JWT_SECRET configurado (length:', JWT_SECRET.length, ')');
+/**
+ * Obtém JWT_SECRET de forma lazy (avaliado no momento de uso)
+ * Garante que SEMPRE retorna um valor válido
+ */
+function getJwtSecret(): string {
+  try {
+    const envSecret = process.env.JWT_SECRET?.trim();
+    if (envSecret && envSecret.length > 0) {
+      return envSecret;
+    }
+  } catch (error) {
+    console.warn('[AUTH] Erro ao ler JWT_SECRET do ambiente:', error);
+  }
+  return DEFAULT_JWT_SECRET;
+}
 
 export interface JWTPayload {
   userId: number;
@@ -52,16 +51,9 @@ export async function comparePassword(password: string, hash: string): Promise<b
  * Gera JWT token com expiração de 30 dias
  */
 export function generateToken(payload: JWTPayload): string {
-  console.log('[AUTH] generateToken chamado');
-  console.log('[AUTH] JWT_SECRET length:', JWT_SECRET?.length || 0);
-  console.log('[AUTH] JWT_SECRET primeiros 10 chars:', JWT_SECRET?.substring(0, 10) || 'VAZIO');
-  
-  if (!JWT_SECRET || JWT_SECRET.trim().length === 0) {
-    console.error('[AUTH] ❌ ERRO CRÍTICO: JWT_SECRET está vazio no momento de gerar token!');
-    throw new Error('JWT_SECRET não configurado');
-  }
-  
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+  const secret = getJwtSecret();
+  console.log('[AUTH] generateToken - secret length:', secret.length);
+  return jwt.sign(payload, secret, { expiresIn: JWT_EXPIRATION });
 }
 
 /**
@@ -69,7 +61,8 @@ export function generateToken(payload: JWTPayload): string {
  */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const secret = getJwtSecret();
+    return jwt.verify(token, secret) as JWTPayload;
   } catch (error) {
     return null;
   }
