@@ -1,0 +1,38 @@
+name: lionfish-app
+region: nyc
+
+services:
+  - name: sistema-estoque-inteligente2
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: jrhiramoto/sistema-estoque-inteligente
+      branch: main
+      deploy_on_push: true
+    
+    http_port: 3000
+    
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    
+    routes:
+      - path: /
+    
+    health_check:
+      http_path: /
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      # Adicione suas outras variáveis de ambiente aqui
+      # - key: DATABASE_URL
+      #   value: "sua-connection-string"
+      # - key: JWT_SECRET
+      #   value: "seu-jwt-secret"
