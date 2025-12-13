@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy all project files
 COPY . .
